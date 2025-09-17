@@ -1,0 +1,38 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+CLAUDE.md
+FURTHER_WORK.md
+AGENTS.md
+
+# Electron distributables (large files)
+dist-electron/*.exe
+dist-electron/*.AppImage
+dist-electron/*.deb
+dist-electron
+# Research artifacts
+research/
+ARCHITECTURE_PROGRESS.md
+
+
