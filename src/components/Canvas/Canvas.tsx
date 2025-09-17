@@ -245,27 +245,8 @@ export const Canvas: React.FC = () => {
     
     edgeUpdate.select('.edge-path')
       .attr('d', (d: Edge) => {
-        const sourceNode = nodes.find(n => n.id === d.source);
-        const targetNode = nodes.find(n => n.id === d.target);
-        if (!sourceNode || !targetNode) return '';
-        
-        // Handle reflexive edges (self-loops)
-        if (d.source === d.target) {
-          return getReflexiveEdgePath(sourceNode);
-        }
-        
-        // Calculate offset for multiple edges between the same nodes
-        const edgeOffset = getEdgeOffset(d, edges);
-        
-        if (edgeOffset === 0) {
-          // Straight line for single edge
-          const source = getNodeConnectionPoint(sourceNode, targetNode.position);
-          const target = getNodeConnectionPoint(targetNode, sourceNode.position);
-          return `M ${source.x} ${source.y} L ${target.x} ${target.y}`;
-        } else {
-          // Curved line for multiple edges
-          return getCurvedEdgePath(sourceNode, targetNode, edgeOffset);
-        }
+        const geometry = getEdgeGeometry(d, nodes, edges);
+        return geometry?.path ?? '';
       })
       .attr('stroke', (d: Edge) => {
         if (selectedItems.includes(d.id)) return '#2196F3';
@@ -282,66 +263,26 @@ export const Canvas: React.FC = () => {
       });
 
     edgeUpdate.select('.edge-label')
-      .attr('x', (d: Edge) => {
-        const sourceNode = nodes.find(n => n.id === d.source);
-        const targetNode = nodes.find(n => n.id === d.target);
-        if (!sourceNode || !targetNode) return 0;
-        
-        // Handle reflexive edges
-        if (d.source === d.target) {
-          const dimensions = getNodeDimensions(sourceNode);
-          return sourceNode.position.x + Math.max(dimensions.width, dimensions.height) * 0.8;
+      .each(function(d: Edge) {
+        const labelSelection = d3.select(this);
+        const geometry = getEdgeGeometry(d, nodes, edges);
+
+        if (!geometry) {
+          labelSelection.attr('x', 0).attr('y', 0).attr('transform', null).text('');
+          return;
         }
-        
-        // Handle curved edges
-        const edgeOffset = getEdgeOffset(d, edges);
-        if (edgeOffset !== 0) {
-          const midX = (sourceNode.position.x + targetNode.position.x) / 2;
-          const dx = targetNode.position.x - sourceNode.position.x;
-          const dy = targetNode.position.y - sourceNode.position.y;
-          const length = Math.sqrt(dx * dx + dy * dy);
-          if (length > 0) {
-            const perpX = -dy / length;
-            return midX + perpX * edgeOffset * 0.5; // Place label partway to the curve
-          }
-        }
-        
-        // Default: midpoint
-        return (sourceNode.position.x + targetNode.position.x) / 2;
-      })
-      .attr('y', (d: Edge) => {
-        const sourceNode = nodes.find(n => n.id === d.source);
-        const targetNode = nodes.find(n => n.id === d.target);
-        if (!sourceNode || !targetNode) return 0;
-        
-        // Handle reflexive edges
-        if (d.source === d.target) {
-          return sourceNode.position.y - 15; // Above the loop
-        }
-        
-        // Handle curved edges
-        const edgeOffset = getEdgeOffset(d, edges);
-        if (edgeOffset !== 0) {
-          const midY = (sourceNode.position.y + targetNode.position.y) / 2;
-          const dx = targetNode.position.x - sourceNode.position.x;
-          const dy = targetNode.position.y - sourceNode.position.y;
-          const length = Math.sqrt(dx * dx + dy * dy);
-          if (length > 0) {
-            const perpY = dx / length;
-            return midY + perpY * edgeOffset * 0.5 - 10; // Place label partway to the curve
-          }
-        }
-        
-        // Default: midpoint
-        return (sourceNode.position.y + targetNode.position.y) / 2 - 10;
-      })
-      .text((d: Edge) => {
-        // Show custom label if it exists
-        if (d.label) return d.label;
-        // Hide labels for unmarked and custom edges unless they have custom labels
-        if (d.type === 'unmarked' || d.type === 'custom') return '';
-        // Show type for all other edges
-        return d.type;
+
+        labelSelection
+          .attr('x', geometry.labelPosition.x)
+          .attr('y', geometry.labelPosition.y)
+          .attr('transform', geometry.labelAngle !== null
+            ? `rotate(${geometry.labelAngle}, ${geometry.labelPosition.x}, ${geometry.labelPosition.y})`
+            : null)
+          .text(() => {
+            if (d.label) return d.label;
+            if (d.type === 'unmarked' || d.type === 'custom') return '';
+            return d.type;
+          });
       });
 
     edgeSelection.exit().remove();
@@ -720,43 +661,58 @@ function getEdgeOffset(currentEdge: Edge, allEdges: Edge[]): number {
   
   // Calculate offset based on index and total count
   const totalEdges = relatedEdges.length;
-  const offsetRange = 40; // pixels
-  
+  const offsetRange = 60; // pixels
+  const orientationSign = currentEdge.source < currentEdge.target ? 1 : -1;
+
   if (totalEdges === 2) {
-    return currentIndex === 0 ? -offsetRange / 2 : offsetRange / 2;
-  } else {
-    // For more than 2 edges, distribute them evenly
-    return (currentIndex - (totalEdges - 1) / 2) * (offsetRange / (totalEdges - 1));
+    const baseOffset = currentIndex === 0 ? -offsetRange / 2 : offsetRange / 2;
+    return baseOffset * orientationSign;
   }
+
+  // For more than 2 edges, distribute them evenly
+  const step = totalEdges > 1 ? offsetRange / (totalEdges - 1) : 0;
+  const baseOffset = (currentIndex - (totalEdges - 1) / 2) * step;
+  return baseOffset * orientationSign;
 }
 
 // Helper function to create curved path for multiple edges
-function getCurvedEdgePath(sourceNode: Node, targetNode: Node, offset: number): string {
+function computeCurvedEdgeData(sourceNode: Node, targetNode: Node, offset: number) {
   const midX = (sourceNode.position.x + targetNode.position.x) / 2;
   const midY = (sourceNode.position.y + targetNode.position.y) / 2;
-  
-  // Calculate perpendicular direction for offset
+
   const dx = targetNode.position.x - sourceNode.position.x;
   const dy = targetNode.position.y - sourceNode.position.y;
   const length = Math.sqrt(dx * dx + dy * dy);
-  
-  if (length === 0) return '';
-  
-  // Perpendicular vector
+
+  if (length === 0) {
+    return {
+      path: '',
+      source: sourceNode.position,
+      target: targetNode.position,
+      control: { x: midX, y: midY }
+    };
+  }
+
   const perpX = -dy / length;
   const perpY = dx / length;
-  
-  // Control point offset from midpoint
+
   const controlX = midX + perpX * offset;
   const controlY = midY + perpY * offset;
-  
-  // Calculate connection points for curved path
+
   const controlPos = { x: controlX, y: controlY };
   const source = getNodeConnectionPoint(sourceNode, controlPos);
   const target = getNodeConnectionPoint(targetNode, controlPos);
-  
-  // Create quadratic Bezier curve
-  return `M ${source.x} ${source.y} Q ${controlX} ${controlY} ${target.x} ${target.y}`;
+
+  return {
+    path: `M ${source.x} ${source.y} Q ${controlX} ${controlY} ${target.x} ${target.y}`,
+    source,
+    target,
+    control: { x: controlX, y: controlY }
+  };
+}
+
+function getCurvedEdgePath(sourceNode: Node, targetNode: Node, offset: number): string {
+  return computeCurvedEdgeData(sourceNode, targetNode, offset).path;
 }
 
 // Helper function to create reflexive loop path
@@ -790,6 +746,101 @@ function getReflexiveEdgePath(node: Node): string {
   const controlY2 = loopEndY;
   
   return `M ${loopStartX} ${loopStartY} C ${controlX1} ${controlY1} ${controlX2} ${controlY2} ${loopEndX} ${loopEndY}`;
+}
+
+interface EdgeGeometry {
+  path: string;
+  labelPosition: { x: number; y: number };
+  labelAngle: number | null;
+}
+
+function normalizeLabelAngle(angleDeg: number): number {
+  let angle = angleDeg;
+  if (angle > 180) angle -= 360;
+  if (angle <= -180) angle += 360;
+  if (angle > 90) angle -= 180;
+  if (angle <= -90) angle += 180;
+  return angle;
+}
+
+function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeometry | null {
+  const sourceNode = nodes.find(n => n.id === edge.source);
+  const targetNode = nodes.find(n => n.id === edge.target);
+  if (!sourceNode || !targetNode) return null;
+
+  if (edge.source === edge.target) {
+    const path = getReflexiveEdgePath(sourceNode);
+    const dimensions = getNodeDimensions(sourceNode);
+    const labelX = sourceNode.position.x + Math.max(dimensions.width, dimensions.height) * 0.8;
+    const labelY = sourceNode.position.y - Math.max(dimensions.height, 40) * 0.6;
+    return {
+      path,
+      labelPosition: { x: labelX, y: labelY },
+      labelAngle: null
+    };
+  }
+
+  const offset = getEdgeOffset(edge, allEdges);
+
+  if (offset === 0) {
+    const start = getNodeConnectionPoint(sourceNode, targetNode.position);
+    const end = getNodeConnectionPoint(targetNode, sourceNode.position);
+    const path = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+
+    const midX = (start.x + end.x) / 2;
+    const midY = (start.y + end.y) / 2;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.sqrt(dx * dx + dy * dy) || 1;
+    const normalX = -dy / length;
+    const normalY = dx / length;
+    const labelOffset = 12;
+
+    const labelX = midX + normalX * labelOffset;
+    const labelY = midY + normalY * labelOffset;
+    const angle = normalizeLabelAngle((Math.atan2(dy, dx) * 180) / Math.PI);
+
+    return {
+      path,
+      labelPosition: { x: labelX, y: labelY },
+      labelAngle: angle
+    };
+  }
+
+  const curveData = computeCurvedEdgeData(sourceNode, targetNode, offset);
+  const { source, target, control } = curveData;
+  const t = 0.5;
+  const oneMinusT = 1 - t;
+
+  const labelX =
+    oneMinusT * oneMinusT * source.x +
+    2 * oneMinusT * t * control.x +
+    t * t * target.x;
+  const labelY =
+    oneMinusT * oneMinusT * source.y +
+    2 * oneMinusT * t * control.y +
+    t * t * target.y;
+
+  const dxdt =
+    2 * oneMinusT * (control.x - source.x) +
+    2 * t * (target.x - control.x);
+  const dydt =
+    2 * oneMinusT * (control.y - source.y) +
+    2 * t * (target.y - control.y);
+  const tangentLength = Math.sqrt(dxdt * dxdt + dydt * dydt) || 1;
+  const normalX = (-dydt / tangentLength) * Math.sign(offset || 1);
+  const normalY = (dxdt / tangentLength) * Math.sign(offset || 1);
+  const labelOffset = 14;
+
+  const adjustedX = labelX + normalX * labelOffset;
+  const adjustedY = labelY + normalY * labelOffset;
+  const angle = normalizeLabelAngle((Math.atan2(dydt, dxdt) * 180) / Math.PI);
+
+  return {
+    path: curveData.path,
+    labelPosition: { x: adjustedX, y: adjustedY },
+    labelAngle: angle
+  };
 }
 
 // Helper function to get connection point on node boundary

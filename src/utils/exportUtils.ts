@@ -1,5 +1,270 @@
-import { getNodeFontSize, getNodeFillColor, getNodeStrokeColor, getNodeTextColor, getNodeDimensions } from './nodeUtils';
-import type { Diagram, Node, Edge } from '../types/all';
+import { getNodeFontSize, getNodeFillColor, getNodeStrokeColor, getNodeTextColor, getNodeDimensions, getNodeShape } from './nodeUtils';
+import type { Diagram, Node, Edge, Point } from '../types/all';
+
+const EDGE_OFFSET_RANGE = 60;
+const EDGE_LABEL_OFFSET = 14;
+
+type EdgeGeometryType = 'straight' | 'curve' | 'loop';
+
+interface ExportEdgeGeometry {
+  type: EdgeGeometryType;
+  start: Point;
+  end: Point;
+  control?: Point;
+  control2?: Point;
+  path: string;
+  labelPosition: Point;
+  labelAngle: number | null;
+}
+
+const normalizeAngle = (angleDeg: number): number => {
+  let angle = angleDeg;
+  if (angle > 180) angle -= 360;
+  if (angle <= -180) angle += 360;
+  if (angle > 90) angle -= 180;
+  if (angle <= -90) angle += 180;
+  return angle;
+};
+
+const getEdgeOffsetForExport = (currentEdge: Edge, allEdges: Edge[]): number => {
+  const relatedEdges = allEdges.filter(edge =>
+    (edge.source === currentEdge.source && edge.target === currentEdge.target) ||
+    (edge.source === currentEdge.target && edge.target === currentEdge.source)
+  );
+
+  if (relatedEdges.length <= 1) return 0;
+
+  relatedEdges.sort((a, b) => a.id.localeCompare(b.id));
+  const currentIndex = relatedEdges.findIndex(edge => edge.id === currentEdge.id);
+  const totalEdges = relatedEdges.length;
+  const orientationSign = currentEdge.source < currentEdge.target ? 1 : -1;
+
+  if (totalEdges === 2) {
+    const baseOffset = currentIndex === 0 ? -EDGE_OFFSET_RANGE / 2 : EDGE_OFFSET_RANGE / 2;
+    return baseOffset * orientationSign;
+  }
+
+  const step = totalEdges > 1 ? EDGE_OFFSET_RANGE / (totalEdges - 1) : 0;
+  const baseOffset = (currentIndex - (totalEdges - 1) / 2) * step;
+  return baseOffset * orientationSign;
+};
+
+const getNodeConnectionPointForExport = (node: Node, targetPos: Point): Point => {
+  const { x: nodeX, y: nodeY } = node.position;
+  const { x: targetX, y: targetY } = targetPos;
+
+  const dx = targetX - nodeX;
+  const dy = targetY - nodeY;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  if (distance === 0) return { x: nodeX, y: nodeY };
+
+  const normalizedDx = dx / distance;
+  const normalizedDy = dy / distance;
+
+  const dimensions = getNodeDimensions(node);
+  const shape = getNodeShape(node);
+
+  let offsetX = 0;
+  let offsetY = 0;
+
+  switch (shape) {
+    case 'ellipse': {
+      const rx = dimensions.width / 2;
+      const ry = dimensions.height / 2;
+      const t = Math.atan2(normalizedDy * rx, normalizedDx * ry);
+      offsetX = rx * Math.cos(t);
+      offsetY = ry * Math.sin(t);
+      break;
+    }
+    case 'rectangle': {
+      const w = dimensions.width / 2;
+      const h = dimensions.height / 2;
+      if (Math.abs(normalizedDx) * h > Math.abs(normalizedDy) * w) {
+        offsetX = normalizedDx > 0 ? w : -w;
+        offsetY = (normalizedDy * w) / Math.abs(normalizedDx || 1);
+      } else {
+        offsetX = (normalizedDx * h) / Math.abs(normalizedDy || 1);
+        offsetY = normalizedDy > 0 ? h : -h;
+      }
+      break;
+    }
+    case 'diamond': {
+      const diamondRadius = dimensions.radius * 0.8;
+      offsetX = normalizedDx * diamondRadius;
+      offsetY = normalizedDy * diamondRadius;
+      break;
+    }
+    default: {
+      offsetX = normalizedDx * dimensions.radius;
+      offsetY = normalizedDy * dimensions.radius;
+      break;
+    }
+  }
+
+  return {
+    x: nodeX + offsetX,
+    y: nodeY + offsetY
+  };
+};
+
+const computeCurvedEdgeGeometry = (sourceNode: Node, targetNode: Node, offset: number): ExportEdgeGeometry => {
+  const midX = (sourceNode.position.x + targetNode.position.x) / 2;
+  const midY = (sourceNode.position.y + targetNode.position.y) / 2;
+  const dx = targetNode.position.x - sourceNode.position.x;
+  const dy = targetNode.position.y - sourceNode.position.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+
+  if (length === 0) {
+    const start = sourceNode.position;
+    const end = targetNode.position;
+    return {
+      type: 'straight',
+      start,
+      end,
+      path: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
+      labelPosition: { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 },
+      labelAngle: 0
+    };
+  }
+
+  const perpX = -dy / length;
+  const perpY = dx / length;
+  const controlX = midX + perpX * offset;
+  const controlY = midY + perpY * offset;
+
+  const controlPos = { x: controlX, y: controlY };
+  const start = getNodeConnectionPointForExport(sourceNode, controlPos);
+  const end = getNodeConnectionPointForExport(targetNode, controlPos);
+  const path = `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`;
+
+  const t = 0.5;
+  const oneMinusT = 1 - t;
+  const midPoint = {
+    x: oneMinusT * oneMinusT * start.x + 2 * oneMinusT * t * controlX + t * t * end.x,
+    y: oneMinusT * oneMinusT * start.y + 2 * oneMinusT * t * controlY + t * t * end.y
+  };
+
+  const dxdt =
+    2 * oneMinusT * (controlX - start.x) +
+    2 * t * (end.x - controlX);
+  const dydt =
+    2 * oneMinusT * (controlY - start.y) +
+    2 * t * (end.y - controlY);
+  const tangentLength = Math.sqrt(dxdt * dxdt + dydt * dydt) || 1;
+  const normalX = (-dydt / tangentLength) * Math.sign(offset || 1);
+  const normalY = (dxdt / tangentLength) * Math.sign(offset || 1);
+
+  const labelPosition = {
+    x: midPoint.x + normalX * EDGE_LABEL_OFFSET,
+    y: midPoint.y + normalY * EDGE_LABEL_OFFSET
+  };
+
+  const labelAngle = normalizeAngle((Math.atan2(dydt, dxdt) * 180) / Math.PI);
+
+  return {
+    type: 'curve',
+    start,
+    end,
+    control: { x: controlX, y: controlY },
+    path,
+    labelPosition,
+    labelAngle
+  };
+};
+
+const computeStraightEdgeGeometry = (sourceNode: Node, targetNode: Node): ExportEdgeGeometry => {
+  const start = getNodeConnectionPointForExport(sourceNode, targetNode.position);
+  const end = getNodeConnectionPointForExport(targetNode, sourceNode.position);
+  const path = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+
+  const midX = (start.x + end.x) / 2;
+  const midY = (start.y + end.y) / 2;
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.sqrt(dx * dx + dy * dy) || 1;
+  const normalX = -dy / length;
+  const normalY = dx / length;
+
+  const labelPosition = {
+    x: midX + normalX * (EDGE_LABEL_OFFSET - 2),
+    y: midY + normalY * (EDGE_LABEL_OFFSET - 2)
+  };
+
+  const labelAngle = normalizeAngle((Math.atan2(dy, dx) * 180) / Math.PI);
+
+  return {
+    type: 'straight',
+    start,
+    end,
+    path,
+    labelPosition,
+    labelAngle
+  };
+};
+
+const computeLoopEdgeGeometry = (node: Node): ExportEdgeGeometry => {
+  const dimensions = getNodeDimensions(node);
+  const shape = getNodeShape(node);
+
+  let loopStartX: number;
+  let loopStartY: number;
+  let loopEndX: number;
+  let loopEndY: number;
+
+  if (shape === 'rectangle') {
+    loopStartX = node.position.x + dimensions.width / 2;
+    loopStartY = node.position.y - dimensions.height / 4;
+    loopEndX = node.position.x + dimensions.width / 2;
+    loopEndY = node.position.y + dimensions.height / 4;
+  } else {
+    const radius = dimensions.radius;
+    loopStartX = node.position.x + radius * 0.7;
+    loopStartY = node.position.y - radius * 0.7;
+    loopEndX = node.position.x + radius * 0.7;
+    loopEndY = node.position.y + radius * 0.7;
+  }
+
+  const loopSize = Math.max(dimensions.width, dimensions.height) * 0.8;
+  const control1 = { x: loopStartX + loopSize, y: loopStartY };
+  const control2 = { x: loopEndX + loopSize, y: loopEndY };
+  const path = `M ${loopStartX} ${loopStartY} C ${control1.x} ${control1.y} ${control2.x} ${control2.y} ${loopEndX} ${loopEndY}`;
+
+  const labelPosition = {
+    x: node.position.x + Math.max(dimensions.width, dimensions.height) * 0.8,
+    y: node.position.y - Math.max(dimensions.height, 40) * 0.6
+  };
+
+  return {
+    type: 'loop',
+    start: { x: loopStartX, y: loopStartY },
+    end: { x: loopEndX, y: loopEndY },
+    control: control1,
+    control2,
+    path,
+    labelPosition,
+    labelAngle: null
+  };
+};
+
+const computeEdgeGeometryForExport = (edge: Edge, nodes: Node[], allEdges: Edge[]): ExportEdgeGeometry | null => {
+  const sourceNode = nodes.find(n => n.id === edge.source);
+  const targetNode = nodes.find(n => n.id === edge.target);
+
+  if (!sourceNode || !targetNode) return null;
+
+  if (edge.source === edge.target) {
+    return computeLoopEdgeGeometry(sourceNode);
+  }
+
+  const offset = getEdgeOffsetForExport(edge, allEdges);
+
+  if (offset === 0) {
+    return computeStraightEdgeGeometry(sourceNode, targetNode);
+  }
+
+  return computeCurvedEdgeGeometry(sourceNode, targetNode, offset);
+};
 
 // Type for import callback
 export type ImportDiagramCallback = (diagram: Diagram) => void;
@@ -129,29 +394,38 @@ export const exportAsSVG = (diagram: Diagram) => {
   <!-- Edges -->
 `;
 
+  const formatNumber = (value: number) => Number.isFinite(value) ? value.toFixed(2) : '0';
+
   // Add edges
   edges.forEach(edge => {
-    const sourceNode = nodes.find(n => n.id === edge.source);
-    const targetNode = nodes.find(n => n.id === edge.target);
-    
-    if (!sourceNode || !targetNode) return;
-    
-    const strokeDasharray = edge.isResultant ? '5,5' : 'none';
+    const geometry = computeEdgeGeometryForExport(edge, nodes, edges);
+    if (!geometry) return;
+
     const edgeColor = getEdgeColorSVG(edge.type);
-    
-    svgContent += `  <line x1="${sourceNode.position.x}" y1="${sourceNode.position.y}" 
-                        x2="${targetNode.position.x}" y2="${targetNode.position.y}" 
-                        stroke="${edgeColor}" stroke-width="2" 
-                        stroke-dasharray="${strokeDasharray}" 
-                        marker-end="url(#arrowhead)" />
+    const strokeDasharray = edge.isResultant ? '8,4' : 'none';
+
+    let pathData: string;
+    if (geometry.type === 'curve' && geometry.control) {
+      pathData = `M ${formatNumber(geometry.start.x)} ${formatNumber(geometry.start.y)} Q ${formatNumber(geometry.control.x)} ${formatNumber(geometry.control.y)} ${formatNumber(geometry.end.x)} ${formatNumber(geometry.end.y)}`;
+    } else if (geometry.type === 'loop' && geometry.control && geometry.control2) {
+      pathData = `M ${formatNumber(geometry.start.x)} ${formatNumber(geometry.start.y)} C ${formatNumber(geometry.control.x)} ${formatNumber(geometry.control.y)} ${formatNumber(geometry.control2.x)} ${formatNumber(geometry.control2.y)} ${formatNumber(geometry.end.x)} ${formatNumber(geometry.end.y)}`;
+    } else {
+      pathData = `M ${formatNumber(geometry.start.x)} ${formatNumber(geometry.start.y)} L ${formatNumber(geometry.end.x)} ${formatNumber(geometry.end.y)}`;
+    }
+
+    svgContent += `  <path d="${pathData}" stroke="${edgeColor}" stroke-width="2" stroke-dasharray="${strokeDasharray}" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
 `;
-    
-    // Add edge label
-    const midX = (sourceNode.position.x + targetNode.position.x) / 2;
-    const midY = (sourceNode.position.y + targetNode.position.y) / 2 - 10;
-    const label = edge.label || edge.type;
-    
-    svgContent += `  ${generateSVGText(label, midX, midY, 12, edgeColor, 'edge-text')}
+
+    const labelText = edge.label || (edge.type === 'unmarked' || edge.type === 'custom' ? '' : edge.type);
+    if (!labelText) return;
+
+    const labelX = formatNumber(geometry.labelPosition.x);
+    const labelY = formatNumber(geometry.labelPosition.y);
+    const transform = geometry.labelAngle !== null
+      ? ` transform="rotate(${geometry.labelAngle.toFixed(2)}, ${labelX}, ${labelY})"`
+      : '';
+
+    svgContent += `  <text class="edge-text" x="${labelX}" y="${labelY}"${transform} fill="${edgeColor}" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">${labelText}</text>
 `;
   });
 
@@ -163,45 +437,59 @@ export const exportAsSVG = (diagram: Diagram) => {
   nodes.forEach(node => {
     const fillColor = getNodeFillColor(node);
     const strokeColor = getNodeStrokeColor(node);
-    
-    if (node.type === 'vocabulary') {
-      svgContent += `  <ellipse cx="${node.position.x}" cy="${node.position.y}" 
-                               rx="60" ry="40" 
-                               fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />
-`;
-    } else if (node.type === 'practice') {
-      svgContent += `  <rect x="${node.position.x - 60}" y="${node.position.y - 30}" 
-                           width="120" height="60" rx="10" 
-                           fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />
-`;
-    } else if (node.type === 'test') {
-      const diamond = `M ${node.position.x},${node.position.y - 40} L ${node.position.x + 50},${node.position.y} L ${node.position.x},${node.position.y + 40} L ${node.position.x - 50},${node.position.y} Z`;
-      svgContent += `  <path d="${diamond}" 
-                           fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />
-`;
-    } else if (node.type === 'operate') {
-      svgContent += `  <rect x="${node.position.x - 50}" y="${node.position.y - 25}" 
-                           width="100" height="50" 
-                           fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />
-`;
-    }
-    
-    // Add node text
-    const nodeFontSize = getNodeFontSize(node);
     const textColor = getNodeTextColor(node);
-    const maxWidth = node.style?.size === 'small' ? 70 : node.style?.size === 'large' ? 140 : 100;
-    svgContent +=
-      '  ' +
-      generateSVGText(
-        node.label,
-        node.position.x,
-        node.position.y,
-        nodeFontSize,
-        textColor,
-        'node-text',
-        maxWidth
-      ) +
-      '\n';
+    const dimensions = getNodeDimensions(node);
+    const shape = node.style?.shape || getNodeShape(node);
+
+    const cx = node.position.x;
+    const cy = node.position.y;
+
+    switch (shape) {
+      case 'ellipse': {
+        const rx = (dimensions.width / 2).toFixed(2);
+        const ry = (dimensions.height / 2).toFixed(2);
+        svgContent += `  <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />\n`;
+        break;
+      }
+      case 'rectangle': {
+        const width = dimensions.width;
+        const height = dimensions.height;
+        const x = (cx - width / 2).toFixed(2);
+        const y = (cy - height / 2).toFixed(2);
+        svgContent += `  <rect x="${x}" y="${y}" width="${width.toFixed(2)}" height="${height.toFixed(2)}" rx="10" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />\n`;
+        break;
+      }
+      case 'diamond': {
+        const halfWidth = dimensions.width / 2;
+        const halfHeight = dimensions.height / 2;
+        const diamond = `M ${cx.toFixed(2)},${(cy - halfHeight).toFixed(2)} L ${(cx + halfWidth).toFixed(2)},${cy.toFixed(2)} L ${cx.toFixed(2)},${(cy + halfHeight).toFixed(2)} L ${(cx - halfWidth).toFixed(2)},${cy.toFixed(2)} Z`;
+        svgContent += `  <path d="${diamond}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />\n`;
+        break;
+      }
+      case 'circle': {
+        const radius = dimensions.radius.toFixed(2);
+        svgContent += `  <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />\n`;
+        break;
+      }
+      default: {
+        const rx = (dimensions.width / 2).toFixed(2);
+        const ry = (dimensions.height / 2).toFixed(2);
+        svgContent += `  <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />\n`;
+        break;
+      }
+    }
+
+    const nodeFontSize = getNodeFontSize(node);
+    const maxWidth = dimensions.width * 0.8;
+    svgContent += '  ' + generateSVGText(
+      node.label,
+      cx,
+      cy,
+      nodeFontSize,
+      textColor,
+      'node-text',
+      maxWidth
+    ) + '\n';
   });
 
   svgContent += '</svg>';
@@ -341,48 +629,57 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
     tikz += `\\node[${nodeStyle}] (${nodeId}) at (${x}, ${y}) {${label}};\n`;
   });
   
+  const convertPoint = (point: Point) => ({
+    x: ((point.x - centerX) * scale).toFixed(2),
+    y: (-(point.y - centerY) * scale).toFixed(2)
+  });
+
   tikz += '\n% Edges\n';
   edges.forEach(edge => {
-    const sourceIndex = nodes.findIndex(n => n.id === edge.source);
-    const targetIndex = nodes.findIndex(n => n.id === edge.target);
-    
-    if (sourceIndex === -1 || targetIndex === -1) return;
-    
-    const sourceNodeId = `node${sourceIndex + 1}`;
-    const targetNodeId = `node${targetIndex + 1}`;
-    
-    let edgeStyle = '->';
-    let edgeOptions = '';
-    
-    // Add edge type specific styling
+    const geometry = computeEdgeGeometryForExport(edge, nodes, edges);
+    if (!geometry) return;
+
+    const styleParts = ['->', 'thick'];
     if (edge.isResultant) {
-      edgeOptions += 'dashed, ';
+      styleParts.push('dashed');
     }
-    
+
     switch (edge.type) {
-      case 'PV': edgeOptions += 'green!70!black, thick'; break;
-      case 'VP': edgeOptions += 'orange!80!black, thick'; break;
-      case 'PP': edgeOptions += 'purple!70!black, thick'; break;
-      case 'VV': edgeOptions += 'red!70!black, thick'; break;
-      case 'sequence': edgeOptions += 'blue!70!black, thick'; break;
-      case 'feedback': edgeOptions += 'red!70!black, thick'; break;
-      case 'loop': edgeOptions += 'gray!70!black, thick'; break;
-      case 'unmarked': edgeOptions += 'gray!50, thick'; break;
-      case 'custom': edgeOptions += 'black, thick'; break;
-      default: edgeOptions += 'black, thick';
+      case 'PV': styleParts.push('green!70!black'); break;
+      case 'VP': styleParts.push('orange!80!black'); break;
+      case 'PP': styleParts.push('purple!70!black'); break;
+      case 'VV': styleParts.push('red!70!black'); break;
+      case 'sequence': styleParts.push('blue!70!black'); break;
+      case 'feedback': styleParts.push('red!70!black'); break;
+      case 'loop': styleParts.push('gray!70!black'); break;
+      case 'unmarked': styleParts.push('gray!50'); break;
+      case 'custom': styleParts.push('black'); break;
+      default: styleParts.push('black'); break;
     }
-    
-    // Handle edge labels
-    let labelText = '';
-    if (edge.label) {
-      labelText = escapeLaTeXText(edge.label);
-    } else if (edge.type !== 'unmarked' && edge.type !== 'custom') {
-      labelText = edge.type;
+
+    const edgeStyle = styleParts.join(', ');
+    const start = convertPoint(geometry.start);
+    const end = convertPoint(geometry.end);
+
+    if (geometry.type === 'curve' && geometry.control) {
+      const control = convertPoint(geometry.control);
+      tikz += `\\draw[${edgeStyle}] (${start.x}, ${start.y}) .. controls (${control.x}, ${control.y}) .. (${end.x}, ${end.y});\n`;
+    } else if (geometry.type === 'loop' && geometry.control && geometry.control2) {
+      const control1 = convertPoint(geometry.control);
+      const control2 = convertPoint(geometry.control2);
+      tikz += `\\draw[${edgeStyle}] (${start.x}, ${start.y}) .. controls (${control1.x}, ${control1.y}) and (${control2.x}, ${control2.y}) .. (${end.x}, ${end.y});\n`;
+    } else {
+      tikz += `\\draw[${edgeStyle}] (${start.x}, ${start.y}) -- (${end.x}, ${end.y});\n`;
     }
-    
-    const labelNode = labelText ? ` node[midway, above, sloped, fill=white, inner sep=1pt] {\\small \\textbf{${labelText}}}` : '';
-    
-    tikz += `\\draw[${edgeOptions}] (${sourceNodeId}) ${edgeStyle} (${targetNodeId})${labelNode};\n`;
+
+    const labelText = edge.label || (edge.type === 'unmarked' || edge.type === 'custom' ? '' : edge.type);
+    if (!labelText) return;
+
+    const labelPoint = convertPoint(geometry.labelPosition);
+    const angle = geometry.labelAngle !== null ? geometry.labelAngle.toFixed(2) : null;
+    const rotateOption = angle ? `, rotate=${angle}` : '';
+
+    tikz += `  \\node[font=\\scriptsize, fill=white, inner sep=1pt${rotateOption}] at (${labelPoint.x}, ${labelPoint.y}) {${escapeLaTeXText(labelText)}};\n`;
   });
   
   tikz += '\n\\end{tikzpicture}';
