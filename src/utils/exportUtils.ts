@@ -1,3 +1,4 @@
+import { getNodeFontSize } from './nodeUtils';
 import type { Diagram, Node, Edge } from '../types/all';
 
 // Type for import callback
@@ -104,7 +105,6 @@ const generateSVGText = (
 export const exportAsSVG = (diagram: Diagram) => {
   const { nodes, edges } = diagram;
   const bounds = calculateDiagramBounds(nodes);
-  const exportFontSize = 14;
   
   // SVG header with proper sizing
   let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
@@ -187,8 +187,21 @@ export const exportAsSVG = (diagram: Diagram) => {
     }
     
     // Add node text
-    svgContent += `  ${generateSVGText(node.label, node.position.x, node.position.y, exportFontSize, '#333', 'node-text', 100)}
-`;
+    const nodeFontSize = getNodeFontSize(node);
+    const textColor = node.style?.textColor || '#333';
+    const maxWidth = node.style?.size === 'small' ? 70 : node.style?.size === 'large' ? 140 : 100;
+    svgContent +=
+      '  ' +
+      generateSVGText(
+        node.label,
+        node.position.x,
+        node.position.y,
+        nodeFontSize,
+        textColor,
+        'node-text',
+        maxWidth
+      ) +
+      '\n';
   });
 
   svgContent += '</svg>';

@@ -76,6 +76,16 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
 
   const currentStyle = node.style || { size: 'medium' };
 
+  const sizeFontMap = {
+    small: 12,
+    medium: 14,
+    large: 18
+  } as const;
+
+  const handleSizeChange = (size: 'small' | 'medium' | 'large') => {
+    updateNodeStyle({ size, fontSize: sizeFontMap[size] });
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -113,7 +123,7 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
           {(['small', 'medium', 'large'] as const).map(size => (
             <button
               key={size}
-              onClick={() => updateNodeStyle({ size })}
+              onClick={() => handleSizeChange(size)}
               style={{
                 flex: 1,
                 padding: '8px 12px',

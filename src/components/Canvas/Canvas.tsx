@@ -7,7 +7,7 @@ import { setZoom, setPanOffset, setCanvasSize, setPendingEdge, setShowEdgeTypeSe
 import { addEdge, addEntryPoint, addExitPoint, updateEntryPoint, saveToHistory } from '../../store/diagramSlice';
 import { Grid } from '../Grid';
 import { getSnappedPosition } from '../../utils/gridUtils';
-import { getNodeColors, getNodeDimensions, getNodeShape } from '../../utils/nodeUtils';
+import { getNodeColors, getNodeDimensions, getNodeShape, getNodeFontSize } from '../../utils/nodeUtils';
 import { getEdgeColor } from '../../utils/edgeUtils';
 import type { Node, Edge, Point } from '../../types/all';
 import './Canvas.css';
@@ -460,7 +460,7 @@ export const Canvas: React.FC = () => {
       nodeGroup.append('text')
         .attr('text-anchor', 'middle')
         .attr('dy', '.35em')
-        .attr('font-size', d.style?.fontSize || 14)
+        .attr('font-size', getNodeFontSize(d))
         .attr('fill', d.style?.textColor || '#333')
         .text(d.label)
         .call(wrapText, dimensions.width * 0.8);

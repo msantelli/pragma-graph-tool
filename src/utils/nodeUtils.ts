@@ -67,3 +67,19 @@ export const getNodeDimensions = (node: Node) => {
     };
   }
 };
+
+export const getNodeFontSize = (node: Node): number => {
+  if (node.style?.fontSize) {
+    return node.style.fontSize;
+  }
+
+  const size = node.style?.size || 'medium';
+  switch (size) {
+    case 'small':
+      return 12;
+    case 'large':
+      return 18;
+    default:
+      return 14;
+  }
+};
