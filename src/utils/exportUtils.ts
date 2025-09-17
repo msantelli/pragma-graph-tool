@@ -1,4 +1,4 @@
-import { getNodeFontSize } from './nodeUtils';
+import { getNodeFontSize, getNodeFillColor, getNodeStrokeColor, getNodeTextColor } from './nodeUtils';
 import type { Diagram, Node, Edge } from '../types/all';
 
 // Type for import callback
@@ -188,7 +188,7 @@ export const exportAsSVG = (diagram: Diagram) => {
     
     // Add node text
     const nodeFontSize = getNodeFontSize(node);
-    const textColor = node.style?.textColor || '#333';
+    const textColor = getNodeTextColor(node);
     const maxWidth = node.style?.size === 'small' ? 70 : node.style?.size === 'large' ? 140 : 100;
     svgContent +=
       '  ' +
@@ -229,30 +229,6 @@ const getEdgeColorSVG = (edgeType: string): string => {
     case 'loop': return '#607D8B';
     case 'exit': return '#8BC34A';
     case 'entry': return '#4CAF50';
-    default: return '#666';
-  }
-};
-
-const getNodeFillColor = (node: Node): string => {
-  if (node.style?.backgroundColor) return node.style.backgroundColor;
-  
-  switch (node.type) {
-    case 'vocabulary': return '#E3F2FD';
-    case 'practice': return '#FFF3E0';
-    case 'test': return '#E8F5E8';
-    case 'operate': return '#FFF8E1';
-    default: return '#FAFAFA';
-  }
-};
-
-const getNodeStrokeColor = (node: Node): string => {
-  if (node.style?.borderColor) return node.style.borderColor;
-  
-  switch (node.type) {
-    case 'vocabulary': return '#1976D2';
-    case 'practice': return '#F57C00';
-    case 'test': return '#4CAF50';
-    case 'operate': return '#FFC107';
     default: return '#666';
   }
 };
@@ -301,7 +277,30 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
   const scale = maxDimension > 0 ? 15 / maxDimension : 1; // Target max coordinate of ±7.5
   
   let tikz = `\\begin{tikzpicture}\n\n`;
-  
+
+  const colorMap = new Map<string, string>();
+  const registerColor = (color: string): string => {
+    const normalized = (color || '#000000').replace('#', '').slice(0, 6).padEnd(6, '0').toUpperCase();
+    if (!colorMap.has(normalized)) {
+      colorMap.set(normalized, `customcolor${colorMap.size + 1}`);
+    }
+    return colorMap.get(normalized)!;
+  };
+
+  nodes.forEach(node => {
+    registerColor(getNodeFillColor(node));
+    registerColor(getNodeStrokeColor(node));
+    registerColor(getNodeTextColor(node));
+  });
+
+  colorMap.forEach((name, hex) => {
+    tikz += `\\definecolor{${name}}{HTML}{${hex}}\n`;
+  });
+
+  if (colorMap.size > 0) {
+    tikz += '\n';
+  }
+
   // Add nodes with clean naming and normalized coordinates
   tikz += '% Nodes\n';
   nodes.forEach((node, index) => {
@@ -310,29 +309,32 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
     const y = (-(node.position.y - centerY) * scale).toFixed(2); // Flip Y axis for LaTeX
     const label = escapeLaTeXText(node.label);
     const nodeId = `node${index + 1}`; // Clean, readable node names
-    
+    const fillColorName = registerColor(getNodeFillColor(node));
+    const strokeColorName = registerColor(getNodeStrokeColor(node));
+    const textColorName = registerColor(getNodeTextColor(node));
+
     let nodeStyle = '';
     switch (node.type) {
       case 'vocabulary':
-        nodeStyle = 'ellipse, fill=vocabcolor!20, draw=vocabcolor, minimum width=2.5cm, minimum height=1.5cm';
+        nodeStyle = `ellipse, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=2.5cm, minimum height=1.5cm`;
         break;
       case 'practice':
-        nodeStyle = 'rectangle, rounded corners=3pt, fill=practicecolor!20, draw=practicecolor, minimum width=2.5cm, minimum height=1.2cm';
+        nodeStyle = `rectangle, rounded corners=3pt, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=2.5cm, minimum height=1.2cm`;
         break;
       case 'test':
-        nodeStyle = 'diamond, fill=testcolor!20, draw=testcolor, minimum width=2cm, minimum height=2cm';
+        nodeStyle = `diamond, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=2cm, minimum height=2cm`;
         break;
       case 'operate':
-        nodeStyle = 'rectangle, fill=operatecolor!20, draw=operatecolor, minimum width=2cm, minimum height=1cm';
+        nodeStyle = `rectangle, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=2cm, minimum height=1cm`;
         break;
       case 'custom':
-        nodeStyle = 'circle, fill=gray!20, draw=gray, minimum size=1.5cm';
+        nodeStyle = `circle, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum size=1.5cm`;
         break;
       default:
-        nodeStyle = 'circle, fill=gray!20, draw=gray, minimum size=1.5cm';
+        nodeStyle = `circle, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum size=1.5cm`;
         break;
     }
-    
+
     tikz += `\\node[${nodeStyle}] (${nodeId}) at (${x}, ${y}) {${label}};\n`;
   });
   
