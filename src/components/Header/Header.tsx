@@ -63,24 +63,26 @@ export const Header: React.FC<HeaderProps> = ({
   hasNodes
 }) => {
   return (
-    <div style={{ 
-      background: '#1976D2', 
-      color: 'white', 
-      padding: '1rem',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+    <div
+      style={{
+        background: '#1976D2',
+        color: 'white',
+        padding: '1rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem'
+      }}
+    >
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <h1 style={{ margin: 0 }}>Pragma Graph Tool</h1>
-          <a 
-            href="https://orcid.org/0000-0002-4422-3535" 
-            target="_blank" 
+          <a
+            href="https://orcid.org/0000-0002-4422-3535"
+            target="_blank"
             rel="noopener noreferrer"
-            style={{ 
-              fontSize: '0.8rem', 
-              color: 'rgba(255,255,255,0.7)', 
+            style={{
+              fontSize: '0.8rem',
+              color: 'rgba(255,255,255,0.7)',
               textDecoration: 'none',
               marginTop: '2px'
             }}
@@ -90,8 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
             by Mauro Santelli
           </a>
         </div>
-        
-        {/* Mode Selector */}
+
         <div style={{ display: 'flex', gap: '2px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', padding: '2px' }}>
           {(['MUD', 'TOTE', 'HYBRID', 'GENERIC'] as const).map(mode => (
             <button
@@ -113,10 +114,9 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           ))}
         </div>
-        
-        {/* Auto-detection toggle for MUD mode */}
+
         {diagramMode === 'MUD' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <input
               type="checkbox"
               id="auto-detect"
@@ -142,36 +142,34 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         )}
 
-        {/* Unmarked edges toggle - not available in GENERIC mode */}
         {diagramMode !== 'GENERIC' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '1rem' }}>
-          <input
-            type="checkbox"
-            id="unmarked-edges"
-            checked={showUnmarkedEdges}
-            onChange={(e) => onUnmarkedEdgesChange(e.target.checked)}
-            style={{
-              width: '16px',
-              height: '16px',
-              cursor: 'pointer'
-            }}
-          />
-          <label
-            htmlFor="unmarked-edges"
-            style={{
-              color: 'white',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              userSelect: 'none'
-            }}
-          >
-            Unmarked edges
-          </label>
-        </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input
+              type="checkbox"
+              id="unmarked-edges"
+              checked={showUnmarkedEdges}
+              onChange={(e) => onUnmarkedEdgesChange(e.target.checked)}
+              style={{
+                width: '16px',
+                height: '16px',
+                cursor: 'pointer'
+              }}
+            />
+            <label
+              htmlFor="unmarked-edges"
+              style={{
+                color: 'white',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                userSelect: 'none'
+              }}
+            >
+              Unmarked edges
+            </label>
+          </div>
         )}
-      {/* Grid controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '1rem', padding: '0 1rem', background: 'rgba(255,255,255,0.1)', borderRadius: '6px' }}>
-          {/* Show Grid Toggle */}
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem', padding: '0 1rem', background: 'rgba(255,255,255,0.1)', borderRadius: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <input
               type="checkbox"
@@ -197,7 +195,6 @@ export const Header: React.FC<HeaderProps> = ({
             </label>
           </div>
 
-          {/* Snap to Grid Toggle */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <input
               type="checkbox"
@@ -223,7 +220,6 @@ export const Header: React.FC<HeaderProps> = ({
             </label>
           </div>
 
-          {/* Grid Spacing Control */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <label
               htmlFor="grid-spacing"
@@ -252,126 +248,144 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
         </div>
+      </div>
 
-        {/* Tools - filtered by mode */}
-        {availableTools.map(tool => (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '0.5rem',
+            overflowX: 'auto',
+            paddingBottom: '0.25rem',
+            flex: '1 1 auto'
+          }}
+        >
+          {availableTools.map(tool => (
+            <button
+              key={tool}
+              onClick={() => onToolSelect(tool)}
+              style={{
+                padding: '0.5rem 1rem',
+                border: '1px solid rgba(255,255,255,0.3)',
+                background: selectedTool === tool ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)',
+                color: 'white',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {tool}
+            </button>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            minWidth: 'fit-content'
+          }}
+        >
           <button
-            key={tool}
-            onClick={() => onToolSelect(tool)}
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
             style={{
               padding: '0.5rem 1rem',
               border: '1px solid rgba(255,255,255,0.3)',
-              background: selectedTool === tool ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)',
-              color: 'white',
+              background: !canUndo ? 'rgba(255,255,255,0.05)' : 'rgba(96,125,139,0.8)',
+              color: !canUndo ? 'rgba(255,255,255,0.3)' : 'white',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: !canUndo ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem'
             }}
           >
-            {tool}
+            ↶ Undo
           </button>
-        ))}
-        </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-        {/* Undo/Redo buttons */}
-        <button
-          onClick={onUndo}
-          disabled={!canUndo}
-          title="Undo (Ctrl+Z)"
-          style={{
-            padding: '0.5rem 1rem',
-            border: '1px solid rgba(255,255,255,0.3)',
-            background: !canUndo ? 'rgba(255,255,255,0.05)' : 'rgba(96,125,139,0.8)',
-            color: !canUndo ? 'rgba(255,255,255,0.3)' : 'white',
-            borderRadius: '4px',
-            cursor: !canUndo ? 'not-allowed' : 'pointer',
-            fontSize: '0.9rem'
-          }}
-        >
-          ↶ Undo
-        </button>
-        
-        <button
-          onClick={onRedo}
-          disabled={!canRedo}
-          title="Redo (Ctrl+Y)"
-          style={{
-            padding: '0.5rem 1rem',
-            border: '1px solid rgba(255,255,255,0.3)',
-            background: !canRedo ? 'rgba(255,255,255,0.05)' : 'rgba(96,125,139,0.8)',
-            color: !canRedo ? 'rgba(255,255,255,0.3)' : 'white',
-            borderRadius: '4px',
-            cursor: !canRedo ? 'not-allowed' : 'pointer',
-            fontSize: '0.9rem'
-          }}
-        >
-          ↷ Redo
-        </button>
-        
-        {/* Import button */}
-        <button
-          onClick={onImport}
-          style={{
-            padding: '0.5rem 1rem',
-            border: '1px solid rgba(255,255,255,0.3)',
-            background: 'rgba(156,39,176,0.8)',
-            color: 'white',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '0.9rem'
-          }}
-        >
-          📁 Import
-        </button>
-        
-        {/* Export buttons */}
-        <button
-          onClick={onExportJSON}
-          disabled={!hasNodes}
-          style={{
-            padding: '0.5rem 1rem',
-            border: '1px solid rgba(255,255,255,0.3)',
-            background: !hasNodes ? 'rgba(255,255,255,0.05)' : 'rgba(76,175,80,0.8)',
-            color: !hasNodes ? 'rgba(255,255,255,0.5)' : 'white',
-            borderRadius: '4px',
-            cursor: !hasNodes ? 'not-allowed' : 'pointer',
-            fontSize: '0.9rem'
-          }}
-        >
-          JSON
-        </button>
-        
-        <button
-          onClick={onExportSVG}
-          disabled={!hasNodes}
-          style={{
-            padding: '0.5rem 1rem',
-            border: '1px solid rgba(255,255,255,0.3)',
-            background: !hasNodes ? 'rgba(255,255,255,0.05)' : 'rgba(255,152,0,0.8)',
-            color: !hasNodes ? 'rgba(255,255,255,0.5)' : 'white',
-            borderRadius: '4px',
-            cursor: !hasNodes ? 'not-allowed' : 'pointer',
-            fontSize: '0.9rem'
-          }}
-        >
-          SVG
-        </button>
-        
-        <button
-          onClick={onExportLatex}
-          disabled={!hasNodes}
-          style={{
-            padding: '0.5rem 1rem',
-            border: '1px solid rgba(255,255,255,0.3)',
-            background: !hasNodes ? 'rgba(255,255,255,0.05)' : 'rgba(233,30,99,0.8)',
-            color: !hasNodes ? 'rgba(255,255,255,0.5)' : 'white',
-            borderRadius: '4px',
-            cursor: !hasNodes ? 'not-allowed' : 'pointer',
-            fontSize: '0.9rem'
-          }}
-        >
-          LaTeX
-        </button>
+          <button
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Y)"
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid rgba(255,255,255,0.3)',
+              background: !canRedo ? 'rgba(255,255,255,0.05)' : 'rgba(96,125,139,0.8)',
+              color: !canRedo ? 'rgba(255,255,255,0.3)' : 'white',
+              borderRadius: '4px',
+              cursor: !canRedo ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            ↷ Redo
+          </button>
+
+          <button
+            onClick={onImport}
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid rgba(255,255,255,0.3)',
+              background: 'rgba(156,39,176,0.8)',
+              color: 'white',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            📁 Import
+          </button>
+
+          <button
+            onClick={onExportJSON}
+            disabled={!hasNodes}
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid rgba(255,255,255,0.3)',
+              background: !hasNodes ? 'rgba(255,255,255,0.05)' : 'rgba(76,175,80,0.8)',
+              color: !hasNodes ? 'rgba(255,255,255,0.5)' : 'white',
+              borderRadius: '4px',
+              cursor: !hasNodes ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            JSON
+          </button>
+
+          <button
+            onClick={onExportSVG}
+            disabled={!hasNodes}
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid rgba(255,255,255,0.3)',
+              background: !hasNodes ? 'rgba(255,255,255,0.05)' : 'rgba(255,152,0,0.8)',
+              color: !hasNodes ? 'rgba(255,255,255,0.5)' : 'white',
+              borderRadius: '4px',
+              cursor: !hasNodes ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            SVG
+          </button>
+
+          <button
+            onClick={onExportLatex}
+            disabled={!hasNodes}
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid rgba(255,255,255,0.3)',
+              background: !hasNodes ? 'rgba(255,255,255,0.05)' : 'rgba(233,30,99,0.8)',
+              color: !hasNodes ? 'rgba(255,255,255,0.5)' : 'white',
+              borderRadius: '4px',
+              cursor: !hasNodes ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            LaTeX
+          </button>
+        </div>
       </div>
     </div>
   );
