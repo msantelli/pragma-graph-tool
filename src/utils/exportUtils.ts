@@ -1,4 +1,4 @@
-import { getNodeFontSize, getNodeFillColor, getNodeStrokeColor, getNodeTextColor } from './nodeUtils';
+import { getNodeFontSize, getNodeFillColor, getNodeStrokeColor, getNodeTextColor, getNodeDimensions } from './nodeUtils';
 import type { Diagram, Node, Edge } from '../types/all';
 
 // Type for import callback
@@ -312,26 +312,29 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
     const fillColorName = registerColor(getNodeFillColor(node));
     const strokeColorName = registerColor(getNodeStrokeColor(node));
     const textColorName = registerColor(getNodeTextColor(node));
+    const dimensions = getNodeDimensions(node);
+    const widthCm = (dimensions.width / 40).toFixed(2);
+    const heightCm = (dimensions.height / 40).toFixed(2);
 
     let nodeStyle = '';
     switch (node.type) {
       case 'vocabulary':
-        nodeStyle = `ellipse, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=2.5cm, minimum height=1.5cm`;
+        nodeStyle = `ellipse, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=${widthCm}cm, minimum height=${heightCm}cm`;
         break;
       case 'practice':
-        nodeStyle = `rectangle, rounded corners=3pt, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=2.5cm, minimum height=1.2cm`;
+        nodeStyle = `rectangle, rounded corners=3pt, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=${widthCm}cm, minimum height=${heightCm}cm`;
         break;
       case 'test':
-        nodeStyle = `diamond, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=2cm, minimum height=2cm`;
+        nodeStyle = `diamond, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=${widthCm}cm, minimum height=${heightCm}cm`;
         break;
       case 'operate':
-        nodeStyle = `rectangle, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=2cm, minimum height=1cm`;
+        nodeStyle = `rectangle, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=${widthCm}cm, minimum height=${heightCm}cm`;
         break;
       case 'custom':
-        nodeStyle = `circle, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum size=1.5cm`;
+        nodeStyle = `circle, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum size=${widthCm}cm`;
         break;
       default:
-        nodeStyle = `circle, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum size=1.5cm`;
+        nodeStyle = `circle, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum size=${widthCm}cm`;
         break;
     }
 
