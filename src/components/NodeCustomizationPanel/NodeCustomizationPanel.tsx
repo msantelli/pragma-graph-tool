@@ -118,11 +118,12 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
                 flex: 1,
                 padding: '8px 12px',
                 border: `2px solid ${currentStyle.size === size ? '#4CAF50' : '#ddd'}`,
-                background: currentStyle.size === size ? '#E8F5E8' : '#f9f9f9',
+                background: currentStyle.size === size ? '#d7eed7' : '#f1f1f1',
                 borderRadius: '6px',
                 cursor: 'pointer',
                 textTransform: 'capitalize',
-                fontWeight: currentStyle.size === size ? 'bold' : 'normal'
+                fontWeight: currentStyle.size === size ? 'bold' : 'normal',
+                color: currentStyle.size === size ? '#1B5E20' : '#333'
               }}
             >
               {size}
