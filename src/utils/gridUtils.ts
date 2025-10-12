@@ -2,15 +2,16 @@ import type { Point } from '../types/all';
 
 /**
  * Snap a point to the nearest grid intersection
- * Only snaps if within tolerance distance (for gentler snapping)
+ * When enabled, snaps to grid. Tolerance controls snap strength (gentler when higher).
  */
-export const snapToGrid = (point: Point, gridSpacing: number, enabled: boolean = true, tolerance: number = 10): Point => {
+export const snapToGrid = (point: Point, gridSpacing: number, enabled: boolean = true, tolerance: number = 15): Point => {
+  // If snapping disabled, return original point
   if (!enabled) return point;
 
   const snappedX = Math.round(point.x / gridSpacing) * gridSpacing;
   const snappedY = Math.round(point.y / gridSpacing) * gridSpacing;
 
-  // Only snap if close enough to grid (gentler behavior)
+  // Only snap if close enough to grid (gentler behavior with tolerance)
   const distanceX = Math.abs(point.x - snappedX);
   const distanceY = Math.abs(point.y - snappedY);
 
