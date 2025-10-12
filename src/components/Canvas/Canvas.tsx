@@ -9,6 +9,7 @@ import { Grid } from '../Grid';
 import { getSnappedPosition } from '../../utils/gridUtils';
 import { getNodeColors, getNodeDimensions, getNodeShape, getNodeFontSize } from '../../utils/nodeUtils';
 import { getEdgeColor } from '../../utils/edgeUtils';
+import { getAbsolutePosition, calculateContainerBounds, isNodeOrAncestorLocked, getLockGroupNodes } from '../../utils/containmentUtils';
 import type { Node, Edge, Point } from '../../types/all';
 import './Canvas.css';
 
@@ -28,6 +29,7 @@ export const Canvas: React.FC = () => {
   const gridSpacing = useAppSelector(state => state.ui.gridSpacing);
   const showGrid = useAppSelector(state => state.ui.showGrid);
   const pendingEntryExit = useAppSelector(state => state.ui.pendingEntryExit);
+  const advancedMode = useAppSelector(state => state.ui.advancedMode);
   const dispatch = useAppDispatch();
   
   // Flag to prevent infinite loop between Redux and D3 zoom
@@ -287,20 +289,65 @@ export const Canvas: React.FC = () => {
 
     edgeSelection.exit().remove();
 
-    // Render nodes
+    // Render nodes with depth-first traversal for correct z-order
     const nodeGroup = g.append('g').attr('class', 'nodes');
-    const nodeSelection = nodeGroup.selectAll<SVGGElement, Node>('.node')
-      .data(nodes, (d) => d?.id ?? '');
 
-    const nodeEnter = nodeSelection.enter()
-      .append('g')
-      .attr('class', 'node')
-      .attr('transform', (d: Node) => `translate(${d.position.x}, ${d.position.y})`)
-      .style('cursor', 'pointer');
+    // Recursive rendering function for depth-first traversal
+    const renderNodesDepthFirst = (parentId: string | null, depth: number = 0) => {
+      const children = nodes.filter(n => n.parentId === parentId);
 
-    // Add shapes based on shape property
-    nodeEnter.each(function(d: Node) {
-      const nodeGroup = d3.select(this);
+      children.forEach(node => {
+        const absPos = getAbsolutePosition(nodes, node.id);
+
+        // 1. Render container frame if this is a container
+        if (node.isContainer && (node.childIds?.length ?? 0) > 0) {
+          const bounds = calculateContainerBounds(nodes, node.id);
+
+          nodeGroup.append('rect')
+            .attr('class', `container-frame container-${node.id}`)
+            .attr('x', bounds.x)
+            .attr('y', bounds.y)
+            .attr('width', bounds.width)
+            .attr('height', bounds.height)
+            .attr('fill', '#f5f5f5')
+            .attr('stroke', '#ccc')
+            .attr('stroke-width', 2)
+            .attr('stroke-dasharray', '8,4')
+            .attr('rx', 8)
+            .style('pointer-events', 'none');
+        }
+
+        // 2. Render the node itself
+        const nodeElement = nodeGroup.append('g')
+          .attr('class', 'node')
+          .attr('data-node-id', node.id)
+          .attr('transform', `translate(${absPos.x}, ${absPos.y})`)
+          .style('cursor', 'pointer');
+
+        // Add shape based on node type
+        renderNodeShape(nodeElement, node);
+
+        // 3. Add lock badge if locked
+        if (node.locked || isNodeOrAncestorLocked(nodes, node.id)) {
+          nodeElement.append('text')
+            .attr('class', 'lock-badge')
+            .attr('x', getNodeDimensions(node).width / 2 - 8)
+            .attr('y', -getNodeDimensions(node).height / 2 + 8)
+            .attr('font-size', 16)
+            .text('🔒')
+            .style('pointer-events', 'none');
+        }
+
+        // 4. Attach interaction handlers
+        attachNodeHandlers(nodeElement, node, absPos);
+
+        // 5. Recurse into children
+        renderNodesDepthFirst(node.id, depth + 1);
+      });
+    };
+
+    // Helper function to render node shape
+    const renderNodeShape = (nodeElement: d3.Selection<SVGGElement, unknown, null, undefined>, d: Node) => {
       const isSelected = selectedItems.includes(d.id);
       const isEdgeSource = selectedTool === 'edge' && edgeSourceNodeId === d.id;
       const colors = getNodeColors(d);
@@ -308,28 +355,28 @@ export const Canvas: React.FC = () => {
       const shape = getNodeShape(d);
       const strokeColor = isEdgeSource ? '#FF9800' : (isSelected ? '#2196F3' : colors.border);
       const strokeWidth = isEdgeSource ? 4 : (isSelected ? 3 : 1);
-      
+
       switch (shape) {
         case 'circle':
-          nodeGroup.append('circle')
+          nodeElement.append('circle')
             .attr('r', dimensions.radius)
             .attr('fill', colors.background)
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
-        
+
         case 'ellipse':
-          nodeGroup.append('ellipse')
+          nodeElement.append('ellipse')
             .attr('rx', dimensions.width / 2)
             .attr('ry', dimensions.height / 2)
             .attr('fill', colors.background)
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
-        
+
         case 'rectangle':
           const cornerRadius = d.type === 'practice' ? 10 : 0;
-          nodeGroup.append('rect')
+          nodeElement.append('rect')
             .attr('x', -dimensions.width / 2)
             .attr('y', -dimensions.height / 2)
             .attr('width', dimensions.width)
@@ -339,37 +386,37 @@ export const Canvas: React.FC = () => {
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
-        
+
         case 'diamond':
           const size = dimensions.radius;
           const diamond = `M 0,-${size} L ${size},0 L 0,${size} L -${size},0 Z`;
-          nodeGroup.append('path')
+          nodeElement.append('path')
             .attr('d', diamond)
             .attr('fill', colors.background)
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
-        
+
         case 'triangle':
           const triangleSize = dimensions.radius;
           const triangle = `M 0,-${triangleSize} L ${triangleSize * 0.866},${triangleSize * 0.5} L -${triangleSize * 0.866},${triangleSize * 0.5} Z`;
-          nodeGroup.append('path')
+          nodeElement.append('path')
             .attr('d', triangle)
             .attr('fill', colors.background)
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
-        
+
         case 'hexagon':
           const hexSize = dimensions.radius;
           const hexagon = `M ${hexSize},0 L ${hexSize * 0.5},${hexSize * 0.866} L -${hexSize * 0.5},${hexSize * 0.866} L -${hexSize},0 L -${hexSize * 0.5},-${hexSize * 0.866} L ${hexSize * 0.5},-${hexSize * 0.866} Z`;
-          nodeGroup.append('path')
+          nodeElement.append('path')
             .attr('d', hexagon)
             .attr('fill', colors.background)
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
-        
+
         case 'star':
           const starSize = dimensions.radius;
           const points = 5;
@@ -382,91 +429,146 @@ export const Canvas: React.FC = () => {
             star += i === 0 ? `M ${x},${y}` : ` L ${x},${y}`;
           }
           star += ' Z';
-          nodeGroup.append('path')
+          nodeElement.append('path')
             .attr('d', star)
             .attr('fill', colors.background)
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
-        
+
         default:
           // Fallback to circle for unknown shapes
-          nodeGroup.append('circle')
+          nodeElement.append('circle')
             .attr('r', dimensions.radius)
             .attr('fill', colors.background)
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
       }
 
-      nodeGroup.append('text')
+      nodeElement.append('text')
         .attr('text-anchor', 'middle')
         .attr('dy', '.35em')
         .attr('font-size', getNodeFontSize(d))
         .attr('fill', d.style?.textColor || '#333')
         .text(d.label)
         .call(wrapText, dimensions.width * 0.8);
-    });
+    };
 
-    // Since we remove .diagram-group completely each render, nodeSelection is always empty
-    // So we just need to attach events to nodeEnter (which contains all nodes)
-
-    // Add click and drag behavior to all nodes
-    nodeEnter
-      .call(d3.drag<SVGGElement, Node>()
-        .on('start', function(event, d) {
+    // Helper function to attach interaction handlers to nodes
+    const attachNodeHandlers = (
+      nodeElement: d3.Selection<SVGGElement, unknown, null, undefined>,
+      d: Node,
+      absPos: Point
+    ) => {
+      nodeElement.call(d3.drag<SVGGElement, Node>()
+        .on('start', function(event) {
           // Store initial position to detect if this is a click or drag
           const element = d3.select(this);
           element.property('__dragStart', { x: event.x, y: event.y });
           element.property('__wasDragged', false);
-          
+
           // Only raise element for select tool
           if (selectedTool === 'select') {
             element.raise();
           }
         })
-        .on('drag', function(event, d) {
+        .on('drag', function(event) {
           // Only allow dragging for select tool
           if (selectedTool !== 'select') return;
-          
+
+          // Check if node or ancestor is locked
+          if (isNodeOrAncestorLocked(nodes, d.id)) {
+            return; // Prevent dragging locked nodes
+          }
+
           const element = d3.select(this);
           const dragStart = element.property('__dragStart');
-          
+
           // Check if mouse moved enough to be considered a drag
           const dx = Math.abs(event.x - dragStart.x);
           const dy = Math.abs(event.y - dragStart.y);
           const dragThreshold = 3; // pixels
-          
+
           if (dx > dragThreshold || dy > dragThreshold) {
             element.property('__wasDragged', true);
-            
-            const newX = event.x;
-            const newY = event.y;
-            element.attr('transform', `translate(${newX}, ${newY})`);
-            
-            // Update connected edges
+
+            const deltaX = event.x - dragStart.x;
+            const deltaY = event.y - dragStart.y;
+
+            // Get lock group nodes if this node is in a lock group
+            const lockGroupNodes = d.lockGroupId ? getLockGroupNodes(nodes, d.lockGroupId) : [d];
+
+            // Move all nodes in lock group
+            lockGroupNodes.forEach(groupNode => {
+              const groupAbsPos = getAbsolutePosition(nodes, groupNode.id);
+              const newX = groupAbsPos.x + deltaX;
+              const newY = groupAbsPos.y + deltaY;
+
+              svg.select(`.node[data-node-id="${groupNode.id}"]`)
+                .attr('transform', `translate(${newX}, ${newY})`);
+            });
+
+            // Update drag start for next iteration
+            element.property('__dragStart', { x: event.x, y: event.y });
+
+            // Update connected edges (simplified live preview, real update on drag end)
             svg.selectAll<SVGPathElement, Edge>('.edge-path')
-              .attr('d', function(edge) {
-                const sourceNode = nodes.find(n => n.id === edge.source);
-                const targetNode = nodes.find(n => n.id === edge.target);
-                if (!sourceNode || !targetNode) return '';
-                
-                const updatedSourceNode = edge.source === d.id ? { ...sourceNode, position: { x: newX, y: newY } } : sourceNode;
-                const updatedTargetNode = edge.target === d.id ? { ...targetNode, position: { x: newX, y: newY } } : targetNode;
-                
-                const source = getNodeConnectionPoint(updatedSourceNode, updatedTargetNode.position);
-                const target = getNodeConnectionPoint(updatedTargetNode, updatedSourceNode.position);
-                return `M ${source.x} ${source.y} L ${target.x} ${target.y}`;
+              .each(function(edge) {
+                // Edge geometry will be recalculated on re-render after drag end
               });
           }
         })
-        .on('end', function(event, d) {
+        .on('end', function(event) {
           const element = d3.select(this);
           const wasDragged = element.property('__wasDragged');
-          
+
           if (wasDragged && selectedTool === 'select') {
+            // Check if node or ancestor is locked
+            if (isNodeOrAncestorLocked(nodes, d.id)) {
+              return;
+            }
+
             // This was a drag - update node position
+            // Convert absolute position back to relative if node has parent
             const snappedPosition = getSnappedPosition({ x: event.x, y: event.y }, gridSpacing, snapToGrid);
-            moveNode(d.id, snappedPosition);
+
+            // Handle lock groups
+            if (d.lockGroupId) {
+              const lockGroupNodes = getLockGroupNodes(nodes, d.lockGroupId);
+              const dragStart = element.property('__dragStart');
+              const deltaX = event.x - absPos.x;
+              const deltaY = event.y - absPos.y;
+
+              // Move all nodes in lock group by the same delta
+              lockGroupNodes.forEach(groupNode => {
+                const groupAbsPos = getAbsolutePosition(nodes, groupNode.id);
+                const newAbsPos = {
+                  x: groupAbsPos.x + deltaX,
+                  y: groupAbsPos.y + deltaY
+                };
+                const snappedAbsPos = getSnappedPosition(newAbsPos, gridSpacing, snapToGrid);
+
+                // Convert to relative position if node has parent
+                const relativePos = groupNode.parentId
+                  ? {
+                      x: snappedAbsPos.x - getAbsolutePosition(nodes, groupNode.parentId).x,
+                      y: snappedAbsPos.y - getAbsolutePosition(nodes, groupNode.parentId).y
+                    }
+                  : snappedAbsPos;
+
+                moveNode(groupNode.id, relativePos);
+              });
+            } else {
+              // Single node move
+              const relativePos = d.parentId
+                ? {
+                    x: snappedPosition.x - getAbsolutePosition(nodes, d.parentId).x,
+                    y: snappedPosition.y - getAbsolutePosition(nodes, d.parentId).y
+                  }
+                : snappedPosition;
+
+              moveNode(d.id, relativePos);
+            }
           } else if (!wasDragged) {
             // This was a click - handle click events
             if (selectedTool === 'edge') {
@@ -498,13 +600,15 @@ export const Canvas: React.FC = () => {
               }
             }
           }
-          
+
           // Clean up properties
           element.property('__dragStart', null);
           element.property('__wasDragged', null);
         }));
+    };
 
-    nodeSelection.exit().remove();
+    // Start depth-first rendering from root nodes (nodes with no parent)
+    renderNodesDepthFirst(null);
 
     // Render entry points
     const entryPointGroup = g.append('g').attr('class', 'entry-points');
@@ -768,11 +872,19 @@ function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeome
   const targetNode = nodes.find(n => n.id === edge.target);
   if (!sourceNode || !targetNode) return null;
 
+  // Use absolute positions for edge calculations
+  const sourceAbsPos = getAbsolutePosition(nodes, edge.source);
+  const targetAbsPos = getAbsolutePosition(nodes, edge.target);
+
+  // Create temporary nodes with absolute positions for geometry calculations
+  const sourceNodeAbs = { ...sourceNode, position: sourceAbsPos };
+  const targetNodeAbs = { ...targetNode, position: targetAbsPos };
+
   if (edge.source === edge.target) {
-    const path = getReflexiveEdgePath(sourceNode);
-    const dimensions = getNodeDimensions(sourceNode);
-    const labelX = sourceNode.position.x + Math.max(dimensions.width, dimensions.height) * 0.8;
-    const labelY = sourceNode.position.y - Math.max(dimensions.height, 40) * 0.6;
+    const path = getReflexiveEdgePath(sourceNodeAbs);
+    const dimensions = getNodeDimensions(sourceNodeAbs);
+    const labelX = sourceAbsPos.x + Math.max(dimensions.width, dimensions.height) * 0.8;
+    const labelY = sourceAbsPos.y - Math.max(dimensions.height, 40) * 0.6;
     return {
       path,
       labelPosition: { x: labelX, y: labelY },
@@ -783,8 +895,8 @@ function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeome
   const offset = getEdgeOffset(edge, allEdges);
 
   if (offset === 0) {
-    const start = getNodeConnectionPoint(sourceNode, targetNode.position);
-    const end = getNodeConnectionPoint(targetNode, sourceNode.position);
+    const start = getNodeConnectionPoint(sourceNodeAbs, targetAbsPos);
+    const end = getNodeConnectionPoint(targetNodeAbs, sourceAbsPos);
     const path = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
 
     const midX = (start.x + end.x) / 2;
@@ -807,7 +919,7 @@ function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeome
     };
   }
 
-  const curveData = computeCurvedEdgeData(sourceNode, targetNode, offset);
+  const curveData = computeCurvedEdgeData(sourceNodeAbs, targetNodeAbs, offset);
   const { source, target, control } = curveData;
   const t = 0.5;
   const oneMinusT = 1 - t;

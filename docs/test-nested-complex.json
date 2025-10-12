@@ -1,0 +1,104 @@
+{
+  "id": "test-nested-complex",
+  "nodes": [
+    {
+      "id": "v-level2",
+      "type": "vocabulary",
+      "label": "P_inferring",
+      "position": { "x": 400, "y": 300 },
+      "isContainer": true,
+      "containerPadding": 50,
+      "childIds": ["v-level1"]
+    },
+    {
+      "id": "v-level1",
+      "type": "vocabulary",
+      "label": "P_ADP",
+      "position": { "x": 0, "y": 0 },
+      "parentId": "v-level2",
+      "isContainer": true,
+      "containerPadding": 30,
+      "childIds": ["v-level0"]
+    },
+    {
+      "id": "v-level0",
+      "type": "vocabulary",
+      "label": "P_core",
+      "position": { "x": 0, "y": 0 },
+      "parentId": "v-level1",
+      "childIds": []
+    },
+    {
+      "id": "p-base",
+      "type": "practice",
+      "label": "Base Practice",
+      "position": { "x": 150, "y": 300 }
+    },
+    {
+      "id": "p-meta",
+      "type": "practice",
+      "label": "Meta Practice",
+      "position": { "x": 650, "y": 300 }
+    },
+    {
+      "id": "lock-group-1",
+      "type": "custom",
+      "label": "Locked A",
+      "position": { "x": 250, "y": 450 },
+      "locked": true,
+      "lockGroupId": "group-1"
+    },
+    {
+      "id": "lock-group-2",
+      "type": "custom",
+      "label": "Locked B",
+      "position": { "x": 350, "y": 450 },
+      "locked": true,
+      "lockGroupId": "group-1"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "p-base",
+      "target": "v-level2",
+      "type": "PV",
+      "sourceAnchor": "auto",
+      "targetAnchor": "auto"
+    },
+    {
+      "id": "e2",
+      "source": "v-level1",
+      "target": "p-meta",
+      "type": "VP",
+      "sourceAnchor": "auto",
+      "targetAnchor": "auto"
+    },
+    {
+      "id": "e3",
+      "source": "v-level0",
+      "target": "v-level1",
+      "type": "VV",
+      "sourceAnchor": "auto",
+      "targetAnchor": "auto"
+    },
+    {
+      "id": "e4",
+      "source": "lock-group-1",
+      "target": "lock-group-2",
+      "type": "custom",
+      "label": "linked",
+      "sourceAnchor": "auto",
+      "targetAnchor": "auto"
+    }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "title": "Complex Nested Test with Lock Groups",
+    "description": "Test case demonstrating 3 levels of nesting (P_core → P_ADP → P_inferring) and lock groups, inspired by Brandom Figure 2.9",
+    "created": "2025-01-14T00:00:00.000Z",
+    "modified": "2025-01-14T00:00:00.000Z",
+    "version": "2.0"
+  }
+}

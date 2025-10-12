@@ -1,0 +1,61 @@
+{
+  "id": "test-nested-simple",
+  "nodes": [
+    {
+      "id": "v-outer",
+      "type": "vocabulary",
+      "label": "P_inferring",
+      "position": { "x": 400, "y": 300 },
+      "isContainer": true,
+      "containerPadding": 30,
+      "childIds": ["v-inner"]
+    },
+    {
+      "id": "v-inner",
+      "type": "vocabulary",
+      "label": "P_ADP",
+      "position": { "x": 0, "y": 0 },
+      "parentId": "v-outer",
+      "childIds": []
+    },
+    {
+      "id": "p-left",
+      "type": "practice",
+      "label": "Asserting",
+      "position": { "x": 200, "y": 300 }
+    },
+    {
+      "id": "p-right",
+      "type": "practice",
+      "label": "Inferring",
+      "position": { "x": 600, "y": 300 }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "p-left",
+      "target": "v-outer",
+      "type": "PV",
+      "sourceAnchor": "auto",
+      "targetAnchor": "auto"
+    },
+    {
+      "id": "e2",
+      "source": "v-inner",
+      "target": "p-right",
+      "type": "VP",
+      "sourceAnchor": "auto",
+      "targetAnchor": "auto"
+    }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "title": "Simple Nested Test",
+    "description": "Test case demonstrating nested vocabulary node (P_ADP inside P_inferring) inspired by Brandom Figure 2.6",
+    "created": "2025-01-14T00:00:00.000Z",
+    "modified": "2025-01-14T00:00:00.000Z",
+    "version": "2.0"
+  }
+}
