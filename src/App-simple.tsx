@@ -1070,7 +1070,7 @@ function SimpleApp() {
             if (!node.id || !node.type || !node.position || !node.label) {
               throw new Error('Invalid node structure in diagram');
             }
-            if (!['vocabulary', 'practice', 'test', 'operate'].includes(node.type)) {
+            if (!['vocabulary', 'practice', 'test', 'operate', 'exit', 'custom'].includes(node.type)) {
               throw new Error(`Invalid node type: ${node.type}`);
             }
           }
