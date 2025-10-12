@@ -34,6 +34,8 @@ interface HeaderProps {
   
   // State
   hasNodes: boolean;
+  advancedMode: boolean;
+  onAdvancedModeChange: (value: boolean) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -60,7 +62,9 @@ export const Header: React.FC<HeaderProps> = ({
   onExportJSON,
   onExportSVG,
   onExportLatex,
-  hasNodes
+  hasNodes,
+  advancedMode,
+  onAdvancedModeChange
 }) => {
   return (
     <div
@@ -246,6 +250,31 @@ export const Header: React.FC<HeaderProps> = ({
             <span style={{ color: 'white', fontSize: '0.8rem', minWidth: '30px' }}>
               {gridSpacing}
             </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input
+              type="checkbox"
+              id="advanced-mode"
+              checked={advancedMode}
+              onChange={(e) => onAdvancedModeChange(e.target.checked)}
+              style={{
+                width: '16px',
+                height: '16px',
+                cursor: 'pointer'
+              }}
+            />
+            <label
+              htmlFor="advanced-mode"
+              style={{
+                color: 'white',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                userSelect: 'none'
+              }}
+            >
+              Advanced
+            </label>
           </div>
         </div>
       </div>

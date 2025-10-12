@@ -2,8 +2,18 @@ import React from 'react';
 import { Modal } from '../Modal';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { setSelectedNodeForCustomization } from '../../store/uiSlice';
-import { updateNode, deleteNode as removeNode, saveToHistory } from '../../store/diagramSlice';
+import {
+  updateNode,
+  deleteNode as removeNode,
+  saveToHistory,
+  setNodeParent,
+  toggleContainer,
+  setContainerPadding,
+  setManualContainerSize,
+  fitContainerToChildren
+} from '../../store/diagramSlice';
 import { getNodeColors, getNodeShape } from '../../utils/nodeUtils';
+import { getDescendants, calculateContainerBounds } from '../../utils/containmentUtils';
 import type { NodeStyle } from '../../types/all';
 
 interface NodeCustomizationPanelProps {
@@ -15,15 +25,54 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
   const dispatch = useAppDispatch();
   const selectedNodeForCustomization = useAppSelector(state => state.ui.selectedNodeForCustomization);
   const currentDiagram = useAppSelector(state => state.diagram.currentDiagram);
-  
+  const advancedMode = useAppSelector(state => state.ui.advancedMode);
+
   const node = currentDiagram?.nodes.find(n => n.id === selectedNodeForCustomization);
+  const nodes = React.useMemo(
+    () => currentDiagram?.nodes ?? [],
+    [currentDiagram?.nodes]
+  );
+
+  const [paddingInput, setPaddingInput] = React.useState<string>('20');
+  const [manualWidthInput, setManualWidthInput] = React.useState<string>('');
+  const [manualHeightInput, setManualHeightInput] = React.useState<string>('');
+
+  React.useEffect(() => {
+    if (!node) {
+      setPaddingInput('20');
+      setManualWidthInput('');
+      setManualHeightInput('');
+      return;
+    }
+
+    setPaddingInput(node.containerPadding !== undefined ? String(node.containerPadding) : '20');
+    if (node.manualSize) {
+      setManualWidthInput(String(Math.round(node.manualSize.width)));
+      setManualHeightInput(String(Math.round(node.manualSize.height)));
+    } else {
+      setManualWidthInput('');
+      setManualHeightInput('');
+    }
+  }, [node]);
+
+  const parentOptions = React.useMemo(() => {
+    if (!node) return [];
+
+    const invalidIds = new Set<string>(getDescendants(nodes, node.id));
+    invalidIds.add(node.id);
+
+    return nodes
+      .filter(n => !invalidIds.has(n.id))
+      .map(n => ({
+        id: n.id,
+        label: n.label || `${n.type} (${n.id.slice(0, 6)})`
+      }));
+  }, [nodes, node]);
 
   const updateNodeStyle = (styleUpdate: Partial<NodeStyle>) => {
     if (!node) return;
-    
-    // Save state before styling
+
     dispatch(saveToHistory());
-    
     dispatch(updateNode({
       id: node.id,
       updates: {
@@ -34,10 +83,8 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
 
   const updateNodeLabel = (label: string) => {
     if (!node) return;
-    
-    // Save state before updating label
+
     dispatch(saveToHistory());
-    
     dispatch(updateNode({
       id: node.id,
       updates: { label }
@@ -46,10 +93,8 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
 
   const resetNodeStyle = () => {
     if (!node) return;
-    
-    // Save state before resetting style
+
     dispatch(saveToHistory());
-    
     dispatch(updateNode({
       id: node.id,
       updates: {
@@ -60,7 +105,7 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
 
   const deleteNode = () => {
     if (!node) return;
-    
+
     dispatch(saveToHistory());
     dispatch(removeNode(node.id));
     dispatch(setSelectedNodeForCustomization(null));
@@ -70,6 +115,118 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
   const handleClose = () => {
     dispatch(setSelectedNodeForCustomization(null));
     onClose();
+  };
+
+  const handleToggleContainer = () => {
+    if (!node) return;
+    dispatch(saveToHistory());
+    dispatch(toggleContainer(node.id));
+  };
+
+  const handleParentChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!node) return;
+    const newParentId = event.target.value || null;
+    const currentParentId = node.parentId ?? null;
+    if (newParentId === currentParentId) return;
+
+    dispatch(saveToHistory());
+    dispatch(setNodeParent({
+      nodeId: node.id,
+      parentId: newParentId
+    }));
+  };
+
+  const handlePaddingBlur = () => {
+    if (!node || !node.isContainer) return;
+
+    const parsed = Number(paddingInput);
+    if (!Number.isFinite(parsed)) {
+      setPaddingInput(String(node.containerPadding ?? 20));
+      return;
+    }
+
+    const normalized = Math.max(0, Math.round(parsed));
+    if (normalized === (node.containerPadding ?? 20)) {
+      setPaddingInput(String(normalized));
+      return;
+    }
+
+    dispatch(saveToHistory());
+    dispatch(setContainerPadding({
+      nodeId: node.id,
+      padding: normalized
+    }));
+    setPaddingInput(String(normalized));
+  };
+
+  const handleManualModeChange = (checked: boolean) => {
+    if (!node || !node.isContainer) return;
+
+    dispatch(saveToHistory());
+    if (checked) {
+      const bounds = calculateContainerBounds(nodes, node.id);
+      const width = Math.max(50, Math.round(bounds.width));
+      const height = Math.max(50, Math.round(bounds.height));
+      setManualWidthInput(String(width));
+      setManualHeightInput(String(height));
+      dispatch(setManualContainerSize({
+        nodeId: node.id,
+        width,
+        height
+      }));
+    } else {
+      dispatch(fitContainerToChildren(node.id));
+      setManualWidthInput('');
+      setManualHeightInput('');
+    }
+  };
+
+  const handleManualWidthBlur = () => {
+    if (!node || !node.isContainer || !node.manualSize) return;
+
+    const parsed = Number(manualWidthInput);
+    if (!Number.isFinite(parsed)) {
+      setManualWidthInput(String(Math.round(node.manualSize.width)));
+      return;
+    }
+
+    const normalized = Math.max(50, Math.round(parsed));
+    if (normalized === Math.round(node.manualSize.width)) {
+      setManualWidthInput(String(normalized));
+      return;
+    }
+
+    dispatch(saveToHistory());
+    dispatch(setManualContainerSize({
+      nodeId: node.id,
+      width: normalized,
+      height: node.manualSize.height
+    }));
+    setManualWidthInput(String(normalized));
+  };
+
+  const handleManualHeightBlur = () => {
+    if (!node || !node.isContainer || !node.manualSize) return;
+
+    const parsed = Number(manualHeightInput);
+    if (!Number.isFinite(parsed)) {
+      setManualHeightInput(String(Math.round(node.manualSize.height)));
+      return;
+    }
+
+    const normalized = Math.max(50, Math.round(parsed));
+    if (normalized === Math.round(node.manualSize.height)) {
+      setManualHeightInput(String(normalized));
+      return;
+    }
+
+    dispatch(saveToHistory());
+    dispatch(setManualContainerSize({
+      nodeId: node.id,
+      width: node.manualSize.width,
+      height: normalized
+    }));
+    setManualHeightInput(String(normalized));
   };
 
   if (!node) return null;
@@ -248,6 +405,172 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
           }}
         />
       </div>
+
+      {advancedMode && (
+        <>
+          <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #e0e0e0' }} />
+          <div>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#2c3e50' }}>
+              Advanced Settings
+            </h3>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '12px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '6px',
+                marginBottom: '16px',
+                background: '#f9f9f9'
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 'bold', color: '#333' }}>Container Mode</div>
+                <div style={{ fontSize: '0.85rem', color: '#555' }}>
+                  Allow this node to frame and manage child nodes.
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={node.isContainer ?? false}
+                onChange={handleToggleContainer}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', color: '#333' }}>
+                Parent Container
+              </label>
+              <select
+                value={node.parentId ?? ''}
+                onChange={handleParentChange}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '2px solid #ddd',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  background: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">No parent (top level)</option>
+                {parentOptions.map(option => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>
+                Assign this node to an existing container. Only non-descendant nodes appear here.
+              </div>
+            </div>
+
+            {node.isContainer && (
+              <div
+                style={{
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '6px',
+                  padding: '12px',
+                  background: '#fcfcfc'
+                }}
+              >
+                <div style={{ fontWeight: 'bold', marginBottom: '10px', color: '#333' }}>
+                  Container Layout
+                </div>
+
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', color: '#333' }}>
+                    Padding (px)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={paddingInput}
+                    onChange={(e) => setPaddingInput(e.target.value)}
+                    onBlur={handlePaddingBlur}
+                    style={{
+                      width: '120px',
+                      padding: '6px 10px',
+                      border: '2px solid #ddd',
+                      borderRadius: '6px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: node.manualSize ? '12px' : '0'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 'bold', color: '#333' }}>Manual Size</div>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                      Override auto-fit width & height for this container.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(node.manualSize)}
+                    onChange={(e) => handleManualModeChange(e.target.checked)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                </div>
+
+                {node.manualSize && (
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 120px' }}>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', color: '#333' }}>
+                        Width (px)
+                      </label>
+                      <input
+                        type="number"
+                        min="50"
+                        value={manualWidthInput}
+                        onChange={(e) => setManualWidthInput(e.target.value)}
+                        onBlur={handleManualWidthBlur}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '2px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+                    <div style={{ flex: '1 1 120px' }}>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', color: '#333' }}>
+                        Height (px)
+                      </label>
+                      <input
+                        type="number"
+                        min="50"
+                        value={manualHeightInput}
+                        onChange={(e) => setManualHeightInput(e.target.value)}
+                        onBlur={handleManualHeightBlur}
+                        style={{
+                          width: '100%',
+                          padding: '6px 10px',
+                          border: '2px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Action Buttons */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>

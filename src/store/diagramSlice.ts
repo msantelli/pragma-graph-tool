@@ -53,7 +53,14 @@ const diagramSlice = createSlice({
       if (state.currentDiagram) {
         const newNode: Node = {
           ...action.payload,
-          id: uuidv4()
+          id: uuidv4(),
+          parentId: action.payload.parentId ?? null,
+          childIds: action.payload.childIds ?? [],
+          locked: action.payload.locked ?? false,
+          lockGroupId: action.payload.lockGroupId ?? undefined,
+          isContainer: action.payload.isContainer ?? false,
+          containerPadding: action.payload.containerPadding ?? 20,
+          manualSize: action.payload.manualSize
         } as Node;
         state.currentDiagram.nodes.push(newNode);
         state.currentDiagram.metadata.modified = new Date().toISOString();

@@ -4,7 +4,7 @@ import type { Point } from '../types/all';
  * Snap a point to the nearest grid intersection
  * When enabled, snaps to grid. Tolerance controls snap strength (gentler when higher).
  */
-export const snapToGrid = (point: Point, gridSpacing: number, enabled: boolean = true, tolerance: number = 15): Point => {
+export const snapToGrid = (point: Point, gridSpacing: number, enabled: boolean = true, tolerance: number = 8): Point => {
   // If snapping disabled, return original point
   if (!enabled) return point;
 

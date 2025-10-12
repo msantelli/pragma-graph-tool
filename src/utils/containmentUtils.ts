@@ -52,7 +52,7 @@ export const getAbsolutePosition = (nodes: Node[], nodeId: string): Point => {
   const node = nodes.find(n => n.id === nodeId);
   if (!node) return { x: 0, y: 0 };
 
-  let pos = { ...node.position };
+  const pos = { ...node.position };
   let currentId = node.parentId;
   const seen = new Set<string>();
 

@@ -18,7 +18,8 @@ import {
   setSelectedTool,
   setShowEdgeTypeSelector,
   setShowCustomizationPanel,
-  setShowEdgeModificationPanel
+  setShowEdgeModificationPanel,
+  setAdvancedMode
 } from './store/uiSlice';
 import { 
   createDiagram,
@@ -44,6 +45,7 @@ const AppContent: React.FC = () => {
   const showEdgeTypeSelector = useAppSelector(state => state.ui.showEdgeTypeSelector);
   const showCustomizationPanel = useAppSelector(state => state.ui.showCustomizationPanel);
   const showEdgeModificationPanel = useAppSelector(state => state.ui.showEdgeModificationPanel);
+  const advancedMode = useAppSelector(state => state.ui.advancedMode);
   
   // Diagram state selectors
   const currentDiagram = useAppSelector(state => state.diagram.currentDiagram);
@@ -85,10 +87,14 @@ const AppContent: React.FC = () => {
     dispatch(setGridSpacing(value));
   };
 
-  const handleToolSelect = (tool: string) => {
-    dispatch(setSelectedTool(tool as any));
+  const handleToolSelect = (tool: Parameters<typeof setSelectedTool>[0]) => {
+    dispatch(setSelectedTool(tool));
     // Clear selections when switching tools
     dispatch(selectNodes([]));
+  };
+
+  const handleAdvancedModeChange = (value: boolean) => {
+    dispatch(setAdvancedMode(value));
   };
 
   const handleUndo = () => {
@@ -167,6 +173,8 @@ const AppContent: React.FC = () => {
         onExportSVG={handleExportSVG}
         onExportLatex={handleExportLatex}
         hasNodes={hasNodes}
+        advancedMode={advancedMode}
+        onAdvancedModeChange={handleAdvancedModeChange}
       />
       
       {/* Main Content Area */}

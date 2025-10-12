@@ -17,8 +17,8 @@ export const Canvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { nodes, edges, selectedItems, selectedTool, addNewNode, moveNode, selectNode, clearCurrentSelection } = useDiagram();
   const currentDiagram = useAppSelector(state => state.diagram.currentDiagram);
-  const entryPoints = currentDiagram?.entryPoints || [];
-  const exitPoints = currentDiagram?.exitPoints || [];
+  const entryPoints = React.useMemo(() => currentDiagram?.entryPoints ?? [], [currentDiagram?.entryPoints]);
+  const exitPoints = React.useMemo(() => currentDiagram?.exitPoints ?? [], [currentDiagram?.exitPoints]);
   const zoom = useAppSelector(state => state.ui.zoom);
   const panOffset = useAppSelector(state => state.ui.panOffset);
   const diagramMode = useAppSelector(state => state.ui.diagramMode);
@@ -29,7 +29,6 @@ export const Canvas: React.FC = () => {
   const gridSpacing = useAppSelector(state => state.ui.gridSpacing);
   const showGrid = useAppSelector(state => state.ui.showGrid);
   const pendingEntryExit = useAppSelector(state => state.ui.pendingEntryExit);
-  const advancedMode = useAppSelector(state => state.ui.advancedMode);
   const dispatch = useAppDispatch();
   
   // Flag to prevent infinite loop between Redux and D3 zoom
@@ -52,7 +51,7 @@ export const Canvas: React.FC = () => {
   };
 
   // Handle edge creation between two nodes
-  const handleEdgeCreation = (sourceNodeId: string, targetNodeId: string) => {
+  const handleEdgeCreation = useCallback((sourceNodeId: string, targetNodeId: string) => {
     const sourceNode = nodes.find(n => n.id === sourceNodeId);
     const targetNode = nodes.find(n => n.id === targetNodeId);
     
@@ -83,7 +82,7 @@ export const Canvas: React.FC = () => {
     
     // Reset edge creation state
     setEdgeSourceNodeId(null);
-  };
+  }, [nodes, showUnmarkedEdges, dispatch, autoDetectEdges, diagramMode]);
 
   // Reset edge creation state when tool changes
   React.useEffect(() => {
@@ -292,6 +291,45 @@ export const Canvas: React.FC = () => {
     // Render nodes with depth-first traversal for correct z-order
     const nodeGroup = g.append('g').attr('class', 'nodes');
 
+    const handleNodeClick = (event: MouseEvent | PointerEvent | null, node: Node) => {
+      event?.stopPropagation();
+
+      if (selectedTool === 'edge') {
+        if (edgeSourceNodeId === null) {
+          setEdgeSourceNodeId(node.id);
+        } else {
+          handleEdgeCreation(edgeSourceNodeId, node.id);
+        }
+        return;
+      }
+
+      if (selectedTool === 'entry') {
+        if (pendingEntryExit?.type === 'entry') {
+          const unconnectedEntry = entryPoints.find(ep => ep.targetNodeId === '');
+          if (unconnectedEntry) {
+            dispatch(updateEntryPoint({
+              id: unconnectedEntry.id,
+              targetNodeId: node.id
+            }));
+            dispatch(setPendingEntryExit(null));
+          }
+        }
+        return;
+      }
+
+      if (selectedTool === 'exit') {
+        if (!pendingEntryExit) {
+          dispatch(setPendingEntryExit({ type: 'exit', nodeId: node.id }));
+        }
+        return;
+      }
+
+      selectNode(node.id);
+      if (selectedTool === 'select') {
+        dispatch(setSelectedNodeForCustomization(node.id));
+      }
+    };
+
     // Recursive rendering function for depth-first traversal
     const renderNodesDepthFirst = (parentId: string | null, depth: number = 0) => {
       const children = nodes.filter(n => n.parentId === parentId);
@@ -304,17 +342,30 @@ export const Canvas: React.FC = () => {
           const bounds = calculateContainerBounds(nodes, node.id);
 
           nodeGroup.append('rect')
-            .attr('class', `container-frame container-${node.id}`)
+            .attr('class', `container-frame-fill container-${node.id}`)
             .attr('x', bounds.x)
             .attr('y', bounds.y)
             .attr('width', bounds.width)
             .attr('height', bounds.height)
             .attr('fill', '#f5f5f5')
+            .attr('rx', 8)
+            .style('pointer-events', 'none');
+
+          const containerBorder = nodeGroup.append('rect')
+            .attr('class', `container-frame container-${node.id}`)
+            .attr('x', bounds.x)
+            .attr('y', bounds.y)
+            .attr('width', bounds.width)
+            .attr('height', bounds.height)
+            .attr('fill', 'none')
             .attr('stroke', '#ccc')
             .attr('stroke-width', 2)
             .attr('stroke-dasharray', '8,4')
             .attr('rx', 8)
-            .style('pointer-events', 'none');
+            .style('pointer-events', 'stroke')
+            .style('cursor', selectedTool === 'select' ? 'move' : 'pointer');
+
+          attachNodeHandlers(containerBorder, node, absPos);
         }
 
         // 2. Render the node itself
@@ -357,15 +408,16 @@ export const Canvas: React.FC = () => {
       const strokeWidth = isEdgeSource ? 4 : (isSelected ? 3 : 1);
 
       switch (shape) {
-        case 'circle':
+        case 'circle': {
           nodeElement.append('circle')
             .attr('r', dimensions.radius)
             .attr('fill', colors.background)
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
+        }
 
-        case 'ellipse':
+        case 'ellipse': {
           nodeElement.append('ellipse')
             .attr('rx', dimensions.width / 2)
             .attr('ry', dimensions.height / 2)
@@ -373,8 +425,9 @@ export const Canvas: React.FC = () => {
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
+        }
 
-        case 'rectangle':
+        case 'rectangle': {
           const cornerRadius = d.type === 'practice' ? 10 : 0;
           nodeElement.append('rect')
             .attr('x', -dimensions.width / 2)
@@ -386,8 +439,9 @@ export const Canvas: React.FC = () => {
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
+        }
 
-        case 'diamond':
+        case 'diamond': {
           const size = dimensions.radius;
           const diamond = `M 0,-${size} L ${size},0 L 0,${size} L -${size},0 Z`;
           nodeElement.append('path')
@@ -396,8 +450,9 @@ export const Canvas: React.FC = () => {
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
+        }
 
-        case 'triangle':
+        case 'triangle': {
           const triangleSize = dimensions.radius;
           const triangle = `M 0,-${triangleSize} L ${triangleSize * 0.866},${triangleSize * 0.5} L -${triangleSize * 0.866},${triangleSize * 0.5} Z`;
           nodeElement.append('path')
@@ -406,8 +461,9 @@ export const Canvas: React.FC = () => {
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
+        }
 
-        case 'hexagon':
+        case 'hexagon': {
           const hexSize = dimensions.radius;
           const hexagon = `M ${hexSize},0 L ${hexSize * 0.5},${hexSize * 0.866} L -${hexSize * 0.5},${hexSize * 0.866} L -${hexSize},0 L -${hexSize * 0.5},-${hexSize * 0.866} L ${hexSize * 0.5},-${hexSize * 0.866} Z`;
           nodeElement.append('path')
@@ -416,8 +472,9 @@ export const Canvas: React.FC = () => {
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
+        }
 
-        case 'star':
+        case 'star': {
           const starSize = dimensions.radius;
           const points = 5;
           let star = '';
@@ -435,14 +492,17 @@ export const Canvas: React.FC = () => {
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
           break;
+        }
 
-        default:
+        default: {
           // Fallback to circle for unknown shapes
           nodeElement.append('circle')
             .attr('r', dimensions.radius)
             .attr('fill', colors.background)
             .attr('stroke', strokeColor)
             .attr('stroke-width', strokeWidth);
+          break;
+        }
       }
 
       nodeElement.append('text')
@@ -455,12 +515,12 @@ export const Canvas: React.FC = () => {
     };
 
     // Helper function to attach interaction handlers to nodes
-    const attachNodeHandlers = (
-      nodeElement: d3.Selection<SVGGElement, unknown, null, undefined>,
+    const attachNodeHandlers = <T extends d3.BaseType>(
+      nodeElement: d3.Selection<T, unknown, null, undefined>,
       d: Node,
       absPos: Point
     ) => {
-      nodeElement.call(d3.drag<SVGGElement, Node>()
+      nodeElement.call(d3.drag<T, Node>()
         .on('start', function(event) {
           // Store initial position to detect if this is a click or drag
           const element = d3.select(this);
@@ -524,7 +584,7 @@ export const Canvas: React.FC = () => {
               // Update container frame if this is a container
               if (nodeToMove.isContainer && (nodeToMove.childIds?.length ?? 0) > 0) {
                 const bounds = calculateContainerBounds(nodes, nodeId);
-                svg.select(`.container-${nodeId}`)
+                svg.selectAll(`.container-${nodeId}`)
                   .attr('x', bounds.x + deltaX)
                   .attr('y', bounds.y + deltaY);
               }
@@ -551,7 +611,6 @@ export const Canvas: React.FC = () => {
             // Handle lock groups
             if (d.lockGroupId) {
               const lockGroupNodes = getLockGroupNodes(nodes, d.lockGroupId);
-              const dragStart = element.property('__dragStart');
               const deltaX = event.x - absPos.x;
               const deltaY = event.y - absPos.y;
 
@@ -586,35 +645,8 @@ export const Canvas: React.FC = () => {
               moveNode(d.id, relativePos);
             }
           } else if (!wasDragged) {
-            // This was a click - handle click events
-            if (selectedTool === 'edge') {
-              if (edgeSourceNodeId === null) {
-                setEdgeSourceNodeId(d.id);
-              } else {
-                // Allow self-loops and connections to different nodes
-                handleEdgeCreation(edgeSourceNodeId, d.id);
-              }
-            } else if (selectedTool === 'entry') {
-              if (pendingEntryExit && pendingEntryExit.type === 'entry') {
-                const unconnectedEntry = entryPoints.find(ep => ep.targetNodeId === '');
-                if (unconnectedEntry) {
-                  dispatch(updateEntryPoint({
-                    id: unconnectedEntry.id,
-                    targetNodeId: d.id
-                  }));
-                  dispatch(setPendingEntryExit(null));
-                }
-              }
-            } else if (selectedTool === 'exit') {
-              if (!pendingEntryExit) {
-                dispatch(setPendingEntryExit({ type: 'exit', nodeId: d.id }));
-              }
-            } else {
-              selectNode(d.id);
-              if (selectedTool === 'select') {
-                dispatch(setSelectedNodeForCustomization(d.id));
-              }
-            }
+            const sourceEvent = (event.sourceEvent ?? null) as MouseEvent | PointerEvent | null;
+            handleNodeClick(sourceEvent, d);
           }
 
           // Clean up properties
@@ -726,7 +758,7 @@ export const Canvas: React.FC = () => {
 
     exitPointSelection.exit().remove();
 
-  }, [dispatch, edges, moveNode, nodes, entryPoints, exitPoints, panOffset, selectedItems, zoom, selectNode, isUpdatingFromRedux, selectedTool, edgeSourceNodeId, snapToGrid, gridSpacing, pendingEntryExit, showGrid]));
+  }, [dispatch, edges, moveNode, nodes, entryPoints, exitPoints, panOffset, selectedItems, zoom, selectNode, isUpdatingFromRedux, selectedTool, edgeSourceNodeId, snapToGrid, gridSpacing, pendingEntryExit, handleEdgeCreation]));
 
   // Update canvas size on resize
   useEffect(() => {
@@ -829,10 +861,6 @@ function computeCurvedEdgeData(sourceNode: Node, targetNode: Node, offset: numbe
     target,
     control: { x: controlX, y: controlY }
   };
-}
-
-function getCurvedEdgePath(sourceNode: Node, targetNode: Node, offset: number): string {
-  return computeCurvedEdgeData(sourceNode, targetNode, offset).path;
 }
 
 // Helper function to create reflexive loop path
@@ -993,7 +1021,7 @@ function getNodeConnectionPoint(node: Node, targetPos: Point): Point {
   let offsetY = 0;
   
   switch (shape) {
-    case 'ellipse':
+    case 'ellipse': {
       // Ellipse boundary using actual dimensions
       const rx = dimensions.width / 2;
       const ry = dimensions.height / 2;
@@ -1001,36 +1029,40 @@ function getNodeConnectionPoint(node: Node, targetPos: Point): Point {
       offsetX = rx * Math.cos(t);
       offsetY = ry * Math.sin(t);
       break;
+    }
       
-    case 'rectangle':
+    case 'rectangle': {
       // Rectangle boundary using actual dimensions
       const w = dimensions.width / 2;
       const h = dimensions.height / 2;
       if (Math.abs(normalizedDx) * h > Math.abs(normalizedDy) * w) {
         offsetX = normalizedDx > 0 ? w : -w;
-        offsetY = normalizedDy * w / Math.abs(normalizedDx);
+        offsetY = (normalizedDy * w) / Math.abs(normalizedDx);
       } else {
-        offsetX = normalizedDx * h / Math.abs(normalizedDy);
+        offsetX = (normalizedDx * h) / Math.abs(normalizedDy);
         offsetY = normalizedDy > 0 ? h : -h;
       }
       break;
+    }
       
-    case 'diamond':
+    case 'diamond': {
       // Diamond boundary - approximate as circle for now
       const diamondRadius = dimensions.radius * 0.8; // Slightly smaller than actual
       offsetX = normalizedDx * diamondRadius;
       offsetY = normalizedDy * diamondRadius;
       break;
+    }
       
     case 'circle':
     case 'triangle':
     case 'hexagon':
     case 'star':
-    default:
+    default: {
       // Circular boundary using actual radius
       offsetX = normalizedDx * dimensions.radius;
       offsetY = normalizedDy * dimensions.radius;
       break;
+    }
   }
   
   return {
@@ -1040,7 +1072,7 @@ function getNodeConnectionPoint(node: Node, targetPos: Point): Point {
 }
 
 // Helper function to wrap text
-function wrapText(text: d3.Selection<SVGTextElement, any, any, any>, width: number) {
+function wrapText(text: d3.Selection<SVGTextElement, unknown, null, undefined>, width: number) {
   text.each(function() {
     const textElement = d3.select(this);
     const words = textElement.text().split(/\s+/).reverse();
