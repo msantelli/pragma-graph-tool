@@ -8,27 +8,30 @@ interface UIState {
   canvasSize: { width: number; height: number };
   isDragging: boolean;
   draggedItemId?: string;
-  
+
   // Diagram mode and settings
   diagramMode: 'MUD' | 'TOTE' | 'HYBRID' | 'GENERIC';
   autoDetectEdges: boolean;
   showUnmarkedEdges: boolean;
-  
+
   // Grid settings
   showGrid: boolean;
   snapToGrid: boolean;
   gridSpacing: number;
-  
+
   // Multi-step workflows
   pendingEdge: { source: string; target: string } | null;
   pendingEntryExit: { type: 'entry' | 'exit'; nodeId?: string } | null;
-  
+
   // Modal states
   showEdgeTypeSelector: boolean;
   showCustomizationPanel: boolean;
   showEdgeModificationPanel: boolean;
   selectedNodeForCustomization: string | null;
   selectedEdgeForModification: string | null;
+
+  // Advanced features (v2.0)
+  advancedMode: boolean;
 }
 
 const initialState: UIState = {
@@ -39,27 +42,30 @@ const initialState: UIState = {
   canvasSize: { width: 800, height: 600 },
   isDragging: false,
   draggedItemId: undefined,
-  
+
   // Diagram mode and settings
   diagramMode: 'GENERIC',
   autoDetectEdges: true,
   showUnmarkedEdges: false,
-  
+
   // Grid settings
   showGrid: false,
   snapToGrid: false,
   gridSpacing: 50,
-  
+
   // Multi-step workflows
   pendingEdge: null,
   pendingEntryExit: null,
-  
+
   // Modal states
   showEdgeTypeSelector: false,
   showCustomizationPanel: false,
   showEdgeModificationPanel: false,
   selectedNodeForCustomization: null,
-  selectedEdgeForModification: null
+  selectedEdgeForModification: null,
+
+  // Advanced features (v2.0)
+  advancedMode: false
 };
 
 const uiSlice = createSlice({
@@ -170,11 +176,16 @@ const uiSlice = createSlice({
       if (action.payload) {
         state.showEdgeModificationPanel = true;
       }
+    },
+
+    // v2.0 Advanced features
+    setAdvancedMode: (state, action: PayloadAction<boolean>) => {
+      state.advancedMode = action.payload;
     }
   }
 });
 
-export const { 
+export const {
   setSelectedTool,
   togglePropertyPanel,
   setPropertyPanelOpen,
@@ -196,7 +207,9 @@ export const {
   setShowCustomizationPanel,
   setShowEdgeModificationPanel,
   setSelectedNodeForCustomization,
-  setSelectedEdgeForModification
+  setSelectedEdgeForModification,
+  // v2.0 actions
+  setAdvancedMode
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

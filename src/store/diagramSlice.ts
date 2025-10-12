@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { Node, Edge, Diagram, Point, EntryPoint, ExitPoint } from '../types/all';
 import { v4 as uuidv4 } from 'uuid';
+import { migrateToV2, validateDiagramV2 } from '../utils/migrationUtils';
 
 interface DiagramState {
   currentDiagram: Diagram | null;
@@ -41,7 +42,8 @@ const diagramSlice = createSlice({
         exitPoints: [],
         metadata: {
           created: new Date().toISOString(),
-          modified: new Date().toISOString()
+          modified: new Date().toISOString(),
+          version: '2.0' // v2.0 schema
         }
       };
       state.selectedItems = [];
@@ -93,16 +95,53 @@ const diagramSlice = createSlice({
     },
     
     deleteNode: (state, action: PayloadAction<string>) => {
-      if (state.currentDiagram) {
-        const nodeId = action.payload;
-        state.currentDiagram.nodes = state.currentDiagram.nodes.filter(n => n.id !== nodeId);
-        // Remove edges connected to this node
-        state.currentDiagram.edges = state.currentDiagram.edges.filter(
-          e => e.source !== nodeId && e.target !== nodeId
-        );
-        state.selectedItems = state.selectedItems.filter(id => id !== nodeId);
-        state.currentDiagram.metadata.modified = new Date().toISOString();
+      if (!state.currentDiagram) return;
+
+      const nodeId = action.payload;
+
+      // Get all descendants (v2.0 cascade delete)
+      const getDescendants = (id: string): string[] => {
+        const result: string[] = [];
+        const queue = [id];
+        const seen = new Set<string>();
+
+        while (queue.length > 0) {
+          const current = queue.shift()!;
+          if (seen.has(current)) continue;
+          seen.add(current);
+
+          const node = state.currentDiagram!.nodes.find(n => n.id === current);
+          if (node?.childIds) {
+            result.push(...node.childIds);
+            queue.push(...node.childIds);
+          }
+        }
+        return result;
+      };
+
+      const descendants = getDescendants(nodeId);
+      const toDelete = [nodeId, ...descendants];
+
+      // Remove from parent's childIds (v2.0)
+      const node = state.currentDiagram.nodes.find(n => n.id === nodeId);
+      if (node?.parentId) {
+        const parent = state.currentDiagram.nodes.find(n => n.id === node.parentId);
+        if (parent) {
+          parent.childIds = parent.childIds?.filter(id => id !== nodeId);
+        }
       }
+
+      // Remove all nodes
+      state.currentDiagram.nodes = state.currentDiagram.nodes.filter(n => !toDelete.includes(n.id));
+
+      // Remove connected edges
+      state.currentDiagram.edges = state.currentDiagram.edges.filter(
+        e => !toDelete.includes(e.source) && !toDelete.includes(e.target)
+      );
+
+      // Clear selections
+      state.selectedItems = state.selectedItems.filter(id => !toDelete.includes(id));
+      state.currentDiagram.metadata.modified = new Date().toISOString();
     },
     
     deleteEdge: (state, action: PayloadAction<string>) => {
@@ -146,7 +185,22 @@ const diagramSlice = createSlice({
     },
     
     loadDiagram: (state, action: PayloadAction<Diagram>) => {
-      state.currentDiagram = action.payload;
+      let diagram = action.payload;
+
+      // Auto-migrate v1 diagrams to v2
+      if (!diagram.metadata?.version || diagram.metadata.version < '2.0') {
+        console.info('[Diagram] Migrating diagram to v2.0 schema');
+        diagram = migrateToV2(diagram);
+      }
+
+      // Validate diagram structure
+      const validation = validateDiagramV2(diagram);
+      if (!validation.valid) {
+        console.error('[Diagram] Validation errors:', validation.errors);
+        // Still load but log errors for debugging
+      }
+
+      state.currentDiagram = diagram;
       state.selectedItems = [];
       state.selectedNodes = [];
       state.selectedEdges = [];
@@ -286,15 +340,166 @@ const diagramSlice = createSlice({
           state.currentDiagram.metadata.modified = new Date().toISOString();
         }
       }
+    },
+
+    // v2.0 Containment Operations
+    setNodeParent: (state, action: PayloadAction<{ nodeId: string; parentId: string | null }>) => {
+      if (!state.currentDiagram) return;
+
+      const { nodeId, parentId } = action.payload;
+      const node = state.currentDiagram.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+
+      // Validate no circular reference
+      if (parentId) {
+        const getAncestors = (id: string): string[] => {
+          const ancestors: string[] = [];
+          let currentId: string | null | undefined = id;
+          const seen = new Set<string>();
+
+          while (currentId) {
+            if (seen.has(currentId)) break;
+            seen.add(currentId);
+            const n = state.currentDiagram!.nodes.find(nd => nd.id === currentId);
+            if (!n?.parentId) break;
+            ancestors.push(n.parentId);
+            currentId = n.parentId;
+          }
+          return ancestors;
+        };
+
+        const ancestors = getAncestors(parentId);
+        if (ancestors.includes(nodeId)) {
+          console.error('Cannot set parent: would create circular reference');
+          return;
+        }
+      }
+
+      // Remove from old parent's childIds
+      if (node.parentId) {
+        const oldParent = state.currentDiagram.nodes.find(n => n.id === node.parentId);
+        if (oldParent) {
+          oldParent.childIds = oldParent.childIds?.filter(id => id !== nodeId) ?? [];
+        }
+      }
+
+      // Update node's parentId
+      node.parentId = parentId;
+
+      // Add to new parent's childIds
+      if (parentId) {
+        const newParent = state.currentDiagram.nodes.find(n => n.id === parentId);
+        if (newParent) {
+          newParent.childIds = [...(newParent.childIds ?? []), nodeId];
+          newParent.isContainer = true; // Auto-enable container mode
+        }
+      }
+
+      state.currentDiagram.metadata.modified = new Date().toISOString();
+    },
+
+    // v2.0 Lock Group Operations
+    createLockGroup: (state, action: PayloadAction<string[]>) => {
+      if (!state.currentDiagram) return;
+
+      const groupId = uuidv4();
+      action.payload.forEach(nodeId => {
+        const node = state.currentDiagram!.nodes.find(n => n.id === nodeId);
+        if (node) {
+          node.lockGroupId = groupId;
+        }
+      });
+
+      state.currentDiagram.metadata.modified = new Date().toISOString();
+    },
+
+    unlockGroup: (state, action: PayloadAction<string>) => {
+      if (!state.currentDiagram) return;
+
+      const groupId = action.payload;
+      state.currentDiagram.nodes.forEach(node => {
+        if (node.lockGroupId === groupId) {
+          node.lockGroupId = undefined;
+        }
+      });
+
+      state.currentDiagram.metadata.modified = new Date().toISOString();
+    },
+
+    toggleNodeLock: (state, action: PayloadAction<string>) => {
+      if (!state.currentDiagram) return;
+
+      const node = state.currentDiagram.nodes.find(n => n.id === action.payload);
+      if (node) {
+        node.locked = !node.locked;
+      }
+
+      state.currentDiagram.metadata.modified = new Date().toISOString();
+    },
+
+    // v2.0 Container Operations
+    toggleContainer: (state, action: PayloadAction<string>) => {
+      if (!state.currentDiagram) return;
+
+      const node = state.currentDiagram.nodes.find(n => n.id === action.payload);
+      if (node) {
+        node.isContainer = !node.isContainer;
+        if (node.isContainer) {
+          node.childIds = node.childIds ?? [];
+          node.containerPadding = node.containerPadding ?? 20;
+        }
+      }
+
+      state.currentDiagram.metadata.modified = new Date().toISOString();
+    },
+
+    setContainerPadding: (state, action: PayloadAction<{ nodeId: string; padding: number }>) => {
+      if (!state.currentDiagram) return;
+
+      const node = state.currentDiagram.nodes.find(n => n.id === action.payload.nodeId);
+      if (node?.isContainer) {
+        node.containerPadding = Math.max(0, action.payload.padding);
+      }
+
+      state.currentDiagram.metadata.modified = new Date().toISOString();
+    },
+
+    setManualContainerSize: (state, action: PayloadAction<{
+      nodeId: string;
+      width: number;
+      height: number;
+    }>) => {
+      if (!state.currentDiagram) return;
+
+      const node = state.currentDiagram.nodes.find(n => n.id === action.payload.nodeId);
+      if (node?.isContainer) {
+        node.manualSize = {
+          width: Math.max(50, action.payload.width),
+          height: Math.max(50, action.payload.height)
+        };
+      }
+
+      state.currentDiagram.metadata.modified = new Date().toISOString();
+    },
+
+    fitContainerToChildren: (state, action: PayloadAction<string>) => {
+      if (!state.currentDiagram) return;
+
+      const node = state.currentDiagram.nodes.find(n => n.id === action.payload);
+      if (node?.isContainer) {
+        node.manualSize = undefined; // Clear manual override, will auto-fit
+      }
+
+      state.currentDiagram.metadata.modified = new Date().toISOString();
     }
   }
 });
 
-export const { 
-  createDiagram, 
-  addNode, 
-  addEdge, 
-  updateNode, 
+export const {
+  createDiagram,
+  addNode,
+  addEdge,
+  updateNode,
   updateNodePosition,
   deleteNode,
   deleteEdge,
@@ -316,7 +521,16 @@ export const {
   deleteEntryPoint,
   deleteExitPoint,
   updateEntryPoint,
-  updateExitPoint
+  updateExitPoint,
+  // v2.0 actions
+  setNodeParent,
+  createLockGroup,
+  unlockGroup,
+  toggleNodeLock,
+  toggleContainer,
+  setContainerPadding,
+  setManualContainerSize,
+  fitContainerToChildren
 } = diagramSlice.actions;
 
 export default diagramSlice.reducer;
