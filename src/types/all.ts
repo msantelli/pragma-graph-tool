@@ -30,9 +30,25 @@ export type NodeType = 'vocabulary' | 'practice' | 'test' | 'operate' | 'exit' |
 export interface BaseNode {
   id: string;
   type: NodeType;
-  position: Point;
+  position: Point; // Relative to parent if parentId exists, otherwise absolute
   label: string;
   style?: NodeStyle;
+
+  // Containment (v2.0)
+  parentId?: string | null; // Parent container node
+  childIds?: string[]; // Managed by Redux, not user-editable
+
+  // Layout Control (v2.0)
+  locked?: boolean; // Prevent dragging
+  lockGroupId?: string; // Nodes with same ID move together
+
+  // Container Behavior (v2.0)
+  isContainer?: boolean; // Enables container frame rendering
+  containerPadding?: number; // Padding around children in pixels (default: 20)
+  manualSize?: { // Override auto-fit when set
+    width: number;
+    height: number;
+  };
 }
 
 export interface VocabularyNode extends BaseNode {
@@ -103,6 +119,11 @@ export interface Edge {
   style?: EdgeStyle;
   isResultant?: boolean; // Whether this is a resultant relationship
   resultantFrom?: string[]; // For resultant MURs - IDs of the source edges
+
+  // Manual Anchors (v2.0)
+  sourceAnchor?: Point | 'auto'; // Relative to source node center, or 'auto' for default
+  targetAnchor?: Point | 'auto'; // Relative to target node center, or 'auto' for default
+  labelOffset?: Point; // Manual label positioning offset
 }
 
 export interface Diagram {
@@ -118,5 +139,6 @@ export interface Diagram {
     modified: string;
     author?: string;
     description?: string;
+    version?: string; // Schema version (v2.0+)
   };
 }
