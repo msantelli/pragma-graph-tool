@@ -2,13 +2,21 @@ import type { Point } from '../types/all';
 
 /**
  * Snap a point to the nearest grid intersection
+ * Only snaps if within tolerance distance (for gentler snapping)
  */
-export const snapToGrid = (point: Point, gridSpacing: number, enabled: boolean = true): Point => {
+export const snapToGrid = (point: Point, gridSpacing: number, enabled: boolean = true, tolerance: number = 10): Point => {
   if (!enabled) return point;
-  
+
+  const snappedX = Math.round(point.x / gridSpacing) * gridSpacing;
+  const snappedY = Math.round(point.y / gridSpacing) * gridSpacing;
+
+  // Only snap if close enough to grid (gentler behavior)
+  const distanceX = Math.abs(point.x - snappedX);
+  const distanceY = Math.abs(point.y - snappedY);
+
   return {
-    x: Math.round(point.x / gridSpacing) * gridSpacing,
-    y: Math.round(point.y / gridSpacing) * gridSpacing
+    x: distanceX <= tolerance ? snappedX : point.x,
+    y: distanceY <= tolerance ? snappedY : point.y
   };
 };
 

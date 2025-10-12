@@ -9,7 +9,7 @@ import { Grid } from '../Grid';
 import { getSnappedPosition } from '../../utils/gridUtils';
 import { getNodeColors, getNodeDimensions, getNodeShape, getNodeFontSize } from '../../utils/nodeUtils';
 import { getEdgeColor } from '../../utils/edgeUtils';
-import { getAbsolutePosition, calculateContainerBounds, isNodeOrAncestorLocked, getLockGroupNodes } from '../../utils/containmentUtils';
+import { getAbsolutePosition, calculateContainerBounds, isNodeOrAncestorLocked, getLockGroupNodes, getDescendants } from '../../utils/containmentUtils';
 import type { Node, Edge, Point } from '../../types/all';
 import './Canvas.css';
 
@@ -498,24 +498,40 @@ export const Canvas: React.FC = () => {
             // Get lock group nodes if this node is in a lock group
             const lockGroupNodes = d.lockGroupId ? getLockGroupNodes(nodes, d.lockGroupId) : [d];
 
-            // Move all nodes in lock group
+            // Collect all nodes that need to move (including descendants of containers)
+            const nodesToMove = new Set<string>();
             lockGroupNodes.forEach(groupNode => {
-              const groupAbsPos = getAbsolutePosition(nodes, groupNode.id);
-              const newX = groupAbsPos.x + deltaX;
-              const newY = groupAbsPos.y + deltaY;
+              nodesToMove.add(groupNode.id);
+              // If this is a container, add all its descendants
+              if (groupNode.isContainer) {
+                const descendantIds = getDescendants(nodes, groupNode.id);
+                descendantIds.forEach(descId => nodesToMove.add(descId));
+              }
+            });
 
-              svg.select(`.node[data-node-id="${groupNode.id}"]`)
+            // Move all nodes (including descendants)
+            nodesToMove.forEach(nodeId => {
+              const nodeToMove = nodes.find(n => n.id === nodeId);
+              if (!nodeToMove) return;
+
+              const nodeAbsPos = getAbsolutePosition(nodes, nodeId);
+              const newX = nodeAbsPos.x + deltaX;
+              const newY = nodeAbsPos.y + deltaY;
+
+              svg.select(`.node[data-node-id="${nodeId}"]`)
                 .attr('transform', `translate(${newX}, ${newY})`);
+
+              // Update container frame if this is a container
+              if (nodeToMove.isContainer && (nodeToMove.childIds?.length ?? 0) > 0) {
+                const bounds = calculateContainerBounds(nodes, nodeId);
+                svg.select(`.container-${nodeId}`)
+                  .attr('x', bounds.x + deltaX)
+                  .attr('y', bounds.y + deltaY);
+              }
             });
 
             // Update drag start for next iteration
             element.property('__dragStart', { x: event.x, y: event.y });
-
-            // Update connected edges (simplified live preview, real update on drag end)
-            svg.selectAll<SVGPathElement, Edge>('.edge-path')
-              .each(function(edge) {
-                // Edge geometry will be recalculated on re-render after drag end
-              });
           }
         })
         .on('end', function(event) {
