@@ -61,6 +61,25 @@ export const Canvas: React.FC = () => {
     }
   };
 
+  // Helper function to auto-detect TOTE edge type
+  const autoDetectTOTEEdgeType = (sourceNode: Node, targetNode: Node): Edge['type'] => {
+    // Standard TOTE logic
+    if (sourceNode.type === 'test') {
+      if (targetNode.type === 'operate') {
+        return 'test-fail'; // Standard feedback loop
+      } else if (targetNode.type === 'exit' || targetNode.type === 'practice' || targetNode.type === 'test') {
+        return 'test-pass'; // Successful exit or transition
+      }
+    } else if (sourceNode.type === 'operate') {
+      if (targetNode.type === 'test') {
+        return 'sequence'; // Standard sequence
+      }
+    }
+
+    // Default fallback
+    return 'sequence';
+  };
+
   // Handle edge creation between two nodes
   const handleEdgeCreation = (sourceNodeId: string, targetNodeId: string) => {
     const sourceNode = nodes.find(n => n.id === sourceNodeId);
@@ -79,6 +98,15 @@ export const Canvas: React.FC = () => {
     } else if (autoDetectEdges && diagramMode === 'MUD') {
       // Auto-detect MUD edge type and create immediately
       const edgeType = autoDetectMUDEdgeType(sourceNode, targetNode);
+      dispatch(saveToHistory());
+      dispatch(addEdge({
+        source: sourceNodeId,
+        target: targetNodeId,
+        type: edgeType
+      }));
+    } else if (autoDetectEdges && (diagramMode === 'TOTE' || diagramMode === 'HYBRID') && (sourceNode.type === 'test' || sourceNode.type === 'operate')) {
+      // Auto-detect TOTE edge type
+      const edgeType = autoDetectTOTEEdgeType(sourceNode, targetNode);
       dispatch(saveToHistory());
       dispatch(addEdge({
         source: sourceNodeId,
@@ -201,19 +229,22 @@ export const Canvas: React.FC = () => {
     // Apply transform to the group
     g.attr('transform', transform.toString());
 
-    // Add defs for arrow markers
-    const defs = svg.append('defs');
-    defs.append('marker')
-      .attr('id', 'arrow-default')
-      .attr('viewBox', '0 0 10 10')
-      .attr('refX', 8)
-      .attr('refY', 5)
-      .attr('markerWidth', 8)
-      .attr('markerHeight', 8)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M 0 0 L 10 5 L 0 10 z')
-      .attr('fill', '#666');
+    // Add defs for arrow markers if they don't exist
+    let defs = svg.select<SVGDefsElement>('defs');
+    if (defs.empty()) {
+      defs = svg.append('defs');
+      defs.append('marker')
+        .attr('id', 'arrow-default')
+        .attr('viewBox', '0 0 10 10')
+        .attr('refX', 8)
+        .attr('refY', 5)
+        .attr('markerWidth', 8)
+        .attr('markerHeight', 8)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M 0 0 L 10 5 L 0 10 z')
+        .attr('fill', '#666');
+    }
 
     // Render edges
     const edgeGroup = g.append('g').attr('class', 'edges');
@@ -273,7 +304,9 @@ export const Canvas: React.FC = () => {
         return 'none';
       })
       .attr('stroke-width', (d: Edge) => {
-        if (selectedItems.includes(d.id)) return 3;
+        if (selectedItems.includes(d.id)) return 3.5;
+        // Make 'nec' (necessary) edges thicker
+        if (d.type.includes('nec')) return 3;
         if (d.type === 'custom' && d.label) return 2.5; // Thicker for labeled custom edges
         return 2;
       });
@@ -296,6 +329,10 @@ export const Canvas: React.FC = () => {
           }
           if (d.label) {
             text += d.label;
+          } else if (d.type === 'test-pass') {
+            text = 'Pass';
+          } else if (d.type === 'test-fail') {
+            text = 'Fail';
           } else if (d.type !== 'unmarked' && d.type !== 'custom') {
             text += d.type;
           }
@@ -671,8 +708,7 @@ export const Canvas: React.FC = () => {
                 // We can't easily get new BBox synchronously without DOM reflow.
                 // But width/height shouldn't change, just position.
 
-                const currentWidth = parseFloat(bgRect.attr('width'));
-                const currentHeight = parseFloat(bgRect.attr('height'));
+
 
                 // Center logic roughly matches original render
                 // Original: x = bbox.x - padding. 
@@ -912,9 +948,18 @@ export const Canvas: React.FC = () => {
       }
     };
 
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
+    // Use ResizeObserver to detect container size changes (e.g. sidebar toggle)
+    const resizeObserver = new ResizeObserver(() => {
+      updateSize();
+    });
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, [dispatch]);
 
   // Tool descriptions for empty state
@@ -1015,13 +1060,50 @@ export const Canvas: React.FC = () => {
   );
 };
 
-// Helper function to calculate edge offset for multiple edges between same nodes
-function getEdgeOffset(currentEdge: Edge, allEdges: Edge[]): number {
-  // Find all edges between the same pair of nodes (both directions)
-  const relatedEdges = allEdges.filter(edge =>
-    (edge.source === currentEdge.source && edge.target === currentEdge.target) ||
-    (edge.source === currentEdge.target && edge.target === currentEdge.source)
-  );
+// Helper function to check if two nodes are related (same, or ancestor/descendant)
+function isNodeRelated(nodeId1: string, nodeId2: string, allNodes: Node[]): boolean {
+  if (nodeId1 === nodeId2) return true;
+
+  // Check if 1 is ancestor of 2
+  let current = allNodes.find(n => n.id === nodeId2);
+  while (current && current.parentId) {
+    if (current.parentId === nodeId1) return true;
+    const pid = current.parentId;
+    current = allNodes.find(n => n.id === pid);
+  }
+
+  // Check if 2 is ancestor of 1
+  current = allNodes.find(n => n.id === nodeId1);
+  while (current && current.parentId) {
+    if (current.parentId === nodeId2) return true;
+    const pid = current.parentId;
+    current = allNodes.find(n => n.id === pid);
+  }
+
+  return false;
+}
+
+// Helper function to calculate edge offset for multiple edges between same nodes or related nodes
+function getEdgeOffset(currentEdge: Edge, allEdges: Edge[], allNodes: Node[]): number {
+  // Find all edges between the same pair of nodes OR related nodes (ancestor/descendant)
+  // This ensures that an edge from Parent->Target and Child->Target are grouped together 
+  // and curved to avoid overlap.
+  const relatedEdges = allEdges.filter(edge => {
+    const sourceRelated = isNodeRelated(edge.source, currentEdge.source, allNodes);
+    const targetRelated = isNodeRelated(edge.target, currentEdge.target, allNodes);
+
+    // Check normal direction (S1~S2 && T1~T2)
+    if (sourceRelated && targetRelated) return true;
+
+    // Check reverse direction (S1~T2 && T1~S2)
+    // We also need to check cross-relations for bidirectional grouping
+    const sourceToTargetRelated = isNodeRelated(edge.source, currentEdge.target, allNodes);
+    const targetToSourceRelated = isNodeRelated(edge.target, currentEdge.source, allNodes);
+
+    if (sourceToTargetRelated && targetToSourceRelated) return true;
+
+    return false;
+  });
 
   if (relatedEdges.length <= 1) return 0;
 
@@ -1034,17 +1116,26 @@ function getEdgeOffset(currentEdge: Edge, allEdges: Edge[]): number {
   // Calculate offset based on index and total count
   const totalEdges = relatedEdges.length;
   const offsetRange = 80; // pixels
-  const orientationSign = currentEdge.source < currentEdge.target ? 1 : -1;
+
+  // Determine orientation based on the "canonical" edge (first in sorted list)
+  // This ensures consistent orientation across all edges in the group, regardless of their individual IDs
+  const canonicalEdge = relatedEdges[0];
+  const groupBaseSign = canonicalEdge.source < canonicalEdge.target ? 1 : -1;
+
+  // Determine if current edge is "aligned" with canonical edge (Source~Source) or "crossed" (Source~Target)
+  // We use isNodeRelated to handle the nested node cases
+  const isAligned = isNodeRelated(currentEdge.source, canonicalEdge.source, allNodes);
+  const finalSign = isAligned ? groupBaseSign : -groupBaseSign;
 
   if (totalEdges === 2) {
     const baseOffset = currentIndex === 0 ? -offsetRange / 2 : offsetRange / 2;
-    return baseOffset * orientationSign;
+    return baseOffset * finalSign;
   }
 
   // For more than 2 edges, distribute them evenly
   const step = totalEdges > 1 ? offsetRange / (totalEdges - 1) : 0;
   const baseOffset = (currentIndex - (totalEdges - 1) / 2) * step;
-  return baseOffset * orientationSign;
+  return baseOffset * finalSign;
 }
 
 // Helper function to create curved path for multiple edges
@@ -1122,11 +1213,7 @@ function getReflexiveEdgePath(node: Node, allNodes?: Node[]): string {
   return `M ${loopStartX} ${loopStartY} C ${controlX1} ${controlY1} ${controlX2} ${controlY2} ${loopEndX} ${loopEndY}`;
 }
 
-interface EdgeGeometry {
-  path: string;
-  labelPosition: { x: number; y: number };
-  labelAngle: number | null;
-}
+
 
 function normalizeLabelAngle(angleDeg: number): number {
   let angle = angleDeg;
@@ -1182,7 +1269,7 @@ const getEdgeGeometry = (
     };
   }
 
-  const offset = getEdgeOffset(edge, allEdges);
+  const offset = getEdgeOffset(edge, allEdges, allNodes);
 
   if (offset === 0) {
     const start = getNodeConnectionPoint(sourceNode, targetPos, allNodes);

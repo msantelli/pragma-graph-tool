@@ -82,7 +82,7 @@ export type EdgeType =
   | 'PV-suff' | 'PV-nec' | 'VP-suff' | 'VP-nec'
   | 'PP-suff' | 'PP-nec' | 'VV-suff' | 'VV-nec'
   // TOTE relations
-  | 'sequence' | 'feedback' | 'loop' | 'exit' | 'entry'
+  | 'sequence' | 'feedback' | 'loop' | 'exit' | 'entry' | 'test-pass' | 'test-fail'
   // Other
   | 'resultant' | 'unmarked' | 'custom';
 

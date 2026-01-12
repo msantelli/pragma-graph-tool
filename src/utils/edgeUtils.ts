@@ -3,13 +3,13 @@ import type { Edge } from '../types/all';
 type DiagramMode = 'MUD' | 'TOTE' | 'HYBRID' | 'GENERIC';
 
 export const getAvailableEdgeTypes = (
-  mode: DiagramMode, 
-  _sourceType?: string, 
-  _targetType?: string, 
+  mode: DiagramMode,
+  _sourceType?: string,
+  _targetType?: string,
   isAutoDetect: boolean = true
 ): Edge['type'][] => {
   let baseTypes: Edge['type'][] = [];
-  
+
   if (mode === 'MUD') {
     if (isAutoDetect) {
       baseTypes = ['PV', 'VP', 'PP', 'VV'] as Edge['type'][];
@@ -18,21 +18,21 @@ export const getAvailableEdgeTypes = (
       baseTypes = ['PV-suff', 'PV-nec', 'VP-suff', 'VP-nec', 'PP-suff', 'PP-nec', 'VV-suff', 'VV-nec'] as Edge['type'][];
     }
   } else if (mode === 'TOTE') {
-    baseTypes = ['sequence', 'feedback', 'loop', 'exit', 'entry'] as Edge['type'][];
+    baseTypes = ['sequence', 'feedback', 'loop', 'exit', 'entry', 'test-pass', 'test-fail'] as Edge['type'][];
   } else if (mode === 'GENERIC') {
     // GENERIC mode: simple edges for any type of graph
     baseTypes = ['custom', 'unmarked'] as Edge['type'][];
   } else {
     // HYBRID mode
     const mudTypes = isAutoDetect ? ['PV', 'VP', 'PP', 'VV'] as Edge['type'][] : ['PV-suff', 'PV-nec', 'VP-suff', 'VP-nec', 'PP-suff', 'PP-nec', 'VV-suff', 'VV-nec'] as Edge['type'][];
-    baseTypes = [...mudTypes, 'sequence', 'feedback', 'loop', 'exit', 'entry'] as Edge['type'][];
+    baseTypes = [...mudTypes, 'sequence', 'feedback', 'loop', 'exit', 'entry', 'test-pass', 'test-fail'] as Edge['type'][];
   }
-  
+
   // Include unmarked edges for non-generic modes
   if (mode !== 'GENERIC') {
     return [...baseTypes, 'unmarked'] as Edge['type'][];
   }
-  
+
   return baseTypes;
 };
 
@@ -49,7 +49,7 @@ export const getEdgeQualifier = (edgeType: string): 'suff' | 'nec' | null => {
 export const getEdgeColor = (type: string, isResultant: boolean = false): string => {
   const baseType = getBaseEdgeType(type);
   const qualifier = getEdgeQualifier(type);
-  
+
   // Base colors for MUD relations
   let baseColor;
   switch (baseType) {
@@ -63,33 +63,35 @@ export const getEdgeColor = (type: string, isResultant: boolean = false): string
     case 'loop': baseColor = '#607D8B'; break; // Blue Grey
     case 'exit': baseColor = '#8BC34A'; break; // Light Green
     case 'entry': baseColor = '#4CAF50'; break; // Green
+    case 'test-pass': baseColor = '#4CAF50'; break; // Green
+    case 'test-fail': baseColor = '#F44336'; break; // Red
     case 'unmarked': baseColor = '#666666'; break; // Neutral gray
     case 'custom': baseColor = '#333333'; break; // Dark gray for custom
     default: baseColor = '#666'; break;
   }
-  
+
   // Modify color based on qualifier
   if (qualifier === 'suff') {
     return baseColor; // Keep original color for sufficient
   } else if (qualifier === 'nec') {
     // Darker/more saturated for necessary
     return baseColor.replace('#4CAF50', '#2E7D32') // Darker green
-                   .replace('#FF9800', '#E65100') // Darker orange
-                   .replace('#9C27B0', '#6A1B9A') // Darker purple
-                   .replace('#F44336', '#C62828'); // Darker red
+      .replace('#FF9800', '#E65100') // Darker orange
+      .replace('#9C27B0', '#6A1B9A') // Darker purple
+      .replace('#F44336', '#C62828'); // Darker red
   } else if (isResultant) {
     // Lighter/more muted for resultant
     return baseColor.replace('#4CAF50', '#81C784') // Lighter green
-                   .replace('#FF9800', '#FFB74D') // Lighter orange
-                   .replace('#9C27B0', '#BA68C8') // Lighter purple
-                   .replace('#F44336', '#E57373') // Lighter red
-                   .replace('#2196F3', '#64B5F6') // Lighter blue
-                   .replace('#FF5722', '#FF8A65') // Lighter deep orange
-                   .replace('#607D8B', '#90A4AE') // Lighter blue grey
-                   .replace('#8BC34A', '#AED581') // Lighter light green
-                   .replace('#666666', '#999999'); // Lighter gray
+      .replace('#FF9800', '#FFB74D') // Lighter orange
+      .replace('#9C27B0', '#BA68C8') // Lighter purple
+      .replace('#F44336', '#E57373') // Lighter red
+      .replace('#2196F3', '#64B5F6') // Lighter blue
+      .replace('#FF5722', '#FF8A65') // Lighter deep orange
+      .replace('#607D8B', '#90A4AE') // Lighter blue grey
+      .replace('#8BC34A', '#AED581') // Lighter light green
+      .replace('#666666', '#999999'); // Lighter gray
   }
-  
+
   return baseColor;
 };
 
@@ -116,11 +118,13 @@ export const getEdgeTypeDescription = (edgeType: Edge['type']): string => {
   // TOTE relations
   else if (edgeType === 'sequence') return 'Sequential action';
   else if (edgeType === 'feedback') return 'Feedback loop';
+  else if (edgeType === 'test-pass') return 'Test Passed (Success)';
+  else if (edgeType === 'test-fail') return 'Test Failed (Retry)';
   else if (edgeType === 'loop') return 'Iterative loop';
   else if (edgeType === 'exit') return 'Exit condition';
   else if (edgeType === 'entry') return 'Entry point';
   else if (edgeType === 'unmarked') return 'Simple line (no label)';
   else if (edgeType === 'custom') return 'Custom edge (use label for description)';
-  
+
   return edgeType; // Fallback to the type name
 };
