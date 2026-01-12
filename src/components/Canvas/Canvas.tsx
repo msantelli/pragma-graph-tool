@@ -414,6 +414,7 @@ export const Canvas: React.FC = () => {
       const children = getChildNodes(d.id, nodes);
       const isContainer = children.length > 0;
       let dimensions = getNodeDimensions(d);
+      let centerOffset = { x: 0, y: 0 };
 
       // If node is a container, resize it to fit children
       if (isContainer) {
@@ -422,6 +423,10 @@ export const Canvas: React.FC = () => {
           width: containerBounds.width,
           height: containerBounds.height,
           radius: Math.max(containerBounds.width, containerBounds.height) / 2
+        };
+        centerOffset = {
+          x: containerBounds.centerX,
+          y: containerBounds.centerY
         };
       }
 
@@ -452,6 +457,8 @@ export const Canvas: React.FC = () => {
       switch (shape) {
         case 'circle':
           nodeGroup.append('circle')
+            .attr('cx', centerOffset.x)
+            .attr('cy', centerOffset.y)
             .attr('r', dimensions.radius)
             .attr('fill', colors.background)
             .attr('fill-opacity', isContainer ? 0.2 : 1)
@@ -462,6 +469,8 @@ export const Canvas: React.FC = () => {
 
         case 'ellipse':
           nodeGroup.append('ellipse')
+            .attr('cx', centerOffset.x)
+            .attr('cy', centerOffset.y)
             .attr('rx', dimensions.width / 2)
             .attr('ry', dimensions.height / 2)
             .attr('fill', colors.background)
@@ -474,8 +483,8 @@ export const Canvas: React.FC = () => {
         case 'rectangle':
           const cornerRadius = d.type === 'practice' ? 10 : 0;
           nodeGroup.append('rect')
-            .attr('x', -dimensions.width / 2)
-            .attr('y', -dimensions.height / 2)
+            .attr('x', centerOffset.x - dimensions.width / 2)
+            .attr('y', centerOffset.y - dimensions.height / 2)
             .attr('width', dimensions.width)
             .attr('height', dimensions.height)
             .attr('rx', cornerRadius)
@@ -488,7 +497,8 @@ export const Canvas: React.FC = () => {
 
         case 'diamond':
           const size = dimensions.radius;
-          const diamond = `M 0,-${size} L ${size},0 L 0,${size} L -${size},0 Z`;
+          // Offset the path for diamond
+          const diamond = `M ${centerOffset.x},${centerOffset.y - size} L ${centerOffset.x + size},${centerOffset.y} L ${centerOffset.x},${centerOffset.y + size} L ${centerOffset.x - size},${centerOffset.y} Z`;
           nodeGroup.append('path')
             .attr('d', diamond)
             .attr('fill', colors.background)
@@ -500,7 +510,10 @@ export const Canvas: React.FC = () => {
 
         case 'triangle':
           const triangleSize = dimensions.radius;
-          const triangle = `M 0,-${triangleSize} L ${triangleSize * 0.866},${triangleSize * 0.5} L -${triangleSize * 0.866},${triangleSize * 0.5} Z`;
+          // Offset the path for triangle
+          const tX = centerOffset.x;
+          const tY = centerOffset.y;
+          const triangle = `M ${tX},${tY - triangleSize} L ${tX + triangleSize * 0.866},${tY + triangleSize * 0.5} L ${tX - triangleSize * 0.866},${tY + triangleSize * 0.5} Z`;
           nodeGroup.append('path')
             .attr('d', triangle)
             .attr('fill', colors.background)
@@ -512,7 +525,9 @@ export const Canvas: React.FC = () => {
 
         case 'hexagon':
           const hexSize = dimensions.radius;
-          const hexagon = `M ${hexSize},0 L ${hexSize * 0.5},${hexSize * 0.866} L -${hexSize * 0.5},${hexSize * 0.866} L -${hexSize},0 L -${hexSize * 0.5},-${hexSize * 0.866} L ${hexSize * 0.5},-${hexSize * 0.866} Z`;
+          const hX = centerOffset.x;
+          const hY = centerOffset.y;
+          const hexagon = `M ${hX + hexSize},${hY} L ${hX + hexSize * 0.5},${hY + hexSize * 0.866} L ${hX - hexSize * 0.5},${hY + hexSize * 0.866} L ${hX - hexSize},${hY} L ${hX - hexSize * 0.5},${hY - hexSize * 0.866} L ${hX + hexSize * 0.5},${hY - hexSize * 0.866} Z`;
           nodeGroup.append('path')
             .attr('d', hexagon)
             .attr('fill', colors.background)
@@ -529,8 +544,8 @@ export const Canvas: React.FC = () => {
           for (let i = 0; i < points * 2; i++) {
             const radius = i % 2 === 0 ? starSize : starSize * 0.4;
             const angle = (i * Math.PI) / points;
-            const x = Math.cos(angle - Math.PI / 2) * radius;
-            const y = Math.sin(angle - Math.PI / 2) * radius;
+            const x = centerOffset.x + Math.cos(angle - Math.PI / 2) * radius;
+            const y = centerOffset.y + Math.sin(angle - Math.PI / 2) * radius;
             star += i === 0 ? `M ${x},${y}` : ` L ${x},${y}`;
           }
           star += ' Z';
@@ -546,6 +561,8 @@ export const Canvas: React.FC = () => {
         default:
           // Fallback to circle for unknown shapes
           nodeGroup.append('circle')
+            .attr('cx', centerOffset.x)
+            .attr('cy', centerOffset.y)
             .attr('r', dimensions.radius)
             .attr('fill', colors.background)
             .attr('fill-opacity', isContainer ? 0.2 : 1)
@@ -556,7 +573,10 @@ export const Canvas: React.FC = () => {
 
       // Calculate base Y position
       // For containers, start from the top. For regular nodes, start from center (0).
-      const baseLabelY = isContainer ? -dimensions.height / 2 + 20 : 0;
+      // Adjusted for centerOffset.y
+      const baseLabelY = isContainer
+        ? centerOffset.y - dimensions.height / 2 + 20
+        : 0;
 
       // Calculate dy offsets
       // If container, main label is at base Y (dy=0 or small adjustment). 
@@ -567,6 +587,7 @@ export const Canvas: React.FC = () => {
       nodeGroup.append('text')
         .attr('class', 'node-main-label')
         .attr('text-anchor', 'middle')
+        .attr('x', centerOffset.x)
         .attr('y', baseLabelY)
         .attr('dy', mainDy)
         .attr('font-size', getNodeFontSize(d))
@@ -583,6 +604,7 @@ export const Canvas: React.FC = () => {
         nodeGroup.append('text')
           .attr('class', 'node-secondary-label')
           .attr('text-anchor', 'middle')
+          .attr('x', centerOffset.x)
           .attr('y', baseLabelY)
           .attr('dy', secondaryDy)
           .attr('font-size', getNodeFontSize(d) * 0.5) // Slightly smaller
@@ -602,6 +624,7 @@ export const Canvas: React.FC = () => {
         nodeGroup.append('text')
           .attr('class', 'node-subscript')
           .attr('text-anchor', 'middle')
+          .attr('x', centerOffset.x)
           .attr('y', baseLabelY)
           .attr('dy', subscriptDy)
           .attr('font-size', getNodeFontSize(d) * 0.75)
