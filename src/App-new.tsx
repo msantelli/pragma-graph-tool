@@ -8,7 +8,7 @@ import { EdgeTypeSelector } from './components/EdgeTypeSelector';
 import { NodeCustomizationPanel } from './components/NodeCustomizationPanel';
 import { EdgeModificationPanel } from './components/EdgeModificationPanel';
 import { useAppSelector, useAppDispatch } from './store/hooks';
-import { 
+import {
   setDiagramMode,
   setAutoDetectEdges,
   setShowUnmarkedEdges,
@@ -20,19 +20,22 @@ import {
   setShowCustomizationPanel,
   setShowEdgeModificationPanel
 } from './store/uiSlice';
-import { 
+import {
   createDiagram,
   undo,
   redo,
   selectNodes,
-  loadDiagram
+  loadDiagram,
+  groupNodesIntoContainer,
+  ungroupContainer,
+  saveToHistory
 } from './store/diagramSlice';
 import { getAvailableTools } from './utils/diagramUtils';
 import { exportAsJSON, exportAsSVG, exportAsLaTeX, importFromJSON } from './utils/exportUtils';
 
 const AppContent: React.FC = () => {
   const dispatch = useAppDispatch();
-  
+
   // UI state selectors
   const diagramMode = useAppSelector(state => state.ui.diagramMode);
   const selectedTool = useAppSelector(state => state.ui.selectedTool);
@@ -44,12 +47,30 @@ const AppContent: React.FC = () => {
   const showEdgeTypeSelector = useAppSelector(state => state.ui.showEdgeTypeSelector);
   const showCustomizationPanel = useAppSelector(state => state.ui.showCustomizationPanel);
   const showEdgeModificationPanel = useAppSelector(state => state.ui.showEdgeModificationPanel);
-  
+
   // Diagram state selectors
   const currentDiagram = useAppSelector(state => state.diagram.currentDiagram);
+  const selectedItems = useAppSelector(state => state.diagram.selectedItems);
   const canUndo = useAppSelector(state => state.diagram.history.past.length > 0);
   const canRedo = useAppSelector(state => state.diagram.history.future.length > 0);
   const hasNodes = useAppSelector(state => (state.diagram.currentDiagram?.nodes.length ?? 0) > 0);
+
+  // Compute if grouping is available (2+ top-level nodes selected)
+  const canGroup = React.useMemo(() => {
+    if (!currentDiagram || selectedItems.length < 2) return false;
+    const selectedNodes = currentDiagram.nodes.filter(
+      n => selectedItems.includes(n.id) && !n.parentId
+    );
+    return selectedNodes.length >= 2;
+  }, [currentDiagram, selectedItems]);
+
+  // Compute if ungrouping is available (single container node selected)
+  const canUngroup = React.useMemo(() => {
+    if (!currentDiagram || selectedItems.length !== 1) return false;
+    const nodeId = selectedItems[0];
+    const nodeChildren = currentDiagram.nodes.filter(n => n.parentId === nodeId);
+    return nodeChildren.length > 0;
+  }, [currentDiagram, selectedItems]);
 
   // Initialize diagram if none exists
   React.useEffect(() => {
@@ -99,6 +120,28 @@ const AppContent: React.FC = () => {
     dispatch(redo());
   };
 
+  const handleGroup = () => {
+    if (!currentDiagram || !canGroup) return;
+    const selectedNodeIds = currentDiagram.nodes
+      .filter(n => selectedItems.includes(n.id) && !n.parentId)
+      .map(n => n.id);
+    if (selectedNodeIds.length >= 2) {
+      dispatch(saveToHistory());
+      dispatch(groupNodesIntoContainer({
+        nodeIds: selectedNodeIds,
+        containerLabel: 'Group',
+        containerType: 'vocabulary' // Default to vocabulary container
+      }));
+    }
+  };
+
+  const handleUngroup = () => {
+    if (!currentDiagram || !canUngroup) return;
+    const containerId = selectedItems[0];
+    dispatch(saveToHistory());
+    dispatch(ungroupContainer(containerId));
+  };
+
   const handleImport = () => {
     importFromJSON((diagram) => {
       dispatch(loadDiagram(diagram));
@@ -140,7 +183,7 @@ const AppContent: React.FC = () => {
       {/* PWA Components */}
       <PWAStatus />
       <InstallPrompt />
-      
+
       {/* Header */}
       <Header
         diagramMode={diagramMode}
@@ -166,21 +209,25 @@ const AppContent: React.FC = () => {
         onExportJSON={handleExportJSON}
         onExportSVG={handleExportSVG}
         onExportLatex={handleExportLatex}
+        canGroup={canGroup}
+        onGroup={handleGroup}
+        canUngroup={canUngroup}
+        onUngroup={handleUngroup}
         hasNodes={hasNodes}
       />
-      
+
       {/* Main Content Area */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {/* Canvas Area */}
         <div style={{ flex: 1, position: 'relative' }}>
           <Canvas />
         </div>
-        
+
         {/* TODO: Add side panels for properties, etc. */}
       </div>
-      
+
       {/* Modals */}
-      <EdgeTypeSelector 
+      <EdgeTypeSelector
         isOpen={showEdgeTypeSelector}
         onClose={handleCloseEdgeTypeSelector}
       />

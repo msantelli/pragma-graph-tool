@@ -38,6 +38,8 @@ export interface BaseNode {
   label: string;
   style?: NodeStyle;
   parentId?: string | null;  // ID of parent container node (null/undefined = top-level)
+  subscript?: string;        // Subscript text (rendered below main label, e.g., "context-homogeneous")
+  secondaryLabel?: string;   // Additional line of text within the node
 }
 
 export interface VocabularyNode extends BaseNode {
@@ -73,11 +75,11 @@ export interface CustomNode extends BaseNode {
 
 export type Node = VocabularyNode | PracticeNode | TestNode | OperateNode | ExitNode | CustomNode;
 
-export type EdgeType = 
+export type EdgeType =
   // Basic MUD relations
   | 'PV' | 'VP' | 'PP' | 'VV'
   // Qualified MUD relations
-  | 'PV-suff' | 'PV-nec' | 'VP-suff' | 'VP-nec' 
+  | 'PV-suff' | 'PV-nec' | 'VP-suff' | 'VP-nec'
   | 'PP-suff' | 'PP-nec' | 'VV-suff' | 'VV-nec'
   // TOTE relations
   | 'sequence' | 'feedback' | 'loop' | 'exit' | 'entry'
@@ -108,6 +110,11 @@ export interface Edge {
   style?: EdgeStyle;
   isResultant?: boolean; // Whether this is a resultant relationship
   resultantFrom?: string[]; // For resultant MURs - IDs of the source edges
+  // Label positioning options
+  labelPosition?: 'start' | 'middle' | 'end';  // Where to place label along edge path
+  labelOffset?: { x: number; y: number };       // Fine-tune label position offset
+  orderNumber?: number;                          // Optional edge numbering prefix (e.g., "1:", "2:")
+  showLabelBackground?: boolean;                 // Show white background behind label for readability
 }
 
 export interface Diagram {

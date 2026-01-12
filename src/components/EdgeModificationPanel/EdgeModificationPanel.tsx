@@ -17,17 +17,17 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
   const diagramMode = useAppSelector(state => state.ui.diagramMode);
   const autoDetectEdges = useAppSelector(state => state.ui.autoDetectEdges);
   const currentDiagram = useAppSelector(state => state.diagram.currentDiagram);
-  
+
   const edge = currentDiagram?.edges.find(e => e.id === selectedEdgeForModification);
   const sourceNode = currentDiagram?.nodes.find(n => n.id === edge?.source);
   const targetNode = currentDiagram?.nodes.find(n => n.id === edge?.target);
 
   const updateEdgeType = (newType: Edge['type']) => {
     if (!edge) return;
-    
+
     // Save state before updating edge type
     dispatch(saveToHistory());
-    
+
     dispatch(updateEdge({
       id: edge.id,
       updates: { type: newType }
@@ -36,10 +36,10 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
 
   const updateEdgeLabel = (label: string) => {
     if (!edge) return;
-    
+
     // Save state before updating label
     dispatch(saveToHistory());
-    
+
     dispatch(updateEdge({
       id: edge.id,
       updates: { label: label.trim() || undefined }
@@ -48,10 +48,10 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
 
   const toggleEdgeResultant = (isResultant: boolean) => {
     if (!edge) return;
-    
+
     // Save state before toggling resultant
     dispatch(saveToHistory());
-    
+
     dispatch(updateEdge({
       id: edge.id,
       updates: { isResultant }
@@ -60,7 +60,7 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
 
   const deleteEdge = () => {
     if (!edge) return;
-    
+
     dispatch(saveToHistory());
     dispatch(removeEdge(edge.id));
     dispatch(setSelectedEdgeForModification(null));
@@ -88,7 +88,7 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
           {sourceNode.label} → {targetNode.label}
         </div>
       )}
-      
+
       {/* Custom Label Input */}
       <div style={{ marginBottom: '20px' }}>
         <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#666' }}>
@@ -109,12 +109,12 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
           }}
         />
         <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
-          {edge.label ? 
-            `Displaying custom label: "${edge.label}"` : 
+          {edge.label ?
+            `Displaying custom label: "${edge.label}"` :
             `Displaying edge type: "${edge.type}"`}
         </div>
       </div>
-      
+
       {/* Edge Type Selection */}
       <div style={{ marginBottom: '20px' }}>
         <label style={{ display: 'block', marginBottom: '12px', fontWeight: 'bold', color: '#666' }}>
@@ -147,9 +147,9 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
 
       {/* Resultant Toggle */}
       <div style={{ marginBottom: '20px' }}>
-        <label style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <label style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '8px',
           cursor: 'pointer',
           padding: '12px',
@@ -162,8 +162,8 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
             type="checkbox"
             checked={edge.isResultant || false}
             onChange={(e) => toggleEdgeResultant(e.target.checked)}
-            style={{ 
-              width: '18px', 
+            style={{
+              width: '18px',
               height: '18px',
               cursor: 'pointer'
             }}
@@ -173,10 +173,166 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
           </span>
         </label>
         <div style={{ fontSize: '11px', color: '#888', marginTop: '6px', marginLeft: '26px' }}>
-          {edge.isResultant ? 
-            'This relationship is derived/indirect (dotted line)' : 
+          {edge.isResultant ?
+            'This relationship is derived/indirect (dotted line)' :
             'This relationship is direct (solid line)'}
         </div>
+      </div>
+
+      {/* Label Position */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#666' }}>
+          Label Position:
+        </label>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {(['start', 'middle', 'end'] as const).map(pos => (
+            <button
+              key={pos}
+              onClick={() => {
+                dispatch(saveToHistory());
+                dispatch(updateEdge({ id: edge.id, updates: { labelPosition: pos } }));
+              }}
+              style={{
+                flex: 1,
+                padding: '8px',
+                border: `2px solid ${(edge.labelPosition || 'middle') === pos ? '#2196F3' : '#ddd'}`,
+                background: (edge.labelPosition || 'middle') === pos ? '#E3F2FD' : '#f9f9f9',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: (edge.labelPosition || 'middle') === pos ? 'bold' : 'normal',
+                textTransform: 'capitalize'
+              }}
+            >
+              {pos}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Order Number */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#666' }}>
+          Order Number (prefix):
+        </label>
+        <input
+          type="number"
+          min="0"
+          value={edge.orderNumber ?? ''}
+          onChange={(e) => {
+            dispatch(saveToHistory());
+            const value = e.target.value === '' ? undefined : parseInt(e.target.value, 10);
+            dispatch(updateEdge({ id: edge.id, updates: { orderNumber: value } }));
+          }}
+          placeholder="e.g., 1 → displays '1: label'"
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            border: '2px solid #ddd',
+            borderRadius: '6px',
+            fontSize: '14px',
+            fontFamily: 'inherit'
+          }}
+        />
+        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
+          Adds a numbered prefix like "1: PV-suff"
+        </div>
+      </div>
+
+      {/* Show Label Background */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          cursor: 'pointer',
+          padding: '12px',
+          border: '2px solid #ddd',
+          borderRadius: '6px',
+          background: edge.showLabelBackground ? '#E3F2FD' : '#f9f9f9',
+          transition: 'all 0.2s ease'
+        }}>
+          <input
+            type="checkbox"
+            checked={edge.showLabelBackground || false}
+            onChange={(e) => {
+              dispatch(saveToHistory());
+              dispatch(updateEdge({ id: edge.id, updates: { showLabelBackground: e.target.checked } }));
+            }}
+            style={{
+              width: '18px',
+              height: '18px',
+              cursor: 'pointer'
+            }}
+          />
+          <span style={{ fontWeight: 'bold', color: '#666' }}>
+            Show Label Background
+          </span>
+        </label>
+        <div style={{ fontSize: '11px', color: '#888', marginTop: '6px', marginLeft: '26px' }}>
+          Adds a white background behind the label for better readability
+        </div>
+      </div>
+
+      {/* Label Offset Fine-tuning */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#666' }}>
+          Label Offset (fine-tune):
+        </label>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: '11px', color: '#888' }}>X: {edge.labelOffset?.x ?? 0}px</label>
+            <input
+              type="range"
+              min="-50"
+              max="50"
+              value={edge.labelOffset?.x ?? 0}
+              onChange={(e) => {
+                dispatch(saveToHistory());
+                const x = parseInt(e.target.value, 10);
+                dispatch(updateEdge({
+                  id: edge.id,
+                  updates: { labelOffset: { x, y: edge.labelOffset?.y ?? 0 } }
+                }));
+              }}
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: '11px', color: '#888' }}>Y: {edge.labelOffset?.y ?? 0}px</label>
+            <input
+              type="range"
+              min="-50"
+              max="50"
+              value={edge.labelOffset?.y ?? 0}
+              onChange={(e) => {
+                dispatch(saveToHistory());
+                const y = parseInt(e.target.value, 10);
+                dispatch(updateEdge({
+                  id: edge.id,
+                  updates: { labelOffset: { x: edge.labelOffset?.x ?? 0, y } }
+                }));
+              }}
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            dispatch(saveToHistory());
+            dispatch(updateEdge({ id: edge.id, updates: { labelOffset: { x: 0, y: 0 } } }));
+          }}
+          style={{
+            marginTop: '8px',
+            padding: '4px 8px',
+            border: '1px solid #ddd',
+            background: '#f5f5f5',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '11px'
+          }}
+        >
+          Reset Offset
+        </button>
       </div>
 
       {/* Action Buttons */}

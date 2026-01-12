@@ -25,6 +25,7 @@ dist-ssr
 CLAUDE.md
 FURTHER_WORK.md
 AGENTS.md
+GEMINI.md
 
 # Electron distributables (large files)
 dist-electron/*.exe

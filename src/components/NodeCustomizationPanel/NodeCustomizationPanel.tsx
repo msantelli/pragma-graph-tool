@@ -15,15 +15,15 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
   const dispatch = useAppDispatch();
   const selectedNodeForCustomization = useAppSelector(state => state.ui.selectedNodeForCustomization);
   const currentDiagram = useAppSelector(state => state.diagram.currentDiagram);
-  
+
   const node = currentDiagram?.nodes.find(n => n.id === selectedNodeForCustomization);
 
   const updateNodeStyle = (styleUpdate: Partial<NodeStyle>) => {
     if (!node) return;
-    
+
     // Save state before styling
     dispatch(saveToHistory());
-    
+
     dispatch(updateNode({
       id: node.id,
       updates: {
@@ -34,10 +34,10 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
 
   const updateNodeLabel = (label: string) => {
     if (!node) return;
-    
+
     // Save state before updating label
     dispatch(saveToHistory());
-    
+
     dispatch(updateNode({
       id: node.id,
       updates: { label }
@@ -46,10 +46,10 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
 
   const resetNodeStyle = () => {
     if (!node) return;
-    
+
     // Save state before resetting style
     dispatch(saveToHistory());
-    
+
     dispatch(updateNode({
       id: node.id,
       updates: {
@@ -60,7 +60,7 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
 
   const deleteNode = () => {
     if (!node) return;
-    
+
     dispatch(saveToHistory());
     dispatch(removeNode(node.id));
     dispatch(setSelectedNodeForCustomization(null));
@@ -112,6 +112,67 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
             fontFamily: 'inherit'
           }}
         />
+      </div>
+
+      {/* Secondary Label Input */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+          Secondary Label (additional line):
+        </label>
+        <input
+          type="text"
+          value={node.secondaryLabel || ''}
+          onChange={(e) => {
+            dispatch(saveToHistory());
+            dispatch(updateNode({
+              id: node.id,
+              updates: { secondaryLabel: e.target.value || undefined }
+            }));
+          }}
+          placeholder="e.g., 'commitment-acknowledging'"
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            border: '2px solid #ddd',
+            borderRadius: '6px',
+            fontSize: '14px',
+            fontFamily: 'inherit'
+          }}
+        />
+        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
+          Additional text rendered within the node below the main label
+        </div>
+      </div>
+
+      {/* Subscript Input */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#333' }}>
+          Subscript Label:
+        </label>
+        <input
+          type="text"
+          value={node.subscript || ''}
+          onChange={(e) => {
+            dispatch(saveToHistory());
+            dispatch(updateNode({
+              id: node.id,
+              updates: { subscript: e.target.value || undefined }
+            }));
+          }}
+          placeholder="e.g., 'context-homogeneous indexicals'"
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            border: '2px solid #ddd',
+            borderRadius: '6px',
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            fontStyle: 'italic'
+          }}
+        />
+        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
+          Italic text rendered below the node (like V<sub>context-homogeneous</sub>)
+        </div>
       </div>
 
       {/* Size Selection */}

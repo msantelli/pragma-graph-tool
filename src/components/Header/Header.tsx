@@ -8,7 +8,7 @@ interface HeaderProps {
   onAutoDetectChange: (value: boolean) => void;
   showUnmarkedEdges: boolean;
   onUnmarkedEdgesChange: (value: boolean) => void;
-  
+
   // Grid settings
   showGrid: boolean;
   onShowGridChange: (value: boolean) => void;
@@ -16,12 +16,12 @@ interface HeaderProps {
   onSnapToGridChange: (value: boolean) => void;
   gridSpacing: number;
   onGridSpacingChange: (value: number) => void;
-  
+
   // Tools
   selectedTool: string;
   availableTools: string[];
   onToolSelect: (tool: string) => void;
-  
+
   // Actions
   canUndo: boolean;
   canRedo: boolean;
@@ -31,7 +31,13 @@ interface HeaderProps {
   onExportJSON: () => void;
   onExportSVG: () => void;
   onExportLatex: () => void;
-  
+
+  // Grouping
+  canGroup: boolean;
+  onGroup: () => void;
+  canUngroup: boolean;
+  onUngroup: () => void;
+
   // State
   hasNodes: boolean;
 }
@@ -60,6 +66,10 @@ export const Header: React.FC<HeaderProps> = ({
   onExportJSON,
   onExportSVG,
   onExportLatex,
+  canGroup,
+  onGroup,
+  canUngroup,
+  onUngroup,
   hasNodes
 }) => {
   return (
@@ -321,6 +331,40 @@ export const Header: React.FC<HeaderProps> = ({
             }}
           >
             ↷ Redo
+          </button>
+
+          <button
+            onClick={onGroup}
+            disabled={!canGroup}
+            title="Group selected nodes into a container (select 2+ nodes)"
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid rgba(255,255,255,0.3)',
+              background: !canGroup ? 'rgba(255,255,255,0.05)' : 'rgba(0,150,136,0.8)',
+              color: !canGroup ? 'rgba(255,255,255,0.3)' : 'white',
+              borderRadius: '4px',
+              cursor: !canGroup ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            📦 Group
+          </button>
+
+          <button
+            onClick={onUngroup}
+            disabled={!canUngroup}
+            title="Ungroup selected container"
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid rgba(255,255,255,0.3)',
+              background: !canUngroup ? 'rgba(255,255,255,0.05)' : 'rgba(255,87,34,0.8)',
+              color: !canUngroup ? 'rgba(255,255,255,0.3)' : 'white',
+              borderRadius: '4px',
+              cursor: !canUngroup ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            🔓 Ungroup
           </button>
 
           <button

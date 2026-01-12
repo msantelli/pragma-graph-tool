@@ -333,16 +333,16 @@ export const exportAsJSON = (diagram: Diagram) => {
       version: '1.1'
     }
   };
-  
+
   const dataStr = JSON.stringify(exportData, null, 2);
   const dataBlob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(dataBlob);
-  
+
   const link = document.createElement('a');
   link.href = url;
   link.download = `${diagram.name || 'pragma-graph'}.json`;
   link.click();
-  
+
   URL.revokeObjectURL(url);
 };
 
@@ -350,11 +350,11 @@ export const exportAsJSON = (diagram: Diagram) => {
 const wrapSVGText = (text: string, maxWidth: number, fontSize: number) => {
   const words = text.split(/\s+/);
   if (words.length <= 1) return [text];
-  
+
   const maxCharsPerLine = Math.floor(maxWidth / (fontSize * 0.6));
   const lines: string[] = [];
   let currentLine = '';
-  
+
   for (const word of words) {
     if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
       currentLine = currentLine ? currentLine + ' ' + word : word;
@@ -363,29 +363,29 @@ const wrapSVGText = (text: string, maxWidth: number, fontSize: number) => {
       currentLine = word;
     }
   }
-  
+
   if (currentLine) lines.push(currentLine);
   return lines;
 };
 
 // Generate SVG text element(s) with proper wrapping
 const generateSVGText = (
-  text: string, 
-  x: number, 
-  y: number, 
-  fontSize: number, 
-  fill: string, 
+  text: string,
+  x: number,
+  y: number,
+  fontSize: number,
+  fill: string,
   className: string,
   maxWidth?: number
 ) => {
   if (!maxWidth || text.length <= 20) {
     return `<text x="${x}" y="${y}" font-size="${fontSize}" class="${className}" fill="${fill}" text-anchor="middle">${text}</text>`;
   }
-  
+
   const lines = wrapSVGText(text, maxWidth, fontSize);
   const lineHeight = fontSize * 1.2;
   const startY = y - ((lines.length - 1) * lineHeight) / 2;
-  
+
   return lines.map((line, index) =>
     `<text x="${x}" y="${startY + index * lineHeight}" font-size="${fontSize}" class="${className}" fill="${fill}" text-anchor="middle">${line}</text>`
   ).join('\n');
@@ -395,7 +395,7 @@ const generateSVGText = (
 export const exportAsSVG = (diagram: Diagram) => {
   const { nodes, edges } = diagram;
   const bounds = calculateDiagramBounds(nodes);
-  
+
   // SVG header with proper sizing
   let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" 
@@ -533,15 +533,15 @@ export const exportAsSVG = (diagram: Diagram) => {
   });
 
   svgContent += '</svg>';
-  
+
   const dataBlob = new Blob([svgContent], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(dataBlob);
-  
+
   const link = document.createElement('a');
   link.href = url;
   link.download = `${diagram.name || 'pragma-graph'}.svg`;
   link.click();
-  
+
   URL.revokeObjectURL(url);
 };
 
@@ -573,7 +573,7 @@ const isLaTeXContent = (text: string): boolean => {
     /\\mathcal\{/, // Calligraphic
     /\\text\{/, // Text in math mode
   ];
-  
+
   return latexPatterns.some(pattern => pattern.test(text));
 };
 
@@ -582,7 +582,7 @@ const escapeLaTeXText = (text: string): string => {
     // Preserve LaTeX content, only escape TikZ-breaking characters
     return text.replace(/([&%])/g, '\\$1');
   }
-  
+
   // Regular text escaping
   return text
     .replace(/\\/g, '\\textbackslash{}')
@@ -594,16 +594,16 @@ const escapeLaTeXText = (text: string): string => {
 // Generate TikZ code for LaTeX export
 const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
   if (nodes.length === 0) return '\\begin{tikzpicture}\n\\end{tikzpicture}';
-  
+
   // Calculate bounds and normalize coordinates
   const bounds = calculateDiagramBounds(nodes);
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerY = (bounds.minY + bounds.maxY) / 2;
-  
+
   // Scale to fit within reasonable LaTeX coordinates (roughly -10 to 10)
   const maxDimension = Math.max(bounds.width, bounds.height);
   const scale = maxDimension > 0 ? 15 / maxDimension : 1; // Target max coordinate of ±7.5
-  
+
   let tikz = `\\begin{tikzpicture}\n\n`;
 
   const colorMap = new Map<string, string>();
@@ -638,7 +638,25 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
     // Normalize coordinates relative to center and scale appropriately
     const x = ((pos.x - centerX) * scale).toFixed(2);
     const y = (-(pos.y - centerY) * scale).toFixed(2); // Flip Y axis for LaTeX
-    const label = escapeLaTeXText(node.label);
+
+    // Construct label with secondary label and subscript
+    let labelContent = escapeLaTeXText(node.label);
+    if (node.secondaryLabel) {
+      labelContent += `\\\\ ${escapeLaTeXText(node.secondaryLabel)}`;
+    }
+    if (node.subscript) {
+      // Use math mode for subscript to ensure it renders correctly
+      labelContent = `$\\text{${labelContent}}_{\\text{${escapeLaTeXText(node.subscript)}}}$`;
+    }
+
+    // Check if node is a container (has children)
+    const isContainer = nodes.some(n => n.parentId === node.id);
+    if (isContainer) {
+      // Containers are typically drawn as background boxes, handled by 'fit' or separate logic
+      // For now, we'll let the node be drawn, but maybe change its style?
+      // Or we can rely on the fact that we're drawing it at its position
+    }
+
     const nodeId = `node${index + 1}`; // Clean, readable node names
     const fillColorName = registerColor(getNodeFillColor(node));
     const strokeColorName = registerColor(getNodeStrokeColor(node));
@@ -669,9 +687,9 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
         break;
     }
 
-    tikz += `\\node[${nodeStyle}] (${nodeId}) at (${x}, ${y}) {${label}};\n`;
+    tikz += `\\node[${nodeStyle}, align=center] (${nodeId}) at (${x}, ${y}) {${labelContent}};\n`;
   });
-  
+
   const convertPoint = (point: Point) => ({
     x: ((point.x - centerX) * scale).toFixed(2),
     y: (-(point.y - centerY) * scale).toFixed(2)
@@ -715,7 +733,12 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
       tikz += `\\draw[${edgeStyle}] (${start.x}, ${start.y}) -- (${end.x}, ${end.y});\n`;
     }
 
-    const labelText = edge.label || (edge.type === 'unmarked' || edge.type === 'custom' ? '' : edge.type);
+    let labelText = edge.label || (edge.type === 'unmarked' || edge.type === 'custom' ? '' : edge.type);
+
+    if (edge.orderNumber !== undefined) {
+      labelText = `${edge.orderNumber}: ${labelText}`;
+    }
+
     if (!labelText) return;
 
     const labelPoint = convertPoint(geometry.labelPosition);
@@ -724,9 +747,9 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
 
     tikz += `  \\node[font=\\scriptsize, fill=white, inner sep=1pt${rotateOption}] at (${labelPoint.x}, ${labelPoint.y}) {${escapeLaTeXText(labelText)}};\n`;
   });
-  
+
   tikz += '\n\\end{tikzpicture}';
-  
+
   return tikz;
 };
 
@@ -734,7 +757,7 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
 export const exportAsLaTeX = (diagram: Diagram) => {
   const { nodes, edges } = diagram;
   const tikzCode = generateTikZCode(nodes, edges);
-  
+
   // Generate diagram metadata
   const diagramTitle = diagram.name || 'Pragma Graph Diagram';
   const hasVocab = nodes.some(n => n.type === 'vocabulary');
@@ -742,12 +765,12 @@ export const exportAsLaTeX = (diagram: Diagram) => {
   const hasTest = nodes.some(n => n.type === 'test');
   const hasOperate = nodes.some(n => n.type === 'operate');
   const hasResultant = edges.some(e => e.isResultant);
-  
+
   const latexDocument = `\\documentclass[11pt]{article}
 \\usepackage[margin=1in]{geometry}
 \\usepackage{tikz}
 \\usepackage{caption}
-\\usetikzlibrary{positioning,shapes.geometric,arrows.meta}
+\\usetikzlibrary{positioning,shapes.geometric,arrows.meta,fit,backgrounds}
 
 % Define academic-friendly colors
 \\definecolor{vocabcolor}{RGB}{25,118,210}
@@ -783,12 +806,12 @@ ${hasResultant ? '% \\item \\textbf{Dashed edges}: Resultant relationships (deri
 
   const dataBlob = new Blob([latexDocument], { type: 'text/plain' });
   const url = URL.createObjectURL(dataBlob);
-  
+
   const link = document.createElement('a');
   link.href = url;
   link.download = `${diagram.name || 'pragma-graph'}.tex`;
   link.click();
-  
+
   URL.revokeObjectURL(url);
 };
 
@@ -800,13 +823,13 @@ export const importFromJSON = (onImport: ImportDiagramCallback) => {
   input.onchange = (event) => {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const jsonStr = e.target?.result as string;
         const importedData = JSON.parse(jsonStr);
-        
+
         // Validate the diagram structure
         if (!importedData.nodes || !Array.isArray(importedData.nodes)) {
           throw new Error('Invalid diagram format: missing or invalid nodes array');
@@ -814,7 +837,7 @@ export const importFromJSON = (onImport: ImportDiagramCallback) => {
         if (!importedData.edges || !Array.isArray(importedData.edges)) {
           throw new Error('Invalid diagram format: missing or invalid edges array');
         }
-        
+
         // Entry/exit points are optional (for backward compatibility)
         if (importedData.entryPoints && !Array.isArray(importedData.entryPoints)) {
           throw new Error('Invalid diagram format: entryPoints must be an array');
@@ -822,7 +845,7 @@ export const importFromJSON = (onImport: ImportDiagramCallback) => {
         if (importedData.exitPoints && !Array.isArray(importedData.exitPoints)) {
           throw new Error('Invalid diagram format: exitPoints must be an array');
         }
-        
+
         // Validate node structure
         for (const node of importedData.nodes) {
           if (!node.id || !node.type || !node.position || !node.label) {
@@ -832,7 +855,7 @@ export const importFromJSON = (onImport: ImportDiagramCallback) => {
             throw new Error(`Invalid node type: ${node.type}`);
           }
         }
-        
+
         // Validate edge structure
         for (const edge of importedData.edges) {
           if (!edge.id || !edge.type) {
@@ -845,7 +868,7 @@ export const importFromJSON = (onImport: ImportDiagramCallback) => {
             }
           }
         }
-        
+
         // Create proper diagram object
         const diagram: Diagram = {
           id: importedData.id || Date.now().toString(),
@@ -862,20 +885,20 @@ export const importFromJSON = (onImport: ImportDiagramCallback) => {
             description: importedData.metadata?.description
           }
         };
-        
+
         // Confirm replacement and import
         if (confirm('This will replace your current diagram. Continue?')) {
           onImport(diagram);
         }
-        
+
       } catch (error) {
         console.error('Failed to import diagram:', error);
         alert(`Failed to import diagram: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     };
-    
+
     reader.readAsText(file);
   };
-  
+
   input.click();
 };
