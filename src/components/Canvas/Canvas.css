@@ -11,6 +11,7 @@
   cursor: crosshair;
   background: radial-gradient(circle, #e8e8e8 1px, transparent 1px);
   background-size: 20px 20px;
+  touch-action: none; /* Prevents passive event listener warning from D3 zoom */
 }
 
 .diagram-canvas.select-mode {

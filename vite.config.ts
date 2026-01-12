@@ -45,8 +45,7 @@ export default defineConfig({
         clientsClaim: true
       },
       devOptions: {
-        enabled: true,
-        type: 'module'
+        enabled: false // Disabled to avoid stale service worker issues in dev
       }
     })
   ],

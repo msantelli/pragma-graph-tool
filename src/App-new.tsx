@@ -2,6 +2,7 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { store } from './store/store';
 import { InstallPrompt, PWAStatus } from './components/PWAComponents';
+import MobileWarning from './components/MobileWarning';
 import { Header } from './components/Header';
 import { Canvas } from './components/Canvas';
 import { EdgeTypeSelector } from './components/EdgeTypeSelector';
@@ -296,6 +297,9 @@ const AppContent: React.FC = () => {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Mobile Warning */}
+      <MobileWarning />
+
       {/* PWA Components */}
       <PWAStatus />
       <InstallPrompt />

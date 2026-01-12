@@ -6,7 +6,7 @@
   "author": {
     "name": "Mauro Santelli",
     "email": "mesantelli@uba.ar",
-    "institution": "Universidad de Buenos Aires - Instituto de Investigaciones Filos\u00f3ficas, SADAF (CONICET) - GEML"
+    "institution": "Universidad de Buenos Aires - Instituto de Investigaciones Filosóficas, SADAF (CONICET) - GEML"
   },
   "type": "module",
   "main": "electron/main.cjs",
