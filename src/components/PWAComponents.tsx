@@ -93,12 +93,15 @@ export const InstallPrompt: React.FC = () => {
 
 export const PWAStatus: React.FC = () => {
   const { isInstalled, isOnline } = usePWA();
-  
+
+  // Only show status when there's something noteworthy (offline or installed)
+  if (isOnline && !isInstalled) return null;
+
   return (
     <div style={{
       position: 'fixed',
       top: '10px',
-      left: '10px',
+      right: '10px',
       display: 'flex',
       gap: '8px',
       zIndex: 1000
@@ -112,19 +115,21 @@ export const PWAStatus: React.FC = () => {
           fontSize: '12px',
           fontWeight: 'bold'
         }}>
-          📱 Installed
+          Installed
         </div>
       )}
-      <div style={{
-        backgroundColor: isOnline ? '#4caf50' : '#ff9800',
-        color: 'white',
-        padding: '4px 8px',
-        borderRadius: '12px',
-        fontSize: '12px',
-        fontWeight: 'bold'
-      }}>
-        {isOnline ? '🌐 Online' : '📡 Offline'}
-      </div>
+      {!isOnline && (
+        <div style={{
+          backgroundColor: '#ff9800',
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '12px',
+          fontSize: '12px',
+          fontWeight: 'bold'
+        }}>
+          Offline
+        </div>
+      )}
     </div>
   );
 };

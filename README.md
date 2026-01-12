@@ -1,14 +1,17 @@
 # Pragma Graph Tool
 
-Research-oriented editor for Meaning-Use Diagrams (MUD) and Test-Operate-Test-Exit (TOTE) cycles. The current branch reintroduces the Redux/D3 architecture with modular UI panels, grid tooling, and publication-grade exports.
+Research-oriented editor for Meaning-Use Diagrams (MUD) and Test-Operate-Test-Exit (TOTE) cycles based on Robert Brandom's inferential pragmatics. Built with Redux/D3 architecture, modular UI panels, and publication-grade exports.
 
 ## Capabilities
-- MUD, TOTE, and hybrid workspaces with mode-specific node palettes
+- MUD, TOTE, HYBRID, and GENERIC workspaces with mode-specific node palettes
 - Qualified and unqualified edge types with auto-detection or manual selection
+- Nested nodes: group nodes into containers for hierarchical diagrams
 - Entry/exit anchors for TOTE cycles plus optional unmarked connectors
-- Node and edge inspectors for size, color, resultant status, and labels
-- Undo/redo stack, grid overlay, and optional snap-to-grid positioning
-- Exports to JSON, SVG, and LaTeX/TikZ with metadata preservation (LaTeX output ships commented legend notes for unobtrusive inclusion)
+- Node and edge inspectors for labels, subscripts, colors, and resultant status
+- Properties sidebar for quick editing of selected elements
+- Collapsible legend showing node/edge types for current mode
+- Undo/redo stack, grid overlay, and snap-to-grid positioning
+- Exports to JSON, SVG, and LaTeX/TikZ with container support
 
 ## Getting Started
 ```bash
@@ -16,18 +19,32 @@ npm install
 npm run dev      # Vite dev server on http://localhost:5173
 npm run build    # Production bundle
 npm run lint     # ESLint
-npm run type-check
+npx tsc --noEmit # Type check
 ```
 Desktop builds remain under `dist-electron/` and are not covered by this README.
 
 ## Using the Editor
-1. Select MUD, TOTE, or HYBRID in the header to configure tools and edge semantics.
-2. Choose a tool (select, node type, edge, entry, exit) and click on the canvas.
-3. Toggle the grid and snapping controls when exact spacing is required.
-4. Open the node or edge panels to adjust captions, colours, size, or resultant flags.
-5. Export from the header: JSON for round-trips, SVG for slides, LaTeX/TikZ for papers.
+1. Select MUD, TOTE, HYBRID, or GENERIC in the header to configure available tools.
+2. Choose a tool and click on the canvas to add nodes.
+3. Use the edge tool to connect nodes; edge types are inferred or manually selected.
+4. Select multiple nodes and click Group to create nested containers.
+5. Toggle grid and snapping controls for precise positioning.
+6. Use the Properties sidebar (right) to edit selected nodes or edges.
+7. Export from the header: JSON for round-trips, SVG for slides, LaTeX/TikZ for papers.
 
-Keyboard shortcuts: `Delete/Backspace` removes the current selection. Undo/redo map to the buttons in the header (native shortcuts are planned but not yet wired).
+## Keyboard Shortcuts
+Press `?` to view all shortcuts. Key bindings:
+- `S` Select tool
+- `V` Vocabulary node (MUD)
+- `P` Practice node (MUD)
+- `T` Test node (TOTE)
+- `O` Operate node (TOTE)
+- `E` Edge tool
+- `G` Toggle grid
+- `Ctrl+Z` Undo
+- `Ctrl+Y` Redo
+- `Delete` Remove selection
+- `Esc` Deselect / cancel
 
 ## Architecture Notes
 - State: Redux Toolkit (`diagramSlice`, `uiSlice`) with history tracking and modal flags
