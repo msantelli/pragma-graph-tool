@@ -16,6 +16,10 @@ export interface NodeStyle {
   borderColor?: string;
   textColor?: string;
   shape?: 'circle' | 'rectangle' | 'ellipse' | 'diamond' | 'hexagon' | 'triangle' | 'star';
+  // Container styling (for nodes that contain other nodes)
+  containerPadding?: number;
+  containerMinWidth?: number;
+  containerMinHeight?: number;
 }
 
 export interface EdgeStyle {
@@ -30,9 +34,10 @@ export type NodeType = 'vocabulary' | 'practice' | 'test' | 'operate' | 'exit' |
 export interface BaseNode {
   id: string;
   type: NodeType;
-  position: Point;
+  position: Point;  // Absolute if no parent, relative to parent if parentId is set
   label: string;
   style?: NodeStyle;
+  parentId?: string | null;  // ID of parent container node (null/undefined = top-level)
 }
 
 export interface VocabularyNode extends BaseNode {

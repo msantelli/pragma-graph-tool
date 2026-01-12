@@ -4,10 +4,22 @@ import { useD3 } from '../../hooks/useD3';
 import { useDiagram } from '../../hooks/useDiagram';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { setZoom, setPanOffset, setCanvasSize, setPendingEdge, setShowEdgeTypeSelector, setPendingEntryExit, setSelectedNodeForCustomization, setSelectedEdgeForModification } from '../../store/uiSlice';
-import { addEdge, addEntryPoint, addExitPoint, updateEntryPoint, saveToHistory } from '../../store/diagramSlice';
+import { addEdge, addEntryPoint, addExitPoint, updateEntryPoint, saveToHistory, setNodeParent } from '../../store/diagramSlice';
 import { Grid } from '../Grid';
 import { getSnappedPosition } from '../../utils/gridUtils';
-import { getNodeColors, getNodeDimensions, getNodeShape, getNodeFontSize } from '../../utils/nodeUtils';
+import {
+  getNodeColors,
+  getNodeDimensions,
+  getNodeShape,
+  getNodeFontSize,
+  toAbsolutePosition,
+  toRelativePosition,
+  getChildNodes,
+  calculateContainerBounds,
+  sortNodesForRendering,
+  findContainerAtPosition,
+  isValidDropTarget
+} from '../../utils/nodeUtils';
 import { getEdgeColor } from '../../utils/edgeUtils';
 import type { Node, Edge, Point } from '../../types/all';
 import './Canvas.css';
@@ -287,15 +299,20 @@ export const Canvas: React.FC = () => {
 
     edgeSelection.exit().remove();
 
-    // Render nodes
+    // Render nodes (sorted so parents render before children)
+    const sortedNodes = sortNodesForRendering(nodes);
     const nodeGroup = g.append('g').attr('class', 'nodes');
     const nodeSelection = nodeGroup.selectAll<SVGGElement, Node>('.node')
-      .data(nodes, (d) => d?.id ?? '');
+      .data(sortedNodes, (d) => d?.id ?? '');
 
     const nodeEnter = nodeSelection.enter()
       .append('g')
       .attr('class', 'node')
-      .attr('transform', (d: Node) => `translate(${d.position.x}, ${d.position.y})`)
+      .attr('transform', (d: Node) => {
+        // Use absolute position for rendering
+        const absolutePos = toAbsolutePosition(d, nodes);
+        return `translate(${absolutePos.x}, ${absolutePos.y})`;
+      })
       .style('cursor', 'pointer');
 
     // Add shapes based on shape property
@@ -308,7 +325,25 @@ export const Canvas: React.FC = () => {
       const shape = getNodeShape(d);
       const strokeColor = isEdgeSource ? '#FF9800' : (isSelected ? '#2196F3' : colors.border);
       const strokeWidth = isEdgeSource ? 4 : (isSelected ? 3 : 1);
-      
+
+      // Render container background if node has children
+      const children = getChildNodes(d.id, nodes);
+      if (children.length > 0) {
+        const containerBounds = calculateContainerBounds(children, nodes);
+        nodeGroup.append('rect')
+          .attr('class', 'container-background')
+          .attr('x', containerBounds.centerX - containerBounds.width / 2)
+          .attr('y', containerBounds.centerY - containerBounds.height / 2)
+          .attr('width', containerBounds.width)
+          .attr('height', containerBounds.height)
+          .attr('rx', 8)
+          .attr('fill', colors.background)
+          .attr('fill-opacity', 0.2)
+          .attr('stroke', colors.border)
+          .attr('stroke-width', isSelected ? 2 : 1)
+          .attr('stroke-dasharray', '6,3');
+      }
+
       switch (shape) {
         case 'circle':
           nodeGroup.append('circle')
@@ -413,7 +448,7 @@ export const Canvas: React.FC = () => {
     // Add click and drag behavior to all nodes
     nodeEnter
       .call(d3.drag<SVGGElement, Node>()
-        .on('start', function(event, d) {
+        .on('start', function(event, _d) {
           // Store initial position to detect if this is a click or drag
           const element = d3.select(this);
           element.property('__dragStart', { x: event.x, y: event.y });
@@ -462,11 +497,61 @@ export const Canvas: React.FC = () => {
         .on('end', function(event, d) {
           const element = d3.select(this);
           const wasDragged = element.property('__wasDragged');
-          
+
           if (wasDragged && selectedTool === 'select') {
-            // This was a drag - update node position
-            const snappedPosition = getSnappedPosition({ x: event.x, y: event.y }, gridSpacing, snapToGrid);
-            moveNode(d.id, snappedPosition);
+            // This was a drag - check for reparenting
+            const dropPos = { x: event.x, y: event.y };
+            const snappedPosition = getSnappedPosition(dropPos, gridSpacing, snapToGrid);
+
+            // Find potential drop target (container node under cursor)
+            const dropTarget = findContainerAtPosition(dropPos, nodes, d.id);
+
+            if (dropTarget && isValidDropTarget(d.id, dropTarget.id, nodes)) {
+              // Reparent: convert to position relative to new parent
+              const relativePos = toRelativePosition(snappedPosition, dropTarget, nodes);
+              dispatch(saveToHistory());
+              dispatch(setNodeParent({
+                nodeId: d.id,
+                parentId: dropTarget.id,
+                newPosition: relativePos
+              }));
+            } else if (d.parentId) {
+              // Node has a parent - check if dragged outside parent bounds
+              const parent = nodes.find(n => n.id === d.parentId);
+              if (parent) {
+                const parentAbsPos = toAbsolutePosition(parent, nodes);
+                const children = getChildNodes(parent.id, nodes);
+                const bounds = calculateContainerBounds(children, nodes);
+                const halfW = bounds.width / 2;
+                const halfH = bounds.height / 2;
+
+                // Check if new position is outside parent
+                const isOutside =
+                  dropPos.x < parentAbsPos.x - halfW ||
+                  dropPos.x > parentAbsPos.x + halfW ||
+                  dropPos.y < parentAbsPos.y - halfH ||
+                  dropPos.y > parentAbsPos.y + halfH;
+
+                if (isOutside) {
+                  // Unparent: convert to absolute position
+                  dispatch(saveToHistory());
+                  dispatch(setNodeParent({
+                    nodeId: d.id,
+                    parentId: null,
+                    newPosition: snappedPosition
+                  }));
+                } else {
+                  // Stay inside parent: update relative position
+                  const relativePos = toRelativePosition(snappedPosition, parent, nodes);
+                  moveNode(d.id, relativePos);
+                }
+              } else {
+                moveNode(d.id, snappedPosition);
+              }
+            } else {
+              // Top-level node, just move it
+              moveNode(d.id, snappedPosition);
+            }
           } else if (!wasDragged) {
             // This was a click - handle click events
             if (selectedTool === 'edge') {
@@ -676,19 +761,23 @@ function getEdgeOffset(currentEdge: Edge, allEdges: Edge[]): number {
 }
 
 // Helper function to create curved path for multiple edges
-function computeCurvedEdgeData(sourceNode: Node, targetNode: Node, offset: number) {
-  const midX = (sourceNode.position.x + targetNode.position.x) / 2;
-  const midY = (sourceNode.position.y + targetNode.position.y) / 2;
+function computeCurvedEdgeData(sourceNode: Node, targetNode: Node, offset: number, allNodes?: Node[]) {
+  // Use absolute positions for nested nodes
+  const sourcePos = allNodes ? toAbsolutePosition(sourceNode, allNodes) : sourceNode.position;
+  const targetPos = allNodes ? toAbsolutePosition(targetNode, allNodes) : targetNode.position;
 
-  const dx = targetNode.position.x - sourceNode.position.x;
-  const dy = targetNode.position.y - sourceNode.position.y;
+  const midX = (sourcePos.x + targetPos.x) / 2;
+  const midY = (sourcePos.y + targetPos.y) / 2;
+
+  const dx = targetPos.x - sourcePos.x;
+  const dy = targetPos.y - sourcePos.y;
   const length = Math.sqrt(dx * dx + dy * dy);
 
   if (length === 0) {
     return {
       path: '',
-      source: sourceNode.position,
-      target: targetNode.position,
+      source: sourcePos,
+      target: targetPos,
       control: { x: midX, y: midY }
     };
   }
@@ -700,8 +789,8 @@ function computeCurvedEdgeData(sourceNode: Node, targetNode: Node, offset: numbe
   const controlY = midY + perpY * offset;
 
   const controlPos = { x: controlX, y: controlY };
-  const source = getNodeConnectionPoint(sourceNode, controlPos);
-  const target = getNodeConnectionPoint(targetNode, controlPos);
+  const source = getNodeConnectionPoint(sourceNode, controlPos, allNodes);
+  const target = getNodeConnectionPoint(targetNode, controlPos, allNodes);
 
   return {
     path: `M ${source.x} ${source.y} Q ${controlX} ${controlY} ${target.x} ${target.y}`,
@@ -711,40 +800,38 @@ function computeCurvedEdgeData(sourceNode: Node, targetNode: Node, offset: numbe
   };
 }
 
-function getCurvedEdgePath(sourceNode: Node, targetNode: Node, offset: number): string {
-  return computeCurvedEdgeData(sourceNode, targetNode, offset).path;
-}
-
 // Helper function to create reflexive loop path
-function getReflexiveEdgePath(node: Node): string {
+function getReflexiveEdgePath(node: Node, allNodes?: Node[]): string {
   const dimensions = getNodeDimensions(node);
   const shape = getNodeShape(node);
-  
+  // Use absolute position for nested nodes
+  const pos = allNodes ? toAbsolutePosition(node, allNodes) : node.position;
+
   // Position the loop at the top-right of the node
   let loopStartX, loopStartY, loopEndX, loopEndY;
-  
+
   if (shape === 'rectangle') {
     // For rectangles, start and end on the right edge
-    loopStartX = node.position.x + dimensions.width / 2;
-    loopStartY = node.position.y - dimensions.height / 4;
-    loopEndX = node.position.x + dimensions.width / 2;
-    loopEndY = node.position.y + dimensions.height / 4;
+    loopStartX = pos.x + dimensions.width / 2;
+    loopStartY = pos.y - dimensions.height / 4;
+    loopEndX = pos.x + dimensions.width / 2;
+    loopEndY = pos.y + dimensions.height / 4;
   } else {
     // For circles, ellipses, and other shapes
     const radius = dimensions.radius;
-    loopStartX = node.position.x + radius * 0.7;
-    loopStartY = node.position.y - radius * 0.7;
-    loopEndX = node.position.x + radius * 0.7;
-    loopEndY = node.position.y + radius * 0.7;
+    loopStartX = pos.x + radius * 0.7;
+    loopStartY = pos.y - radius * 0.7;
+    loopEndX = pos.x + radius * 0.7;
+    loopEndY = pos.y + radius * 0.7;
   }
-  
+
   // Create a loop that goes out to the right
   const loopSize = Math.max(dimensions.width, dimensions.height) * 0.8;
   const controlX1 = loopStartX + loopSize;
   const controlY1 = loopStartY;
   const controlX2 = loopEndX + loopSize;
   const controlY2 = loopEndY;
-  
+
   return `M ${loopStartX} ${loopStartY} C ${controlX1} ${controlY1} ${controlX2} ${controlY2} ${loopEndX} ${loopEndY}`;
 }
 
@@ -768,11 +855,15 @@ function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeome
   const targetNode = nodes.find(n => n.id === edge.target);
   if (!sourceNode || !targetNode) return null;
 
+  // Get absolute positions for nested nodes
+  const sourcePos = toAbsolutePosition(sourceNode, nodes);
+  const targetPos = toAbsolutePosition(targetNode, nodes);
+
   if (edge.source === edge.target) {
-    const path = getReflexiveEdgePath(sourceNode);
+    const path = getReflexiveEdgePath(sourceNode, nodes);
     const dimensions = getNodeDimensions(sourceNode);
-    const labelX = sourceNode.position.x + Math.max(dimensions.width, dimensions.height) * 0.8;
-    const labelY = sourceNode.position.y - Math.max(dimensions.height, 40) * 0.6;
+    const labelX = sourcePos.x + Math.max(dimensions.width, dimensions.height) * 0.8;
+    const labelY = sourcePos.y - Math.max(dimensions.height, 40) * 0.6;
     return {
       path,
       labelPosition: { x: labelX, y: labelY },
@@ -783,8 +874,8 @@ function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeome
   const offset = getEdgeOffset(edge, allEdges);
 
   if (offset === 0) {
-    const start = getNodeConnectionPoint(sourceNode, targetNode.position);
-    const end = getNodeConnectionPoint(targetNode, sourceNode.position);
+    const start = getNodeConnectionPoint(sourceNode, targetPos, nodes);
+    const end = getNodeConnectionPoint(targetNode, sourcePos, nodes);
     const path = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
 
     const midX = (start.x + end.x) / 2;
@@ -807,7 +898,7 @@ function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeome
     };
   }
 
-  const curveData = computeCurvedEdgeData(sourceNode, targetNode, offset);
+  const curveData = computeCurvedEdgeData(sourceNode, targetNode, offset, nodes);
   const { source, target, control } = curveData;
   const t = 0.5;
   const oneMinusT = 1 - t;
@@ -844,28 +935,31 @@ function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeome
 }
 
 // Helper function to get connection point on node boundary
-function getNodeConnectionPoint(node: Node, targetPos: Point): Point {
-  const { x: nodeX, y: nodeY } = node.position;
+// Uses absolute positions for nested nodes
+function getNodeConnectionPoint(node: Node, targetPos: Point, allNodes?: Node[]): Point {
+  // Get absolute position if allNodes provided, otherwise use node.position directly
+  const nodePos = allNodes ? toAbsolutePosition(node, allNodes) : node.position;
+  const { x: nodeX, y: nodeY } = nodePos;
   const { x: targetX, y: targetY } = targetPos;
-  
+
   const dx = targetX - nodeX;
   const dy = targetY - nodeY;
   const distance = Math.sqrt(dx * dx + dy * dy);
-  
+
   if (distance === 0) return { x: nodeX, y: nodeY };
-  
+
   const normalizedDx = dx / distance;
   const normalizedDy = dy / distance;
-  
+
   // Get actual node dimensions and shape
   const dimensions = getNodeDimensions(node);
   const shape = getNodeShape(node);
-  
+
   let offsetX = 0;
   let offsetY = 0;
-  
+
   switch (shape) {
-    case 'ellipse':
+    case 'ellipse': {
       // Ellipse boundary using actual dimensions
       const rx = dimensions.width / 2;
       const ry = dimensions.height / 2;
@@ -873,8 +967,9 @@ function getNodeConnectionPoint(node: Node, targetPos: Point): Point {
       offsetX = rx * Math.cos(t);
       offsetY = ry * Math.sin(t);
       break;
-      
-    case 'rectangle':
+    }
+
+    case 'rectangle': {
       // Rectangle boundary using actual dimensions
       const w = dimensions.width / 2;
       const h = dimensions.height / 2;
@@ -886,14 +981,16 @@ function getNodeConnectionPoint(node: Node, targetPos: Point): Point {
         offsetY = normalizedDy > 0 ? h : -h;
       }
       break;
-      
-    case 'diamond':
+    }
+
+    case 'diamond': {
       // Diamond boundary - approximate as circle for now
       const diamondRadius = dimensions.radius * 0.8; // Slightly smaller than actual
       offsetX = normalizedDx * diamondRadius;
       offsetY = normalizedDy * diamondRadius;
       break;
-      
+    }
+
     case 'circle':
     case 'triangle':
     case 'hexagon':
@@ -904,7 +1001,7 @@ function getNodeConnectionPoint(node: Node, targetPos: Point): Point {
       offsetY = normalizedDy * dimensions.radius;
       break;
   }
-  
+
   return {
     x: nodeX + offsetX,
     y: nodeY + offsetY

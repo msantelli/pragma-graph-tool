@@ -1,4 +1,15 @@
-import { getNodeFontSize, getNodeFillColor, getNodeStrokeColor, getNodeTextColor, getNodeDimensions, getNodeShape } from './nodeUtils';
+import {
+  getNodeFontSize,
+  getNodeFillColor,
+  getNodeStrokeColor,
+  getNodeTextColor,
+  getNodeDimensions,
+  getNodeShape,
+  toAbsolutePosition,
+  sortNodesForRendering,
+  getChildNodes,
+  calculateContainerBounds
+} from './nodeUtils';
 import type { Diagram, Node, Edge, Point } from '../types/all';
 
 const EDGE_OFFSET_RANGE = 60;
@@ -49,8 +60,10 @@ const getEdgeOffsetForExport = (currentEdge: Edge, allEdges: Edge[]): number => 
   return baseOffset * orientationSign;
 };
 
-const getNodeConnectionPointForExport = (node: Node, targetPos: Point): Point => {
-  const { x: nodeX, y: nodeY } = node.position;
+const getNodeConnectionPointForExport = (node: Node, targetPos: Point, allNodes: Node[]): Point => {
+  // Use absolute position for nested nodes
+  const nodePos = toAbsolutePosition(node, allNodes);
+  const { x: nodeX, y: nodeY } = nodePos;
   const { x: targetX, y: targetY } = targetPos;
 
   const dx = targetX - nodeX;
@@ -108,16 +121,20 @@ const getNodeConnectionPointForExport = (node: Node, targetPos: Point): Point =>
   };
 };
 
-const computeCurvedEdgeGeometry = (sourceNode: Node, targetNode: Node, offset: number): ExportEdgeGeometry => {
-  const midX = (sourceNode.position.x + targetNode.position.x) / 2;
-  const midY = (sourceNode.position.y + targetNode.position.y) / 2;
-  const dx = targetNode.position.x - sourceNode.position.x;
-  const dy = targetNode.position.y - sourceNode.position.y;
+const computeCurvedEdgeGeometry = (sourceNode: Node, targetNode: Node, offset: number, allNodes: Node[]): ExportEdgeGeometry => {
+  // Use absolute positions for nested nodes
+  const sourcePos = toAbsolutePosition(sourceNode, allNodes);
+  const targetPos = toAbsolutePosition(targetNode, allNodes);
+
+  const midX = (sourcePos.x + targetPos.x) / 2;
+  const midY = (sourcePos.y + targetPos.y) / 2;
+  const dx = targetPos.x - sourcePos.x;
+  const dy = targetPos.y - sourcePos.y;
   const length = Math.sqrt(dx * dx + dy * dy);
 
   if (length === 0) {
-    const start = sourceNode.position;
-    const end = targetNode.position;
+    const start = sourcePos;
+    const end = targetPos;
     return {
       type: 'straight',
       start,
@@ -134,8 +151,8 @@ const computeCurvedEdgeGeometry = (sourceNode: Node, targetNode: Node, offset: n
   const controlY = midY + perpY * offset;
 
   const controlPos = { x: controlX, y: controlY };
-  const start = getNodeConnectionPointForExport(sourceNode, controlPos);
-  const end = getNodeConnectionPointForExport(targetNode, controlPos);
+  const start = getNodeConnectionPointForExport(sourceNode, controlPos, allNodes);
+  const end = getNodeConnectionPointForExport(targetNode, controlPos, allNodes);
   const path = `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`;
 
   const t = 0.5;
@@ -173,9 +190,13 @@ const computeCurvedEdgeGeometry = (sourceNode: Node, targetNode: Node, offset: n
   };
 };
 
-const computeStraightEdgeGeometry = (sourceNode: Node, targetNode: Node): ExportEdgeGeometry => {
-  const start = getNodeConnectionPointForExport(sourceNode, targetNode.position);
-  const end = getNodeConnectionPointForExport(targetNode, sourceNode.position);
+const computeStraightEdgeGeometry = (sourceNode: Node, targetNode: Node, allNodes: Node[]): ExportEdgeGeometry => {
+  // Use absolute positions for nested nodes
+  const sourcePos = toAbsolutePosition(sourceNode, allNodes);
+  const targetPos = toAbsolutePosition(targetNode, allNodes);
+
+  const start = getNodeConnectionPointForExport(sourceNode, targetPos, allNodes);
+  const end = getNodeConnectionPointForExport(targetNode, sourcePos, allNodes);
   const path = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
 
   const midX = (start.x + end.x) / 2;
@@ -203,9 +224,11 @@ const computeStraightEdgeGeometry = (sourceNode: Node, targetNode: Node): Export
   };
 };
 
-const computeLoopEdgeGeometry = (node: Node): ExportEdgeGeometry => {
+const computeLoopEdgeGeometry = (node: Node, allNodes: Node[]): ExportEdgeGeometry => {
   const dimensions = getNodeDimensions(node);
   const shape = getNodeShape(node);
+  // Use absolute position for nested nodes
+  const pos = toAbsolutePosition(node, allNodes);
 
   let loopStartX: number;
   let loopStartY: number;
@@ -213,16 +236,16 @@ const computeLoopEdgeGeometry = (node: Node): ExportEdgeGeometry => {
   let loopEndY: number;
 
   if (shape === 'rectangle') {
-    loopStartX = node.position.x + dimensions.width / 2;
-    loopStartY = node.position.y - dimensions.height / 4;
-    loopEndX = node.position.x + dimensions.width / 2;
-    loopEndY = node.position.y + dimensions.height / 4;
+    loopStartX = pos.x + dimensions.width / 2;
+    loopStartY = pos.y - dimensions.height / 4;
+    loopEndX = pos.x + dimensions.width / 2;
+    loopEndY = pos.y + dimensions.height / 4;
   } else {
     const radius = dimensions.radius;
-    loopStartX = node.position.x + radius * 0.7;
-    loopStartY = node.position.y - radius * 0.7;
-    loopEndX = node.position.x + radius * 0.7;
-    loopEndY = node.position.y + radius * 0.7;
+    loopStartX = pos.x + radius * 0.7;
+    loopStartY = pos.y - radius * 0.7;
+    loopEndX = pos.x + radius * 0.7;
+    loopEndY = pos.y + radius * 0.7;
   }
 
   const loopSize = Math.max(dimensions.width, dimensions.height) * 0.8;
@@ -231,8 +254,8 @@ const computeLoopEdgeGeometry = (node: Node): ExportEdgeGeometry => {
   const path = `M ${loopStartX} ${loopStartY} C ${control1.x} ${control1.y} ${control2.x} ${control2.y} ${loopEndX} ${loopEndY}`;
 
   const labelPosition = {
-    x: node.position.x + Math.max(dimensions.width, dimensions.height) * 0.8,
-    y: node.position.y - Math.max(dimensions.height, 40) * 0.6
+    x: pos.x + Math.max(dimensions.width, dimensions.height) * 0.8,
+    y: pos.y - Math.max(dimensions.height, 40) * 0.6
   };
 
   return {
@@ -254,16 +277,16 @@ const computeEdgeGeometryForExport = (edge: Edge, nodes: Node[], allEdges: Edge[
   if (!sourceNode || !targetNode) return null;
 
   if (edge.source === edge.target) {
-    return computeLoopEdgeGeometry(sourceNode);
+    return computeLoopEdgeGeometry(sourceNode, nodes);
   }
 
   const offset = getEdgeOffsetForExport(edge, allEdges);
 
   if (offset === 0) {
-    return computeStraightEdgeGeometry(sourceNode, targetNode);
+    return computeStraightEdgeGeometry(sourceNode, targetNode, nodes);
   }
 
-  return computeCurvedEdgeGeometry(sourceNode, targetNode, offset);
+  return computeCurvedEdgeGeometry(sourceNode, targetNode, offset, nodes);
 };
 
 // Type for import callback
@@ -281,11 +304,13 @@ export const calculateDiagramBounds = (nodes: Node[]) => {
   let maxY = -Infinity;
 
   nodes.forEach(node => {
+    // Use absolute position for nested nodes
+    const pos = toAbsolutePosition(node, nodes);
     const padding = 100; // Add padding around nodes
-    minX = Math.min(minX, node.position.x - padding);
-    minY = Math.min(minY, node.position.y - padding);
-    maxX = Math.max(maxX, node.position.x + padding);
-    maxY = Math.max(maxY, node.position.y + padding);
+    minX = Math.min(minX, pos.x - padding);
+    minY = Math.min(minY, pos.y - padding);
+    maxX = Math.max(maxX, pos.x + padding);
+    maxY = Math.max(maxY, pos.y + padding);
   });
 
   return {
@@ -429,20 +454,35 @@ export const exportAsSVG = (diagram: Diagram) => {
 `;
   });
 
-  svgContent += `  
+  svgContent += `
   <!-- Nodes -->
 `;
 
+  // Sort nodes for proper rendering (parents before children)
+  const sortedNodes = sortNodesForRendering(nodes);
+
   // Add nodes
-  nodes.forEach(node => {
+  sortedNodes.forEach(node => {
     const fillColor = getNodeFillColor(node);
     const strokeColor = getNodeStrokeColor(node);
     const textColor = getNodeTextColor(node);
     const dimensions = getNodeDimensions(node);
     const shape = node.style?.shape || getNodeShape(node);
 
-    const cx = node.position.x;
-    const cy = node.position.y;
+    // Use absolute position for nested nodes
+    const pos = toAbsolutePosition(node, nodes);
+    const cx = pos.x;
+    const cy = pos.y;
+
+    // Render container background if node has children
+    const children = getChildNodes(node.id, nodes);
+    if (children.length > 0) {
+      const containerBounds = calculateContainerBounds(children, nodes);
+      // Container position is parent position + center offset of children bounds
+      const containerX = (cx + containerBounds.centerX - containerBounds.width / 2).toFixed(2);
+      const containerY = (cy + containerBounds.centerY - containerBounds.height / 2).toFixed(2);
+      svgContent += `  <rect x="${containerX}" y="${containerY}" width="${containerBounds.width.toFixed(2)}" height="${containerBounds.height.toFixed(2)}" rx="8" fill="${fillColor}" fill-opacity="0.2" stroke="${strokeColor}" stroke-width="1" stroke-dasharray="6,3" />\n`;
+    }
 
     switch (shape) {
       case 'ellipse': {
@@ -589,12 +629,15 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
     tikz += '\n';
   }
 
-  // Add nodes with clean naming and normalized coordinates
+  // Sort nodes for proper rendering and add with clean naming
+  const sortedNodes = sortNodesForRendering(nodes);
   tikz += '% Nodes\n';
-  nodes.forEach((node, index) => {
+  sortedNodes.forEach((node, index) => {
+    // Use absolute position for nested nodes
+    const pos = toAbsolutePosition(node, nodes);
     // Normalize coordinates relative to center and scale appropriately
-    const x = ((node.position.x - centerX) * scale).toFixed(2);
-    const y = (-(node.position.y - centerY) * scale).toFixed(2); // Flip Y axis for LaTeX
+    const x = ((pos.x - centerX) * scale).toFixed(2);
+    const y = (-(pos.y - centerY) * scale).toFixed(2); // Flip Y axis for LaTeX
     const label = escapeLaTeXText(node.label);
     const nodeId = `node${index + 1}`; // Clean, readable node names
     const fillColorName = registerColor(getNodeFillColor(node));

@@ -95,12 +95,30 @@ const diagramSlice = createSlice({
     deleteNode: (state, action: PayloadAction<string>) => {
       if (state.currentDiagram) {
         const nodeId = action.payload;
-        state.currentDiagram.nodes = state.currentDiagram.nodes.filter(n => n.id !== nodeId);
-        // Remove edges connected to this node
-        state.currentDiagram.edges = state.currentDiagram.edges.filter(
-          e => e.source !== nodeId && e.target !== nodeId
+
+        // Collect all descendant node IDs (recursive)
+        const getAllDescendants = (parentId: string): string[] => {
+          const children = state.currentDiagram!.nodes.filter(n => n.parentId === parentId);
+          const childIds = children.map(c => c.id);
+          const grandchildIds = childIds.flatMap(id => getAllDescendants(id));
+          return [...childIds, ...grandchildIds];
+        };
+
+        const descendantIds = getAllDescendants(nodeId);
+        const allIdsToDelete = [nodeId, ...descendantIds];
+
+        // Remove the node and all descendants
+        state.currentDiagram.nodes = state.currentDiagram.nodes.filter(
+          n => !allIdsToDelete.includes(n.id)
         );
-        state.selectedItems = state.selectedItems.filter(id => id !== nodeId);
+
+        // Remove edges connected to any deleted node
+        state.currentDiagram.edges = state.currentDiagram.edges.filter(
+          e => !allIdsToDelete.includes(e.source) && !allIdsToDelete.includes(e.target)
+        );
+
+        // Clear selection of deleted items
+        state.selectedItems = state.selectedItems.filter(id => !allIdsToDelete.includes(id));
         state.currentDiagram.metadata.modified = new Date().toISOString();
       }
     },
@@ -286,15 +304,73 @@ const diagramSlice = createSlice({
           state.currentDiagram.metadata.modified = new Date().toISOString();
         }
       }
+    },
+
+    // Nesting: Set or remove parent for a node
+    setNodeParent: (state, action: PayloadAction<{
+      nodeId: string;
+      parentId: string | null;
+      newPosition: Point;  // Position in new coordinate system (relative if parenting, absolute if unparenting)
+    }>) => {
+      if (state.currentDiagram) {
+        const { nodeId, parentId, newPosition } = action.payload;
+        const nodeIndex = state.currentDiagram.nodes.findIndex(n => n.id === nodeId);
+        if (nodeIndex === -1) return;
+
+        const node = state.currentDiagram.nodes[nodeIndex];
+
+        // Validate: can't parent to self
+        if (parentId === nodeId) return;
+
+        // Validate: can't create cycles (parent can't be a descendant of node)
+        if (parentId) {
+          const isDescendant = (ancestorId: string, descendantId: string): boolean => {
+            const desc = state.currentDiagram!.nodes.find(n => n.id === descendantId);
+            if (!desc || !desc.parentId) return false;
+            if (desc.parentId === ancestorId) return true;
+            return isDescendant(ancestorId, desc.parentId);
+          };
+          if (isDescendant(nodeId, parentId)) return;
+
+          // Validate: max depth of 2
+          // Get depth of target parent
+          const getDepth = (nId: string): number => {
+            const n = state.currentDiagram!.nodes.find(nd => nd.id === nId);
+            if (!n || !n.parentId) return 0;
+            return 1 + getDepth(n.parentId);
+          };
+          const parentDepth = getDepth(parentId);
+
+          // Get max depth of node's subtree
+          const getSubtreeDepth = (nId: string): number => {
+            const children = state.currentDiagram!.nodes.filter(n => n.parentId === nId);
+            if (children.length === 0) return 0;
+            return 1 + Math.max(...children.map(c => getSubtreeDepth(c.id)));
+          };
+          const subtreeDepth = getSubtreeDepth(nodeId);
+
+          // Total depth would be: parentDepth + 1 (for node) + subtreeDepth
+          if (parentDepth + 1 + subtreeDepth > 2) return;
+        }
+
+        // Update the node
+        state.currentDiagram.nodes[nodeIndex] = {
+          ...node,
+          parentId: parentId ?? undefined,
+          position: newPosition
+        } as Node;
+
+        state.currentDiagram.metadata.modified = new Date().toISOString();
+      }
     }
   }
 });
 
-export const { 
-  createDiagram, 
-  addNode, 
-  addEdge, 
-  updateNode, 
+export const {
+  createDiagram,
+  addNode,
+  addEdge,
+  updateNode,
   updateNodePosition,
   deleteNode,
   deleteEdge,
@@ -316,7 +392,8 @@ export const {
   deleteEntryPoint,
   deleteExitPoint,
   updateEntryPoint,
-  updateExitPoint
+  updateExitPoint,
+  setNodeParent
 } = diagramSlice.actions;
 
 export default diagramSlice.reducer;
