@@ -26,6 +26,7 @@ CLAUDE.md
 FURTHER_WORK.md
 AGENTS.md
 GEMINI.md
+COMPLEX_MUD_IMPLEMENTATION.md
 
 # Electron distributables (large files)
 dist-electron/*.exe

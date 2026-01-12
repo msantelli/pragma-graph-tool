@@ -611,19 +611,96 @@ export const Canvas: React.FC = () => {
             const newY = event.y;
             element.attr('transform', `translate(${newX}, ${newY})`);
 
-            // Update connected edges
+            // Update connected edges and labels synchronously
             svg.selectAll<SVGPathElement, Edge>('.edge-path')
               .attr('d', function (edge) {
                 const sourceNode = nodes.find(n => n.id === edge.source);
                 const targetNode = nodes.find(n => n.id === edge.target);
                 if (!sourceNode || !targetNode) return '';
 
-                const updatedSourceNode = edge.source === d.id ? { ...sourceNode, position: { x: newX, y: newY } } : sourceNode;
-                const updatedTargetNode = edge.target === d.id ? { ...targetNode, position: { x: newX, y: newY } } : targetNode;
+                // Create update overrides with absolute positions (clear parentId so toAbsolutePosition uses pos as-is)
+                const updatedSourceNode = edge.source === d.id ? { ...sourceNode, position: { x: newX, y: newY }, parentId: undefined } : sourceNode;
+                const updatedTargetNode = edge.target === d.id ? { ...targetNode, position: { x: newX, y: newY }, parentId: undefined } : targetNode;
 
-                const source = getNodeConnectionPoint(updatedSourceNode, updatedTargetNode.position);
-                const target = getNodeConnectionPoint(updatedTargetNode, updatedSourceNode.position);
-                return `M ${source.x} ${source.y} L ${target.x} ${target.y}`;
+                const geometry = getEdgeGeometry(edge, nodes, edges, updatedSourceNode, updatedTargetNode);
+                return geometry.path;
+              });
+
+            // Update label positions
+            svg.selectAll<SVGTextElement, Edge>('.edge-label')
+              .each(function (edge) {
+                const label = d3.select(this);
+                if (edge.source !== d.id && edge.target !== d.id) return; // Only process connected edges
+
+                const sourceNode = nodes.find(n => n.id === edge.source);
+                const targetNode = nodes.find(n => n.id === edge.target);
+                if (!sourceNode || !targetNode) return;
+
+                const updatedSourceNode = edge.source === d.id ? { ...sourceNode, position: { x: newX, y: newY }, parentId: undefined } : sourceNode;
+                const updatedTargetNode = edge.target === d.id ? { ...targetNode, position: { x: newX, y: newY }, parentId: undefined } : targetNode;
+
+                const geometry = getEdgeGeometry(edge, nodes, edges, updatedSourceNode, updatedTargetNode);
+
+                label
+                  .attr('x', geometry.labelPosition.x)
+                  .attr('y', geometry.labelPosition.y)
+                  .attr('transform', geometry.labelAngle !== null
+                    ? `rotate(${geometry.labelAngle}, ${geometry.labelPosition.x}, ${geometry.labelPosition.y})`
+                    : null);
+              });
+
+            // Update label backgrounds
+            svg.selectAll<SVGRectElement, Edge>('.edge-label-background')
+              .each(function (edge) {
+                if (edge.source !== d.id && edge.target !== d.id) return;
+                if (!edge.showLabelBackground) return;
+
+                const bgRect = d3.select(this);
+                const sourceNode = nodes.find(n => n.id === edge.source);
+                const targetNode = nodes.find(n => n.id === edge.target);
+                if (!sourceNode || !targetNode) return;
+
+                const updatedSourceNode = edge.source === d.id ? { ...sourceNode, position: { x: newX, y: newY }, parentId: undefined } : sourceNode;
+                const updatedTargetNode = edge.target === d.id ? { ...targetNode, position: { x: newX, y: newY }, parentId: undefined } : targetNode;
+
+                const geometry = getEdgeGeometry(edge, nodes, edges, updatedSourceNode, updatedTargetNode);
+
+                // Need to re-read bbox from text element (assumes text updated)
+                // This might be expensive/laggy if text hasn't reflowed? 
+                // Actually we just move the rect to the new center.
+                // We can't easily get new BBox synchronously without DOM reflow.
+                // But width/height shouldn't change, just position.
+
+                const currentWidth = parseFloat(bgRect.attr('width'));
+                const currentHeight = parseFloat(bgRect.attr('height'));
+
+                // Center logic roughly matches original render
+                // Original: x = bbox.x - padding. 
+                // bbox.x depends on geometry.x
+                // We can estimate displacement?
+                // Or just skip background update for drag performance (it catches up on drop).
+                // User said "edges visually dislocated". Labels are secondary. 
+                // But let's try to update transform at least.
+
+                bgRect.attr('transform', geometry.labelAngle !== null
+                  ? `rotate(${geometry.labelAngle}, ${geometry.labelPosition.x}, ${geometry.labelPosition.y})`
+                  : null);
+
+                // To update X/Y correctly we need the text BBox. 
+                // Let's rely on the fact that text-anchor is middle?
+                // If text is centered at labelPosition, we can center rect there too?
+                // Rect is usually drawn relative to text.
+                // Let's just update transform and maybe skip x/y updates to avoid jumping
+                // Actually, finding the text element and asking BBox is standard.
+                const parentGroup = d3.select((this as SVGRectElement).parentNode as SVGGElement);
+                const textEl = parentGroup.select('.edge-label').node() as SVGTextElement;
+                if (textEl) {
+                  const bbox = textEl.getBBox();
+                  const padding = 4;
+                  bgRect
+                    .attr('x', bbox.x - padding)
+                    .attr('y', bbox.y - padding);
+                }
               });
           }
         })
@@ -840,6 +917,18 @@ export const Canvas: React.FC = () => {
     return () => window.removeEventListener('resize', updateSize);
   }, [dispatch]);
 
+  // Tool descriptions for empty state
+  const toolDescriptions: Record<string, string> = {
+    vocabulary: 'Vocabulary (V) - Linguistic/conceptual vocabularies',
+    practice: 'Practice (P) - Abilities, skills, behaviors',
+    test: 'Test (T) - Decision points in TOTE cycles',
+    operate: 'Operate (O) - Actions in TOTE cycles',
+    edge: 'Edge (E) - Connect two nodes',
+    custom: 'Custom (C) - Generic node',
+  };
+
+  const showEmptyState = nodes.length === 0;
+
   return (
     <div ref={containerRef} className="canvas-container">
       <svg
@@ -857,6 +946,71 @@ export const Canvas: React.FC = () => {
           />
         )}
       </svg>
+
+      {/* Empty state overlay */}
+      {showEmptyState && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          textAlign: 'center',
+          color: '#666',
+          pointerEvents: 'none',
+          maxWidth: '400px'
+        }}>
+          <div style={{
+            fontSize: '3rem',
+            marginBottom: '1rem',
+            opacity: 0.3
+          }}>
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
+          </div>
+          <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: 500 }}>
+            Start Building Your Diagram
+          </h2>
+          <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}>
+            {selectedTool === 'select'
+              ? 'Select a tool from the toolbar above, then click on the canvas to add nodes.'
+              : `Click anywhere on the canvas to add a ${selectedTool} node.`}
+          </p>
+
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+            justifyContent: 'center',
+            fontSize: '0.75rem'
+          }}>
+            {Object.entries(toolDescriptions)
+              .filter(([tool]) => selectedTool === 'select' ? true : tool === selectedTool)
+              .slice(0, 4)
+              .map(([tool, desc]) => (
+                <div key={tool} style={{
+                  background: selectedTool === tool ? 'rgba(25, 118, 210, 0.1)' : 'rgba(0,0,0,0.03)',
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: '4px',
+                  border: selectedTool === tool ? '1px solid rgba(25, 118, 210, 0.3)' : '1px solid transparent'
+                }}>
+                  {desc}
+                </div>
+              ))}
+          </div>
+
+          <p style={{ marginTop: '1.5rem', fontSize: '0.8rem', opacity: 0.5 }}>
+            Press <kbd style={{
+              background: '#eee',
+              padding: '2px 6px',
+              borderRadius: '3px',
+              fontFamily: 'monospace',
+              fontSize: '0.75rem'
+            }}>?</kbd> for keyboard shortcuts
+          </p>
+        </div>
+      )}
     </div>
   );
 };
@@ -981,16 +1135,22 @@ function normalizeLabelAngle(angleDeg: number): number {
   if (angle > 90) angle -= 180;
   if (angle <= -90) angle += 180;
   return angle;
-}
+} // Helper function to calculate edge geometry including label position
+const getEdgeGeometry = (
+  edge: Edge,
+  allNodes: Node[],
+  allEdges: Edge[],
+  sourceOverride?: Node,
+  targetOverride?: Node
+) => {
+  const sourceNode = sourceOverride || allNodes.find(n => n.id === edge.source);
+  const targetNode = targetOverride || allNodes.find(n => n.id === edge.target);
 
-function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeometry | null {
-  const sourceNode = nodes.find(n => n.id === edge.source);
-  const targetNode = nodes.find(n => n.id === edge.target);
-  if (!sourceNode || !targetNode) return null;
+  if (!sourceNode || !targetNode) return { path: '', labelPosition: { x: 0, y: 0 }, labelAngle: 0 };
 
-  // Get absolute positions for nested nodes
-  const sourcePos = toAbsolutePosition(sourceNode, nodes);
-  const targetPos = toAbsolutePosition(targetNode, nodes);
+  // Use absolute positions for nested nodes (overrides should have parentId cleared if they are already absolute)
+  const sourcePos = allNodes ? toAbsolutePosition(sourceNode, allNodes) : sourceNode.position;
+  const targetPos = allNodes ? toAbsolutePosition(targetNode, allNodes) : targetNode.position;
 
   // Helper to apply user-defined label offset
   const applyLabelOffset = (baseX: number, baseY: number): { x: number; y: number } => {
@@ -1010,7 +1170,7 @@ function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeome
   };
 
   if (edge.source === edge.target) {
-    const path = getReflexiveEdgePath(sourceNode, nodes);
+    const path = getReflexiveEdgePath(sourceNode, allNodes);
     const dimensions = getNodeDimensions(sourceNode);
     const labelX = sourcePos.x + Math.max(dimensions.width, dimensions.height) * 0.8;
     const labelY = sourcePos.y - Math.max(dimensions.height, 40) * 0.6;
@@ -1025,8 +1185,8 @@ function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeome
   const offset = getEdgeOffset(edge, allEdges);
 
   if (offset === 0) {
-    const start = getNodeConnectionPoint(sourceNode, targetPos, nodes);
-    const end = getNodeConnectionPoint(targetNode, sourcePos, nodes);
+    const start = getNodeConnectionPoint(sourceNode, targetPos, allNodes);
+    const end = getNodeConnectionPoint(targetNode, sourcePos, allNodes);
     const path = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
 
     const t = getLabelT();
@@ -1051,7 +1211,7 @@ function getEdgeGeometry(edge: Edge, nodes: Node[], allEdges: Edge[]): EdgeGeome
     };
   }
 
-  const curveData = computeCurvedEdgeData(sourceNode, targetNode, offset, nodes);
+  const curveData = computeCurvedEdgeData(sourceNode, targetNode, offset, allNodes);
   const { source, target, control } = curveData;
   const t = getLabelT();
   const oneMinusT = 1 - t;

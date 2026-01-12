@@ -474,14 +474,22 @@ export const exportAsSVG = (diagram: Diagram) => {
     const cx = pos.x;
     const cy = pos.y;
 
-    // Render container background if node has children
+    // Check if node is a container (has children)
     const children = getChildNodes(node.id, nodes);
-    if (children.length > 0) {
+    const isContainer = children.length > 0;
+
+    // Render container background if node has children
+    if (isContainer) {
       const containerBounds = calculateContainerBounds(children, nodes);
       // Container position is parent position + center offset of children bounds
       const containerX = (cx + containerBounds.centerX - containerBounds.width / 2).toFixed(2);
       const containerY = (cy + containerBounds.centerY - containerBounds.height / 2).toFixed(2);
       svgContent += `  <rect x="${containerX}" y="${containerY}" width="${containerBounds.width.toFixed(2)}" height="${containerBounds.height.toFixed(2)}" rx="8" fill="${fillColor}" fill-opacity="0.2" stroke="${strokeColor}" stroke-width="1" stroke-dasharray="6,3" />\n`;
+      // Add container label above the dashed rectangle
+      const labelY = (cy + containerBounds.centerY - containerBounds.height / 2 - 10).toFixed(2);
+      svgContent += `  <text x="${cx}" y="${labelY}" font-size="12" class="node-text" fill="${textColor}" text-anchor="middle">${node.label}</text>\n`;
+      // Skip rendering the regular node shape for containers
+      return;
     }
 
     switch (shape) {
@@ -631,8 +639,44 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
 
   // Sort nodes for proper rendering and add with clean naming
   const sortedNodes = sortNodesForRendering(nodes);
-  tikz += '% Nodes\n';
+
+  // First pass: render containers as dashed background rectangles
+  tikz += '% Container backgrounds\n';
   sortedNodes.forEach((node, index) => {
+    const children = getChildNodes(node.id, nodes);
+    if (children.length === 0) return; // Not a container
+
+    // Calculate container bounds based on children (returns pixel dimensions)
+    const containerBounds = calculateContainerBounds(children, nodes);
+    const parentPos = toAbsolutePosition(node, nodes);
+
+    // Container center in absolute coordinates
+    const containerCenterX = parentPos.x + containerBounds.centerX;
+    const containerCenterY = parentPos.y + containerBounds.centerY;
+
+    // Convert position to LaTeX coordinates (apply scale for position)
+    const x = ((containerCenterX - centerX) * scale).toFixed(2);
+    const y = (-(containerCenterY - centerY) * scale).toFixed(2);
+
+    // Convert dimensions: pixel dimensions / 40 = cm (same as regular nodes)
+    // Don't multiply by scale - that's only for coordinate conversion
+    const widthCm = (containerBounds.width / 40).toFixed(2);
+    const heightCm = (containerBounds.height / 40).toFixed(2);
+
+    const strokeColorName = registerColor(getNodeStrokeColor(node));
+    const fillColorName = registerColor(getNodeFillColor(node));
+
+    // Render container as dashed rectangle with label above
+    tikz += `\\node[rectangle, rounded corners=4pt, draw=${strokeColorName}, dashed, fill=${fillColorName}, fill opacity=0.15, minimum width=${widthCm}cm, minimum height=${heightCm}cm] (container${index + 1}) at (${x}, ${y}) {};\n`;
+    tikz += `\\node[above=0.1cm of container${index + 1}, font=\\small] {${escapeLaTeXText(node.label)}};\n`;
+  });
+
+  tikz += '\n% Nodes\n';
+  sortedNodes.forEach((node, index) => {
+    // Skip container nodes - they're rendered above as dashed backgrounds
+    const children = getChildNodes(node.id, nodes);
+    if (children.length > 0) return;
+
     // Use absolute position for nested nodes
     const pos = toAbsolutePosition(node, nodes);
     // Normalize coordinates relative to center and scale appropriately
@@ -647,14 +691,6 @@ const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
     if (node.subscript) {
       // Use math mode for subscript to ensure it renders correctly
       labelContent = `$\\text{${labelContent}}_{\\text{${escapeLaTeXText(node.subscript)}}}$`;
-    }
-
-    // Check if node is a container (has children)
-    const isContainer = nodes.some(n => n.parentId === node.id);
-    if (isContainer) {
-      // Containers are typically drawn as background boxes, handled by 'fit' or separate logic
-      // For now, we'll let the node be drawn, but maybe change its style?
-      // Or we can rely on the fact that we're drawing it at its position
     }
 
     const nodeId = `node${index + 1}`; // Clean, readable node names
@@ -766,6 +802,23 @@ export const exportAsLaTeX = (diagram: Diagram) => {
   const hasOperate = nodes.some(n => n.type === 'operate');
   const hasResultant = edges.some(e => e.isResultant);
 
+  // Infer diagram type from content if stored type is generic
+  let inferredType = diagram.type;
+  if (diagram.type === 'GENERIC' || !diagram.type) {
+    const hasMUDNodes = hasVocab || hasPractice;
+    const hasTOTENodes = hasTest || hasOperate;
+    const hasMUDEdges = edges.some(e => ['PV', 'VP', 'PP', 'VV'].includes(e.type));
+    const hasTOTEEdges = edges.some(e => ['sequence', 'feedback', 'exit'].includes(e.type));
+
+    if ((hasMUDNodes || hasMUDEdges) && (hasTOTENodes || hasTOTEEdges)) {
+      inferredType = 'HYBRID';
+    } else if (hasMUDNodes || hasMUDEdges) {
+      inferredType = 'MUD';
+    } else if (hasTOTENodes || hasTOTEEdges) {
+      inferredType = 'TOTE';
+    }
+  }
+
   const latexDocument = `\\documentclass[11pt]{article}
 \\usepackage[margin=1in]{geometry}
 \\usepackage{tikz}
@@ -788,7 +841,7 @@ export const exportAsLaTeX = (diagram: Diagram) => {
 \\begin{figure}[h]
 \\centering
 ${tikzCode}
-\\caption{${escapeLaTeXText(diagramTitle)} - ${diagram.type} diagram showing ${nodes.length} nodes and ${edges.length} edges.}
+\\caption{${escapeLaTeXText(diagramTitle)} - ${inferredType} diagram showing ${nodes.length} nodes and ${edges.length} edges.}
 \\end{figure}
 
 % Uncomment the following section to include a legend
