@@ -96,6 +96,27 @@ const AppContent: React.FC = () => {
     return nodeChildren.length > 0;
   }, [currentDiagram, selectedItems]);
 
+  // Expose bridge for Electron main process / CLI integration
+  React.useEffect(() => {
+    (window as any).__pragma_cli__ = {
+      getState: () => store.getState(),
+      dispatch: (action: any) => store.dispatch(action),
+    };
+    (window as any).clearDiagram = () => store.dispatch(createDiagram({ name: 'Untitled', type: 'MUD' }));
+    (window as any).importDiagram = (d: any) => store.dispatch(loadDiagram(d));
+    (window as any).exportDiagram = () => store.getState().diagram.currentDiagram;
+    (window as any).undo = () => store.dispatch(undo());
+    (window as any).redo = () => store.dispatch(redo());
+    return () => {
+      delete (window as any).__pragma_cli__;
+      delete (window as any).clearDiagram;
+      delete (window as any).importDiagram;
+      delete (window as any).exportDiagram;
+      delete (window as any).undo;
+      delete (window as any).redo;
+    };
+  }, []);
+
   // Initialize diagram if none exists
   React.useEffect(() => {
     if (!currentDiagram) {

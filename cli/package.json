@@ -1,0 +1,20 @@
+{
+  "name": "pragma-cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "pragma-cli": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@pragma-graph/core": "file:../packages/core",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3"
+  }
+}

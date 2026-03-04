@@ -10,7 +10,8 @@
 7. [Customizing Your Diagram](#customizing-your-diagram)
 8. [Exporting Your Work](#exporting-your-work)
 9. [Keyboard Shortcuts](#keyboard-shortcuts)
-10. [Academic Context](#academic-context)
+10. [Command-Line Interface (CLI)](#command-line-interface-cli)
+11. [Academic Context](#academic-context)
 
 ## Getting Started
 
@@ -260,6 +261,221 @@ Press `?` at any time to view the keyboard shortcuts modal.
 ### Canvas Navigation
 - **Mouse Wheel**: Zoom in/out
 - **Click + Drag** (on background): Pan the canvas
+
+## Command-Line Interface (CLI)
+
+The Pragma Graph Tool includes a CLI for programmatic diagram creation and manipulation. It is designed for two primary use cases:
+
+1. **LLM-assisted diagramming**: Ask an AI assistant to build diagrams using structured commands
+2. **Scripted pipelines**: Automate diagram generation in build scripts or CI workflows
+
+The CLI operates in two modes:
+- **Connected mode**: When the Electron desktop app is running, the CLI auto-detects it and dispatches commands directly to the GUI. Changes appear on the canvas in real time.
+- **Headless mode**: Without the GUI (or with `--headless`), the CLI runs a standalone Redux store in-process and uses `--file` for persistence.
+
+### Setup
+
+```bash
+# From the project root
+npm run build:core   # Build the shared core library
+npm run build:cli    # Build the CLI
+
+# Verify installation
+node cli/dist/index.js --help
+```
+
+### Quick Start
+
+Create a simple MUD diagram entirely from the command line:
+
+```bash
+CLI="node cli/dist/index.js --json --file my-diagram.json"
+
+# Create a new diagram
+$CLI diagram create --name "BSD Figure 2" --type MUD
+
+# Add vocabulary and practice nodes
+$CLI node add --type vocabulary --label "Observational vocabulary" --x 0 --y 0
+$CLI node add --type practice --label "Reliable reporting" --x 300 --y 0
+
+# List nodes to get their IDs
+$CLI node list
+
+# Add an edge (replace IDs from node list output)
+$CLI edge add --source <V1_ID> --target <P1_ID> --type VP --label "deploys"
+
+# Export to LaTeX for your paper
+$CLI export latex --raw > figure2.tex
+```
+
+### Global Options
+
+| Flag | Description |
+|------|-------------|
+| `--json` | Force JSON output (default when stdout is piped) |
+| `--human` | Force human-readable output (default in a terminal) |
+| `--file <path>` | Auto-load diagram before command, auto-save after mutations |
+| `--headless` | Force headless mode (skip GUI auto-connection) |
+
+### Commands
+
+#### Diagram Lifecycle
+
+| Command | Description |
+|---------|-------------|
+| `diagram create --name <name> --type <MUD\|TOTE\|HYBRID\|GENERIC>` | Create a new diagram |
+| `diagram info` | Show current diagram summary |
+| `diagram load <file>` | Load a diagram from JSON |
+| `diagram save [file]` | Save current diagram to file |
+| `diagram clear` | Reset to empty diagram |
+
+#### Node Operations
+
+| Command | Description |
+|---------|-------------|
+| `node add --type <type> --label <text> --x <n> --y <n>` | Add a node |
+| `node list` | List all nodes |
+| `node get <id>` | Get a single node by ID |
+| `node update <id> --label <text>` | Update node properties |
+| `node move <id> --x <n> --y <n>` | Reposition a node |
+| `node delete <id>` | Delete a node and its descendants |
+| `node group --ids <id1,id2,...> --label <text>` | Group nodes into a container |
+| `node ungroup <id>` | Dissolve a container |
+
+Available node types: `vocabulary`, `practice`, `test`, `operate`, `exit`, `custom`
+
+Optional node flags: `--subtype`, `--subscript`, `--secondary-label`, `--parent <parentId>`
+
+#### Edge Operations
+
+| Command | Description |
+|---------|-------------|
+| `edge add --source <id> --target <id> --type <type>` | Add an edge |
+| `edge list` | List all edges |
+| `edge get <id>` | Get a single edge by ID |
+| `edge update <id> --label <text>` | Update edge properties |
+| `edge delete <id>` | Delete an edge |
+
+Edge types depend on diagram mode:
+- **MUD**: `PV`, `VP`, `PP`, `VV` (and qualified variants with `-suff`/`-nec`)
+- **TOTE**: `sequence`, `feedback`, `loop`, `exit`, `entry`, `test-pass`, `test-fail`
+- **All modes**: `resultant`, `unmarked`, `custom`
+
+Optional edge flags: `--label`, `--resultant`, `--order <number>`
+
+#### Entry/Exit Points (TOTE)
+
+| Command | Description |
+|---------|-------------|
+| `entry add --node <id> [--x <n> --y <n> --label <text>]` | Add an entry point |
+| `entry list` | List all entry points |
+| `entry delete <id>` | Delete an entry point |
+| `exit add --node <id> [--x <n> --y <n> --label <text>]` | Add an exit point |
+| `exit list` | List all exit points |
+| `exit delete <id>` | Delete an exit point |
+
+#### Export
+
+| Command | Description |
+|---------|-------------|
+| `export json [--raw]` | Export as JSON |
+| `export svg [--raw]` | Export as SVG |
+| `export latex [--raw]` | Export as LaTeX/TikZ standalone document |
+
+The `--raw` flag outputs the content directly without a JSON envelope, suitable for piping to a file.
+
+#### History
+
+| Command | Description |
+|---------|-------------|
+| `history undo` | Undo the last mutation |
+| `history redo` | Redo the last undone mutation |
+| `history save` | Create a manual history snapshot |
+
+All mutating commands (`node add`, `edge add`, `node delete`, etc.) automatically create history snapshots before applying changes.
+
+#### Schema Discovery
+
+| Command | Description |
+|---------|-------------|
+| `schema all` | Full type schema (node types, edge types, diagram modes) |
+| `schema node-types` | Available node types with shapes, subtypes, and descriptions |
+| `schema edge-types` | Available edge types grouped by mode |
+| `schema modes` | Diagram modes with available tool palettes |
+
+Schema commands are designed for LLM self-reference: an AI agent can call `schema all` to learn what commands and values are valid without consulting external documentation.
+
+### JSON Output Format
+
+When output is in JSON mode (piped or `--json`), all commands return a structured envelope:
+
+**Success:**
+```json
+{
+  "ok": true,
+  "command": "node.add",
+  "result": {
+    "id": "abc-123",
+    "type": "vocabulary",
+    "label": "V₁",
+    "position": {"x": 100, "y": 200}
+  }
+}
+```
+
+**Error:**
+```json
+{
+  "ok": false,
+  "command": "node.add",
+  "error": {
+    "code": "INVALID_NODE_TYPE",
+    "message": "Invalid node type: vocabulry",
+    "validValues": ["vocabulary", "practice", "test", "operate", "exit", "custom"]
+  }
+}
+```
+
+The `validValues` field in error responses enables self-correcting behavior: an LLM can read the valid options and retry with the correct value.
+
+### Using with an LLM
+
+The CLI is designed to be called by an LLM (such as Claude) acting as an assistant. A typical workflow:
+
+1. The user describes a diagram they want ("Create a MUD showing the relationship between observational vocabulary and reliable differential responsive dispositions")
+2. The LLM calls `schema all` to understand available types
+3. The LLM constructs a series of CLI commands to build the diagram
+4. Each command returns structured JSON that the LLM parses to get node IDs for subsequent edge commands
+5. The LLM calls `export latex` to produce the final output
+
+The `--file` flag makes this stateless: each command invocation is independent, loading and saving the diagram file automatically.
+
+### Connected Mode (GUI Bridge)
+
+When the Electron desktop app is running, the CLI automatically connects to it. You can verify this with:
+
+```bash
+node cli/dist/index.js status
+# Output: mode: "connected", gui: true
+```
+
+In connected mode:
+- All commands (`node add`, `edge add`, `diagram create`, etc.) dispatch directly to the GUI's Redux store
+- Changes appear on the canvas instantly — no need to import/export files
+- The `--file` flag still works for saving backups, but auto-save is skipped (the GUI is the source of truth)
+- History commands (`undo`/`redo`) operate on the GUI's undo stack
+
+To force headless mode even when the GUI is running, use:
+```bash
+node cli/dist/index.js --headless --file diagram.json node add --type vocabulary --label "V₁" --x 0 --y 0
+```
+
+#### How It Works
+
+1. When the Electron app starts, it launches an HTTP server on `127.0.0.1` (random port) and writes connection details to `~/.pragma-graph-tool/server.json`
+2. The CLI reads this file before each command, verifies the GUI process is alive, and sends requests over HTTP
+3. Authentication uses a per-session Bearer token generated at startup
+4. When the Electron app quits, the connection file is automatically deleted
 
 ## Academic Context
 

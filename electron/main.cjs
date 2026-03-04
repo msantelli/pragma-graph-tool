@@ -1,6 +1,9 @@
 const { app, BrowserWindow, Menu, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
+const crypto = require('crypto');
+const os = require('os');
 
 // Keep a global reference of the window object
 let mainWindow;
@@ -340,8 +343,172 @@ function createMenu() {
   Menu.setApplicationMenu(menu);
 }
 
+// --- CLI HTTP Server ---
+let cliServer = null;
+let cliToken = null;
+const CONNECTION_DIR = path.join(os.homedir(), '.pragma-graph-tool');
+const CONNECTION_FILE = path.join(CONNECTION_DIR, 'server.json');
+
+function startCLIServer() {
+  cliToken = crypto.randomUUID();
+
+  cliServer = http.createServer(async (req, res) => {
+    // CORS and content type
+    res.setHeader('Content-Type', 'application/json');
+
+    // Auth check
+    const auth = req.headers['authorization'];
+    if (auth !== `Bearer ${cliToken}`) {
+      res.writeHead(401);
+      res.end(JSON.stringify({ ok: false, error: 'Unauthorized' }));
+      return;
+    }
+
+    try {
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const pathname = url.pathname;
+
+      // Parse body for POST
+      let body = null;
+      if (req.method === 'POST') {
+        body = await new Promise((resolve, reject) => {
+          let data = '';
+          req.on('data', chunk => { data += chunk; });
+          req.on('end', () => {
+            try { resolve(JSON.parse(data)); }
+            catch { reject(new Error('Invalid JSON body')); }
+          });
+          req.on('error', reject);
+        });
+      }
+
+      // Route handling
+      let result;
+
+      if (req.method === 'GET' && pathname === '/api/v1/status') {
+        const diagram = await mainWindow.webContents.executeJavaScript(
+          `(function() { var s = window.__pragma_cli__; if (!s) return null; var d = s.getState().diagram.currentDiagram; return d ? { id: d.id, name: d.name, type: d.type, nodes: d.nodes.length, edges: d.edges.length } : null; })()`
+        );
+        result = { gui: true, pid: process.pid, diagram };
+
+      } else if (req.method === 'GET' && pathname === '/api/v1/diagram') {
+        result = await mainWindow.webContents.executeJavaScript(
+          `(function() { var s = window.__pragma_cli__; return s ? s.getState().diagram.currentDiagram : null; })()`
+        );
+
+      } else if (req.method === 'GET' && pathname === '/api/v1/diagram/nodes') {
+        result = await mainWindow.webContents.executeJavaScript(
+          `(function() { var s = window.__pragma_cli__; var d = s ? s.getState().diagram.currentDiagram : null; return d ? d.nodes : []; })()`
+        );
+
+      } else if (req.method === 'GET' && pathname.match(/^\/api\/v1\/diagram\/nodes\/(.+)$/)) {
+        const nodeId = pathname.match(/^\/api\/v1\/diagram\/nodes\/(.+)$/)[1];
+        result = await mainWindow.webContents.executeJavaScript(
+          `(function() { var s = window.__pragma_cli__; var d = s ? s.getState().diagram.currentDiagram : null; return d ? d.nodes.find(function(n) { return n.id === ${JSON.stringify(nodeId)}; }) || null : null; })()`
+        );
+        if (!result) {
+          res.writeHead(404);
+          res.end(JSON.stringify({ ok: false, error: 'Node not found' }));
+          return;
+        }
+
+      } else if (req.method === 'GET' && pathname === '/api/v1/diagram/edges') {
+        result = await mainWindow.webContents.executeJavaScript(
+          `(function() { var s = window.__pragma_cli__; var d = s ? s.getState().diagram.currentDiagram : null; return d ? d.edges : []; })()`
+        );
+
+      } else if (req.method === 'POST' && pathname === '/api/v1/dispatch') {
+        const action = body.action;
+        if (!action || !action.type) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ ok: false, error: 'Missing action.type' }));
+          return;
+        }
+        result = await mainWindow.webContents.executeJavaScript(
+          `(function() { var s = window.__pragma_cli__; s.dispatch(${JSON.stringify(action)}); return s.getState().diagram.currentDiagram; })()`
+        );
+
+      } else if (req.method === 'POST' && pathname === '/api/v1/dispatch/batch') {
+        const actions = body.actions;
+        if (!Array.isArray(actions)) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ ok: false, error: 'Missing actions array' }));
+          return;
+        }
+        result = await mainWindow.webContents.executeJavaScript(
+          `(function() { var s = window.__pragma_cli__; var actions = ${JSON.stringify(actions)}; actions.forEach(function(a) { s.dispatch(a); }); return s.getState().diagram.currentDiagram; })()`
+        );
+
+      } else if (req.method === 'POST' && pathname.match(/^\/api\/v1\/export\/(.+)$/)) {
+        const format = pathname.match(/^\/api\/v1\/export\/(.+)$/)[1];
+        // Get the diagram, then generate export on the main process side
+        const diagram = await mainWindow.webContents.executeJavaScript(
+          `(function() { var s = window.__pragma_cli__; return s ? s.getState().diagram.currentDiagram : null; })()`
+        );
+        if (!diagram) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ ok: false, error: 'No diagram loaded' }));
+          return;
+        }
+        // Return diagram for CLI-side export generation
+        result = { format, diagram };
+
+      } else {
+        res.writeHead(404);
+        res.end(JSON.stringify({ ok: false, error: 'Not found' }));
+        return;
+      }
+
+      res.writeHead(200);
+      res.end(JSON.stringify({ ok: true, result }));
+
+    } catch (err) {
+      res.writeHead(500);
+      res.end(JSON.stringify({ ok: false, error: err.message || 'Internal error' }));
+    }
+  });
+
+  cliServer.listen(0, '127.0.0.1', () => {
+    const port = cliServer.address().port;
+    console.log(`CLI server listening on 127.0.0.1:${port}`);
+
+    // Write connection file
+    if (!fs.existsSync(CONNECTION_DIR)) {
+      fs.mkdirSync(CONNECTION_DIR, { recursive: true });
+    }
+    fs.writeFileSync(CONNECTION_FILE, JSON.stringify({
+      port,
+      token: cliToken,
+      pid: process.pid,
+      version: '1.0.0'
+    }, null, 2) + '\n');
+  });
+}
+
+function stopCLIServer() {
+  if (cliServer) {
+    cliServer.close();
+    cliServer = null;
+  }
+  // Clean up connection file
+  try {
+    if (fs.existsSync(CONNECTION_FILE)) {
+      fs.unlinkSync(CONNECTION_FILE);
+    }
+  } catch {
+    // ignore cleanup errors
+  }
+}
+
 // App event handlers
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+  startCLIServer();
+});
+
+app.on('before-quit', () => {
+  stopCLIServer();
+});
 
 app.on('window-all-closed', () => {
   // On macOS, keep the app running even when all windows are closed
