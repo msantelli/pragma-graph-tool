@@ -132,9 +132,9 @@ const AppContent: React.FC = () => {
 
       const tool = toolShortcuts[e.key.toLowerCase()];
       if (tool) {
-        const available = getAvailableTools(diagramMode);
+        const available = getAvailableTools(diagramMode) as readonly string[];
         if (available.includes(tool)) {
-          dispatch(setSelectedTool(tool as any));
+          dispatch(setSelectedTool(tool as Parameters<typeof setSelectedTool>[0]));
         }
         return;
       }
@@ -202,7 +202,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleToolSelect = (tool: string) => {
-    dispatch(setSelectedTool(tool as any));
+    dispatch(setSelectedTool(tool as Parameters<typeof setSelectedTool>[0]));
     dispatch(selectNodes([]));
   };
 

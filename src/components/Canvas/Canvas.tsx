@@ -313,7 +313,7 @@ export const Canvas: React.FC = () => {
 
     edgeUpdate.select('.edge-label')
       .each(function (d: Edge) {
-        const labelSelection = d3.select(this) as d3.Selection<SVGTextElement, Edge, null, undefined>;
+        const labelSelection = d3.select(this) as unknown as d3.Selection<SVGTextElement, Edge, null, undefined>;
         const geometry = getEdgeGeometry(d, nodes, edges);
 
         if (!geometry) {

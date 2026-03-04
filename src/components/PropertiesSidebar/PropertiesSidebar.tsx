@@ -150,7 +150,7 @@ const NodeProperties: React.FC<{
           width: '32px',
           height: '32px',
           borderRadius: '6px',
-          background: node.style?.fillColor || getDefaultNodeColor(node.type),
+          background: node.style?.fill || getDefaultNodeColor(node.type),
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
