@@ -1,0 +1,12 @@
+# Desktop app (Electron main process, build outputs)
+electron/
+dist-electron/
+
+# CLI package (not part of web app)
+cli/
+
+# Shared core (GUI uses parallel copies in src/, not this package)
+packages/
+
+# Research docs
+research/

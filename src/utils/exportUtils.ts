@@ -679,26 +679,26 @@ const generateTikZCode = (nodes: Node[], edges: Edge[], diagramType: string): st
     tikz += '  % MUD styles (Brandom, Between Saying and Doing)\n';
     tikz += '  vocabulary/.style={ellipse, draw=black, thick,\n';
     tikz += '    minimum width=2.8cm, minimum height=1.2cm,\n';
-    tikz += '    text centered, align=center},\n';
+    tikz += '    text width=2.2cm, text centered, align=center},\n';
     tikz += '  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,\n';
     tikz += '    minimum width=2.8cm, minimum height=1.2cm,\n';
-    tikz += '    text centered, align=center},\n';
+    tikz += '    text width=2.4cm, text centered, align=center},\n';
   }
 
   if (isTOTE) {
     tikz += '  % TOTE styles (Miller et al., Plans and the Structure of Behavior)\n';
     tikz += '  test/.style={diamond, draw=black, thick, aspect=2,\n';
-    tikz += '    minimum width=2cm, text centered, align=center},\n';
+    tikz += '    minimum width=2cm, text width=1.4cm, text centered, align=center},\n';
     tikz += '  operate/.style={rectangle, draw=black, thick,\n';
     tikz += '    minimum width=2.5cm, minimum height=1cm,\n';
-    tikz += '    text centered, align=center},\n';
+    tikz += '    text width=2.1cm, text centered, align=center},\n';
     tikz += '  exitnode/.style={rectangle, draw=black, thick,\n';
     tikz += '    minimum width=1.5cm, minimum height=0.8cm,\n';
-    tikz += '    text centered, align=center},\n';
+    tikz += '    text width=1.1cm, text centered, align=center},\n';
   }
 
   tikz += '  custom/.style={circle, draw=black, thick,\n';
-  tikz += '    minimum size=1.5cm, text centered, align=center},\n';
+  tikz += '    minimum size=1.5cm, text width=1.0cm, text centered, align=center},\n';
   tikz += '  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,\n';
   tikz += '    inner sep=12pt},\n';
   tikz += '  % Edge styles\n';
@@ -743,14 +743,23 @@ const generateTikZCode = (nodes: Node[], edges: Edge[], diagramType: string): st
 
     // Determine TikZ style name
     let styleName: string;
+    let textWidthCm: number;
+    let maxLines: number;
     switch (node.type) {
-      case 'vocabulary': styleName = 'vocabulary'; break;
-      case 'practice': styleName = 'practice'; break;
-      case 'test': styleName = 'test'; break;
-      case 'operate': styleName = 'operate'; break;
-      case 'exit': styleName = 'exitnode'; break;
-      case 'custom': styleName = 'custom'; break;
-      default: styleName = 'custom'; break;
+      case 'vocabulary': styleName = 'vocabulary'; textWidthCm = 2.2; maxLines = 3; break;
+      case 'practice': styleName = 'practice'; textWidthCm = 2.4; maxLines = 3; break;
+      case 'test': styleName = 'test'; textWidthCm = 1.4; maxLines = 2; break;
+      case 'operate': styleName = 'operate'; textWidthCm = 2.1; maxLines = 3; break;
+      case 'exit': styleName = 'exitnode'; textWidthCm = 1.1; maxLines = 2; break;
+      case 'custom': styleName = 'custom'; textWidthCm = 1.0; maxLines = 2; break;
+      default: styleName = 'custom'; textWidthCm = 1.0; maxLines = 2; break;
+    }
+
+    // Estimate overflow: ~10 chars per cm of text width
+    const charsPerLine = Math.floor(textWidthCm * 10);
+    const plainLabel = node.label + (node.secondaryLabel ? ' ' + node.secondaryLabel : '') + (node.subscript ? ' ' + node.subscript : '');
+    if (plainLabel.length > charsPerLine * maxLines) {
+      tikz += `% WARNING: label may overflow — consider shortening\n`;
     }
 
     tikz += `\\node[${styleName}] (${tikzId}) at (${x}, ${y}) {${labelContent}};\n`;

@@ -13,6 +13,9 @@ Research-oriented editor for Meaning-Use Diagrams (MUD) and Test-Operate-Test-Ex
 - Properties sidebar for quick editing of selected elements
 - Collapsible legend showing node/edge types for current mode
 - Undo/redo stack, grid overlay, and snap-to-grid positioning
+- Uniform node sizing in TikZ export with fixed `text width` constraints per node type
+- Overflow indicator (⚠) on canvas when labels exceed node bounds
+- Qualified edge types (`PV-suff`, `PV-nec`, etc.) for sufficiency and necessity relations
 - Exports to JSON, SVG, and LaTeX/TikZ with container support
 
 ### CLI (new in v1.2)
@@ -146,6 +149,7 @@ pragma-cli --file diagram.json export latex --raw > diagram.tex
 - Modal system: reusable wrapper powering edge type selector, node customiser, edge editor
 - Utilities: `utils/` holds grid snapping, export pipelines, and type helpers
 - **Monorepo**: npm workspaces with `packages/core/` (shared types, store, pure utils) and `cli/` (Node.js CLI)
+- **Parallel copies**: `src/` and `packages/core/` maintain parallel copies of types, slices, and export utils; changes to export logic must be applied to both
 
 ### Package Structure
 ```
@@ -179,6 +183,8 @@ The included `netlify.toml` configures:
 - Single Page Application routing
 - PWA support with proper headers
 - Optimal caching for static assets
+
+A `.netlifyignore` file excludes `electron/`, `cli/`, `packages/`, `dist-electron/`, and `research/` from the deploy artifact. This does not affect the build step — `npm install` and `vite build` still have full repo access.
 
 ### Desktop Distribution
 Desktop builds are available for multiple platforms:

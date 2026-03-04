@@ -20,7 +20,7 @@ The Pragma Graph Tool is a specialized application for creating visual represent
 ### Accessing the Tool
 - **Web Version**: Access through your browser at the deployed URL
 - **Offline Use**: The tool works offline once loaded thanks to Progressive Web App (PWA) technology
-- **Desktop Version**: Available as downloadable executables for Windows, Mac, and Linux
+- **Desktop Version**: Available as downloadable executables for Windows, Mac, and Linux. The desktop app exposes a CLI bridge (connected mode) so CLI commands update the canvas in real time
 
 ### Browser Requirements
 - Modern browsers supporting ES2020+
@@ -117,6 +117,9 @@ The Pragma Graph Tool is a specialized application for creating visual represent
 - **Custom Nodes**: Circle shape for general-purpose use
 - **Shortcut**: `C`
 
+### Overflow Indicator
+When a node's label is too long to fit within its shape, a ⚠ indicator appears at the bottom-right corner of the node on the canvas. This warns that the label will likely overflow in TikZ export. To resolve it, shorten the label or move text to the secondary label or subscript fields.
+
 ## Working with Edges
 
 ### Edge Types by Mode
@@ -126,6 +129,10 @@ The Pragma Graph Tool is a specialized application for creating visual represent
 - **VP (Vocabulary → Practice)**: Vocabulary elaborates or informs practice (orange)
 - **PP (Practice → Practice)**: Practice-to-practice presupposition (purple)
 - **VV (Vocabulary → Vocabulary)**: Vocabulary-to-vocabulary entailment (red)
+
+Each MUD edge type has qualified variants for sufficiency and necessity:
+- **`-suff`** (e.g., `PV-suff`): Sufficient condition — the practice/vocabulary is enough on its own
+- **`-nec`** (e.g., `PV-nec`): Necessary condition — the practice/vocabulary is required but may not suffice alone
 
 #### TOTE Mode Edge Types
 - **Sequence**: Test triggers Operate action (blue)
@@ -221,9 +228,11 @@ Double-click any edge to open the panel:
 - **Purpose**: Academic papers and publications
 - **Usage**: Integration with LaTeX documents
 - **Features**:
-  - Containers as dashed rectangles with labels
+  - Fixed-width nodes: each node style has a `text width` constraint (e.g., vocabulary 2.2cm, practice 2.4cm) so all nodes of the same type render at uniform size
+  - Automatic text wrapping within fixed-width nodes
+  - `% WARNING: label may overflow` comments appear above nodes whose labels exceed the available space — shorten the label or split into primary + secondary labels
+  - Containers as dashed rectangles with labels (using TikZ `fit` library)
   - Proper coordinate normalization
-  - Commented legend template
   - Diagram type inference (MUD/TOTE/HYBRID)
 
 ### Import
@@ -505,6 +514,8 @@ When using this tool in academic work:
 - Maintain consistent styling within and across diagrams
 - Export to JSON before making significant changes
 - Use LaTeX export for papers; SVG for presentations
+- Keep node labels concise for clean TikZ export (~20 characters for vocabulary/practice, ~14 for test/exit nodes); use secondary labels or subscripts for additional text
+- Watch for the ⚠ overflow indicator — it signals that a label will not fit within the TikZ node's fixed width
 
 ---
 

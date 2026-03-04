@@ -584,7 +584,7 @@ export const Canvas: React.FC = () => {
       const mainDy = isContainer ? '0' : (d.subscript || d.secondaryLabel ? '-0.3em' : '.35em');
 
       // Main label
-      nodeGroup.append('text')
+      const mainLabelText = nodeGroup.append('text')
         .attr('class', 'node-main-label')
         .attr('text-anchor', 'middle')
         .attr('x', centerOffset.x)
@@ -592,8 +592,27 @@ export const Canvas: React.FC = () => {
         .attr('dy', mainDy)
         .attr('font-size', getNodeFontSize(d))
         .attr('fill', d.style?.textColor || '#333')
-        .text(d.label)
-        .call(wrapText, dimensions.width * 0.8);
+        .text(d.label);
+      const mainLineCount = wrapText(mainLabelText, dimensions.width * 0.8);
+
+      // Overflow indicator: show warning when wrapped text exceeds node height
+      if (!isContainer) {
+        const fontSize = getNodeFontSize(d);
+        const textHeight = mainLineCount * fontSize * 1.1;
+        const availableHeight = dimensions.height * 0.75;
+
+        if (textHeight > availableHeight) {
+          nodeGroup.append('text')
+            .attr('x', centerOffset.x + dimensions.width / 2 - 8)
+            .attr('y', baseLabelY + dimensions.height / 2 - 4)
+            .attr('font-size', 10)
+            .attr('fill', '#e67700')
+            .text('\u26A0');
+
+          nodeGroup.append('title')
+            .text('Label overflows node \u2014 shorten text or resize node');
+        }
+      }
 
       // Secondary label (additional line within the node)
       if (d.secondaryLabel) {
@@ -1452,12 +1471,14 @@ function getNodeConnectionPoint(node: Node, targetPos: Point, allNodes?: Node[])
   };
 }
 
-// Helper function to wrap text
-function wrapText(text: d3.Selection<SVGTextElement, any, any, any>, width: number) {
+// Helper function to wrap text. Returns the max number of lines produced.
+function wrapText(text: d3.Selection<SVGTextElement, any, any, any>, width: number): number {
+  let maxLines = 0;
   text.each(function () {
     const textElement = d3.select(this);
     const words = textElement.text().split(/\s+/).reverse();
     let line: string[] = [];
+    let lineCount = 1;
     const lineHeight = 1.1; // ems
     const y = textElement.attr('y') || 0;
     // Read the original dy string to preserve units (e.g. '-55px' or '1.2em')
@@ -1480,6 +1501,7 @@ function wrapText(text: d3.Selection<SVGTextElement, any, any, any>, width: numb
         line.pop();
         tspan.text(line.join(' '));
         line = [word];
+        lineCount++;
         // Subsequent lines use relative positioning (no fixed y) and em-based spacing
         tspan = textElement.append('tspan')
           .attr('x', 0)
@@ -1487,5 +1509,7 @@ function wrapText(text: d3.Selection<SVGTextElement, any, any, any>, width: numb
           .text(word);
       }
     }
+    maxLines = Math.max(maxLines, lineCount);
   });
+  return maxLines;
 }
