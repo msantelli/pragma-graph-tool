@@ -8,6 +8,7 @@ import {
   toAbsolutePosition,
   sortNodesForRendering,
   getChildNodes,
+  getNestingDepth,
   calculateContainerBounds
 } from './nodeUtils';
 import type { Diagram, Node, Edge, Point } from '../types/all';
@@ -556,16 +557,17 @@ export const exportAsSVG = (diagram: Diagram) => {
 // Helper functions for SVG colors
 const getEdgeColorSVG = (edgeType: string): string => {
   switch (edgeType) {
-    case 'PV': return '#4CAF50';
-    case 'VP': return '#FF9800';
-    case 'PP': return '#9C27B0';
-    case 'VV': return '#F44336';
-    case 'sequence': return '#2196F3';
-    case 'feedback': return '#FF5722';
-    case 'loop': return '#607D8B';
-    case 'exit': return '#8BC34A';
-    case 'entry': return '#4CAF50';
-    default: return '#666';
+    case 'PV': return '#333333';
+    case 'VP': return '#333333';
+    case 'PP': return '#333333';
+    case 'VV': return '#333333';
+    case 'sequence': return '#333333';
+    case 'feedback': return '#333333';
+    case 'loop': return '#555555';
+    case 'exit': return '#333333';
+    case 'entry': return '#333333';
+    case 'unmarked': return '#999999';
+    default: return '#333333';
   }
 };
 
@@ -575,6 +577,10 @@ const isLaTeXContent = (text: string): boolean => {
     /\\\w+/, // LaTeX commands like \alpha, \beta
     /\$.*?\$/, // Math mode
     /\\[{}]/, // Escaped braces
+    /[_^]/, // Subscripts and superscripts
+    /\\frac\{/, // Fractions
+    /\\mathbb\{/, // Blackboard bold
+    /\\mathcal\{/, // Calligraphic
     /\\text\{/, // Text in math mode
   ];
 
@@ -596,284 +602,299 @@ const escapeLaTeXText = (text: string): string => {
 };
 
 // Generate TikZ code for LaTeX export
-const generateTikZCode = (nodes: Node[], edges: Edge[]): string => {
+// Uses native TikZ node references, fit library for containers,
+// and bend left/right for curved edges (idiomatic TikZ).
+const generateTikZCode = (nodes: Node[], edges: Edge[], diagramType: string): string => {
   if (nodes.length === 0) return '\\begin{tikzpicture}\n\\end{tikzpicture}';
-
-  // Deduplicate edges to prevent double rendering
-  const uniqueEdges = edges.filter((edge, index, self) =>
-    index === self.findIndex((t) => (
-      t.source === edge.source &&
-      t.target === edge.target &&
-      t.type === edge.type &&
-      t.label === edge.label
-    ))
-  );
 
   // Calculate bounds and normalize coordinates
   const bounds = calculateDiagramBounds(nodes);
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerY = (bounds.minY + bounds.maxY) / 2;
 
-  // Scale to fit within reasonable LaTeX coordinates (roughly -10 to 10)
+  // Scale to fit within reasonable LaTeX coordinates
   const maxDimension = Math.max(bounds.width, bounds.height);
-  const scale = maxDimension > 0 ? 15 / maxDimension : 1; // Target max coordinate of ±7.5
+  const scale = maxDimension > 0 ? 15 / maxDimension : 1;
 
-  let tikz = `\\begin{tikzpicture}\n\n`;
+  // --- Build node ID map: node.id -> TikZ name ---
+  // Use semantic prefixes: V1, P1, T1, O1, C1 for readability
+  const nodeIdMap = new Map<string, string>();
+  const counters: Record<string, number> = {};
+  const sortedNodes = sortNodesForRendering(nodes);
 
-  const colorMap = new Map<string, string>();
-  const registerColor = (color: string): string => {
-    const normalized = (color || '#000000').replace('#', '').slice(0, 6).padEnd(6, '0').toUpperCase();
-    if (!colorMap.has(normalized)) {
-      colorMap.set(normalized, `customcolor${colorMap.size + 1}`);
-    }
-    return colorMap.get(normalized)!;
-  };
-
-  nodes.forEach(node => {
-    // Only register colors for custom nodes or containers
-    // Semantic nodes (vocabulary, practice, test, operate) use predefined stylistic colors
-    const isSemantic = ['vocabulary', 'practice', 'test', 'operate'].includes(node.type);
+  sortedNodes.forEach(node => {
     const children = getChildNodes(node.id, nodes);
     const isContainer = children.length > 0;
-
-    if (!isSemantic || isContainer || node.type === 'custom') {
-      registerColor(getNodeFillColor(node));
-      registerColor(getNodeStrokeColor(node));
-      registerColor(getNodeTextColor(node));
+    let prefix: string;
+    if (isContainer) {
+      prefix = 'G'; // Group/container
+    } else {
+      switch (node.type) {
+        case 'vocabulary': prefix = 'V'; break;
+        case 'practice': prefix = 'P'; break;
+        case 'test': prefix = 'T'; break;
+        case 'operate': prefix = 'O'; break;
+        case 'exit': prefix = 'X'; break;
+        case 'custom': prefix = 'C'; break;
+        default: prefix = 'N'; break;
+      }
     }
+    counters[prefix] = (counters[prefix] || 0) + 1;
+    nodeIdMap.set(node.id, `${prefix}${counters[prefix]}`);
   });
 
-  colorMap.forEach((name, hex) => {
-    // Convert hex to grayscale for academic style where possible, or keep as defined
-    // For now, mapping everything to gray scale approximations if it looks like a color
-    tikz += `\\definecolor{${name}}{HTML}{${hex}}\n`;
+  // --- Determine which edge pairs need bending ---
+  const edgePairKey = (a: string, b: string) => [a, b].sort().join('::');
+  const edgePairCounts = new Map<string, Edge[]>();
+  edges.forEach(edge => {
+    const key = edgePairKey(edge.source, edge.target);
+    if (!edgePairCounts.has(key)) edgePairCounts.set(key, []);
+    edgePairCounts.get(key)!.push(edge);
   });
 
-  if (colorMap.size > 0) {
-    tikz += '\n';
+  const edgeBendAngles = new Map<string, number>();
+  edgePairCounts.forEach((group) => {
+    if (group.length <= 1) return;
+    // Assign symmetric bend angles
+    const step = Math.min(30, 60 / group.length);
+    group.forEach((edge, i) => {
+      const angle = (i - (group.length - 1) / 2) * step;
+      edgeBendAngles.set(edge.id, angle);
+    });
+  });
+
+  // --- Start tikzpicture ---
+  let tikz = `\\begin{tikzpicture}[>=Stealth, thick, font=\\small]\n\n`;
+
+  // --- Emit style definitions based on diagram type ---
+  const isMUD = ['MUD', 'HYBRID'].includes(diagramType) ||
+    nodes.some(n => n.type === 'vocabulary' || n.type === 'practice');
+  const isTOTE = ['TOTE', 'HYBRID'].includes(diagramType) ||
+    nodes.some(n => n.type === 'test' || n.type === 'operate');
+
+  tikz += '% --- Node styles ---\n';
+  tikz += '\\tikzset{\n';
+
+  if (isMUD) {
+    tikz += '  % MUD styles (Brandom, Between Saying and Doing)\n';
+    tikz += '  vocabulary/.style={ellipse, draw=black, thick,\n';
+    tikz += '    minimum width=2.8cm, minimum height=1.2cm,\n';
+    tikz += '    text centered, align=center},\n';
+    tikz += '  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,\n';
+    tikz += '    minimum width=2.8cm, minimum height=1.2cm,\n';
+    tikz += '    text centered, align=center},\n';
   }
 
-  // Sort nodes for proper rendering and add with clean naming
-  const sortedNodes = sortNodesForRendering(nodes);
-  const nodeMap = new Map<string, string>(); // Map UUID -> nodeX
+  if (isTOTE) {
+    tikz += '  % TOTE styles (Miller et al., Plans and the Structure of Behavior)\n';
+    tikz += '  test/.style={diamond, draw=black, thick, aspect=2,\n';
+    tikz += '    minimum width=2cm, text centered, align=center},\n';
+    tikz += '  operate/.style={rectangle, draw=black, thick,\n';
+    tikz += '    minimum width=2.5cm, minimum height=1cm,\n';
+    tikz += '    text centered, align=center},\n';
+    tikz += '  exitnode/.style={rectangle, draw=black, thick,\n';
+    tikz += '    minimum width=1.5cm, minimum height=0.8cm,\n';
+    tikz += '    text centered, align=center},\n';
+  }
 
-  // First pass: render containers as backgrounds
-  tikz += '% Container backgrounds\n';
-  sortedNodes.forEach((node, index) => {
+  tikz += '  custom/.style={circle, draw=black, thick,\n';
+  tikz += '    minimum size=1.5cm, text centered, align=center},\n';
+  tikz += '  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,\n';
+  tikz += '    inner sep=12pt},\n';
+  tikz += '  % Edge styles\n';
+
+  if (isMUD) {
+    tikz += '  pv/.style={->, thick},\n';
+    tikz += '  vp/.style={->, thick},\n';
+    tikz += '  pp/.style={->, thick},\n';
+    tikz += '  vv/.style={->, thick},\n';
+    tikz += '  resultant/.style={->, thick, dashed},\n';
+  }
+
+  if (isTOTE) {
+    tikz += '  sequence/.style={->, thick},\n';
+    tikz += '  feedback/.style={->, thick},\n';
+    tikz += '  exitedge/.style={->, thick},\n';
+  }
+
+  tikz += '  unmarked/.style={->, thick, gray!60},\n';
+  tikz += '  customedge/.style={->, thick},\n';
+  tikz += '}\n\n';
+
+  // --- First pass: emit leaf nodes (non-containers) ---
+  tikz += '% --- Nodes ---\n';
+  sortedNodes.forEach(node => {
     const children = getChildNodes(node.id, nodes);
-    if (children.length === 0) return; // Not a container
+    if (children.length > 0) return; // Skip containers for now
 
-    // Calculate container bounds based on children (returns pixel dimensions)
-    const containerBounds = calculateContainerBounds(children, nodes);
-    const parentPos = toAbsolutePosition(node, nodes);
-
-    // Container center in absolute coordinates
-    const containerCenterX = parentPos.x + containerBounds.centerX;
-    const containerCenterY = parentPos.y + containerBounds.centerY;
-
-    // Convert position to LaTeX coordinates (apply scale for position)
-    const x = ((containerCenterX - centerX) * scale).toFixed(2);
-    const y = (-(containerCenterY - centerY) * scale).toFixed(2);
-
-    // Convert dimensions: pixel dimensions / 40 = cm (same as regular nodes)
-    const widthCm = (containerBounds.width / 40).toFixed(2);
-    const heightCm = (containerBounds.height / 40).toFixed(2);
-
-    const strokeColorName = registerColor(getNodeStrokeColor(node));
-    const fillColorName = registerColor(getNodeFillColor(node));
-
-    // Register container ID for edges (though usually edges go to content)
-    const containerId = `container${index + 1}`;
-    nodeMap.set(node.id, containerId);
-
-    // Render container as solid rectangle with label above (removed dashed)
-    tikz += `\\node[rectangle, rounded corners=4pt, draw=${strokeColorName}, fill=${fillColorName}, fill opacity=0.15, minimum width=${widthCm}cm, minimum height=${heightCm}cm] (${containerId}) at (${x}, ${y}) {};\n`;
-    tikz += `\\node[above=0.1cm of ${containerId}, font=\\small] {${escapeLaTeXText(node.label)}};\n`;
-  });
-
-  tikz += '\n% Nodes\n';
-  sortedNodes.forEach((node, index) => {
-    const children = getChildNodes(node.id, nodes);
-    if (children.length > 0) return; // Skip containers
-
+    const tikzId = nodeIdMap.get(node.id)!;
     const pos = toAbsolutePosition(node, nodes);
     const x = ((pos.x - centerX) * scale).toFixed(2);
     const y = (-(pos.y - centerY) * scale).toFixed(2);
 
+    // Build label
     let labelContent = escapeLaTeXText(node.label);
     if (node.secondaryLabel) {
       labelContent += `\\\\ ${escapeLaTeXText(node.secondaryLabel)}`;
     }
     if (node.subscript) {
-      labelContent = `$\\text{${labelContent}}_{\\text{${escapeLaTeXText(node.subscript)}}}$`;
-    } else if (isLaTeXContent(node.label)) {
-      // Detect if user likely wants math mode but hasn't fully wrapped it, or if it's already wrapped
-      const trimmed = node.label.trim();
-      const isWrapped = trimmed.startsWith('$') && trimmed.endsWith('$');
+      labelContent += `\\\\ {\\scriptsize\\itshape ${escapeLaTeXText(node.subscript)}}`;
+    }
 
-      if (!isWrapped && (node.label.includes('_') || node.label.includes('^'))) {
-        labelContent = `$${labelContent}$`;
+    // Determine TikZ style name
+    let styleName: string;
+    switch (node.type) {
+      case 'vocabulary': styleName = 'vocabulary'; break;
+      case 'practice': styleName = 'practice'; break;
+      case 'test': styleName = 'test'; break;
+      case 'operate': styleName = 'operate'; break;
+      case 'exit': styleName = 'exitnode'; break;
+      case 'custom': styleName = 'custom'; break;
+      default: styleName = 'custom'; break;
+    }
+
+    tikz += `\\node[${styleName}] (${tikzId}) at (${x}, ${y}) {${labelContent}};\n`;
+  });
+
+  // --- Second pass: emit containers using fit ---
+  const containerNodes = sortedNodes.filter(n => getChildNodes(n.id, nodes).length > 0);
+  if (containerNodes.length > 0) {
+    tikz += '\n% --- Containers (using fit) ---\n';
+
+    // Process containers from deepest to shallowest so inner fit nodes exist first
+    const sortedContainers = [...containerNodes].sort((a, b) => {
+      const depthA = getNestingDepth(a, nodes);
+      const depthB = getNestingDepth(b, nodes);
+      return depthB - depthA; // deepest first
+    });
+
+    sortedContainers.forEach(node => {
+      const tikzId = nodeIdMap.get(node.id)!;
+      const children = getChildNodes(node.id, nodes);
+
+      // Collect all descendant TikZ IDs for the fit
+      const fitTargets = children.map(child => `(${nodeIdMap.get(child.id)!})`).join(' ');
+
+      tikz += `\\node[container, fit=${fitTargets}, label=above:{${escapeLaTeXText(node.label)}}] (${tikzId}) {};\n`;
+    });
+  }
+
+  // --- Edges ---
+  tikz += '\n% --- Edges ---\n';
+  edges.forEach(edge => {
+    const sourceTikzId = nodeIdMap.get(edge.source);
+    const targetTikzId = nodeIdMap.get(edge.target);
+    if (!sourceTikzId || !targetTikzId) return;
+
+    // Determine TikZ edge style name
+    let edgeStyleName: string;
+    if (edge.isResultant) {
+      edgeStyleName = 'resultant';
+    } else {
+      switch (edge.type) {
+        case 'PV': edgeStyleName = 'pv'; break;
+        case 'VP': edgeStyleName = 'vp'; break;
+        case 'PP': edgeStyleName = 'pp'; break;
+        case 'VV': edgeStyleName = 'vv'; break;
+        case 'PV-suff': case 'PV-nec': edgeStyleName = 'pv'; break;
+        case 'VP-suff': case 'VP-nec': edgeStyleName = 'vp'; break;
+        case 'PP-suff': case 'PP-nec': edgeStyleName = 'pp'; break;
+        case 'VV-suff': case 'VV-nec': edgeStyleName = 'vv'; break;
+        case 'sequence': edgeStyleName = 'sequence'; break;
+        case 'feedback': edgeStyleName = 'feedback'; break;
+        case 'exit': edgeStyleName = 'exitedge'; break;
+        case 'entry': edgeStyleName = 'sequence'; break;
+        case 'loop': edgeStyleName = 'feedback'; break;
+        case 'test-pass': edgeStyleName = 'exitedge'; break;
+        case 'test-fail': edgeStyleName = 'sequence'; break;
+        case 'unmarked': edgeStyleName = 'unmarked'; break;
+        case 'custom': edgeStyleName = 'customedge'; break;
+        case 'resultant': edgeStyleName = 'resultant'; break;
+        default: edgeStyleName = 'customedge'; break;
       }
     }
 
-    const nodeId = `node${index + 1}`;
-    nodeMap.set(node.id, nodeId);
-
-    const dimensions = getNodeDimensions(node);
-    const widthCm = (dimensions.width / 40).toFixed(2);
-    const heightCm = (dimensions.height / 40).toFixed(2);
-
-    let nodeStyle = '';
-    switch (node.type) {
-      case 'vocabulary':
-        nodeStyle = `ellipse, fill=vocabfill, draw=vocabcolor, text=textcolor, minimum width=${widthCm}cm, minimum height=${heightCm}cm`;
-        break;
-      case 'practice':
-        nodeStyle = `rectangle, rounded corners=3pt, fill=practicefill, draw=practicecolor, text=textcolor, minimum width=${widthCm}cm, minimum height=${heightCm}cm`;
-        break;
-      case 'test':
-        nodeStyle = `diamond, fill=testfill, draw=testcolor, text=textcolor, minimum width=${widthCm}cm, minimum height=${heightCm}cm`;
-        break;
-      case 'operate':
-        nodeStyle = `rectangle, fill=operatefill, draw=operatecolor, text=textcolor, minimum width=${widthCm}cm, minimum height=${heightCm}cm`;
-        break;
-      case 'custom':
-      default:
-        const fillColorName = registerColor(getNodeFillColor(node));
-        const strokeColorName = registerColor(getNodeStrokeColor(node));
-        const textColorName = registerColor(getNodeTextColor(node));
-        const shape = node.style?.shape || 'circle';
-
-        let shapeStyle = 'circle';
-        if (shape === 'rectangle') shapeStyle = 'rectangle, rounded corners=3pt';
-        else if (shape === 'ellipse') shapeStyle = 'ellipse';
-        else if (shape === 'diamond') shapeStyle = 'diamond';
-
-        nodeStyle = `${shapeStyle}, fill=${fillColorName}, draw=${strokeColorName}, text=${textColorName}, minimum width=${widthCm}cm, minimum height=${heightCm}cm`;
-        break;
+    // Build label text
+    let labelText = edge.label || '';
+    if (!labelText && edge.type !== 'unmarked' && edge.type !== 'custom') {
+      labelText = edge.type;
+    }
+    if (edge.orderNumber !== undefined) {
+      labelText = `${edge.orderNumber}: ${labelText}`;
     }
 
-    nodeStyle += ', align=center';
-    tikz += `\\node[${nodeStyle}] (${nodeId}) at (${x}, ${y}) {${labelContent}};\n`;
-  });
+    // Determine bend angle for parallel edges
+    const bendAngle = edgeBendAngles.get(edge.id);
 
-  const convertPoint = (point: Point) => ({
-    x: ((point.x - centerX) * scale).toFixed(2),
-    y: (-(point.y - centerY) * scale).toFixed(2)
-  });
-
-  tikz += '\n% Edges\n';
-  uniqueEdges.forEach((edge, edgeIndex) => {
-    const sourceId = nodeMap.get(edge.source);
-    const targetId = nodeMap.get(edge.target);
-
-    // If nodes not found (e.g. filtered out), skip
-    if (!sourceId || !targetId) return;
-
-    // We still use computeEdgeGeometry to get control points for curves
-    const geometry = computeEdgeGeometryForExport(edge, nodes, uniqueEdges);
-    if (!geometry) return;
-
-    const styleParts = ['->', 'thick'];
-    if (edge.isResultant) {
-      styleParts.push('dashed');
+    // Self-loop
+    if (edge.source === edge.target) {
+      const labelPart = labelText
+        ? ` node[above, font=\\scriptsize] {${escapeLaTeXText(labelText)}}`
+        : '';
+      tikz += `\\draw[${edgeStyleName}] (${sourceTikzId}) to[loop above, looseness=5]${labelPart} (${sourceTikzId});\n`;
+      return;
     }
 
-    // Coloring (keep existing logic but default to black for academic)
-    // Actually, user wants academic look. So force black mostly?
-    // User verified 'academic colors'.
-    // In our manual .tex we used 'black' or 'red!70!black'.
-    // Let's keep the color logic but maybe simplify or make it overridable.
-    // For now, I'll keep the existing color logic as it mapped to TikZ colors which we can redefine globally if needed.
-    // But wait, the manual .tex used 'black' for most.
+    // Label positioning
+    const labelPosSuffix = edge.labelPosition === 'start' ? 'near start'
+      : edge.labelPosition === 'end' ? 'near end'
+        : 'midway';
 
-    switch (edge.type) {
-      case 'VV': styleParts.push('red!70!black'); break; // Keep distinctive
-      case 'unmarked': styleParts.push('gray!50'); break;
-      default: styleParts.push('black'); break; // Default everything else to black
-    }
+    const labelPart = labelText
+      ? ` node[${labelPosSuffix}, fill=white, inner sep=1pt, font=\\scriptsize] {${escapeLaTeXText(labelText)}}`
+      : '';
 
-    const edgeStyle = styleParts.join(', ');
-
-    // Use ANCHORING: (sourceId) -- (targetId)
-    // Use control points if curve/loop
-
-    let path = '';
-    if (geometry.type === 'curve' && geometry.control) {
-      const control = convertPoint(geometry.control);
-      path = `(${sourceId}) .. controls (${control.x}, ${control.y}) .. (${targetId})`;
-    } else if (geometry.type === 'loop' && geometry.control && geometry.control2) {
-      const control1 = convertPoint(geometry.control);
-      const control2 = convertPoint(geometry.control2);
-      // For loops, we need to respect the entry/exit angles which control points define
-      // Using (node) .. controls .. (node) works but might not look like a loop if start/end are same center.
-      // Ideally use specific anchors or coordinates for loops.
-      // But 'computeLoopEdgeGeometry' returns start/end on the border.
-      // Let's stick to coordinates for LOOPS only, as anchoring a loop to center-center is weird.
-      const start = convertPoint(geometry.start);
-      const end = convertPoint(geometry.end);
-      path = `(${start.x}, ${start.y}) .. controls (${control1.x}, ${control1.y}) and (${control2.x}, ${control2.y}) .. (${end.x}, ${end.y})`;
+    if (bendAngle !== undefined && bendAngle !== 0) {
+      // Curved edge using bend
+      const bendDir = bendAngle > 0 ? 'bend left' : 'bend right';
+      const bendVal = Math.abs(bendAngle).toFixed(0);
+      tikz += `\\draw[${edgeStyleName}] (${sourceTikzId}) to[${bendDir}=${bendVal}]${labelPart} (${targetTikzId});\n`;
     } else {
-      // Straight edge
-      path = `(${sourceId}) -- (${targetId})`;
-    }
-
-    tikz += `\\draw[${edgeStyle}] ${path};\n`;
-
-    // Labels
-    let labelText = edge.label || (edge.type === 'unmarked' || edge.type === 'custom' ? '' : edge.type);
-
-    // Auto-numbering: Add index + 1
-    // Note: User manual fix used 1..N.
-    // We can use edgeIndex + 1.
-    if (labelText) {
-      labelText = `${edgeIndex + 1}: ${labelText}`;
-    }
-
-    if (labelText) {
-      // Position label
-      // We use the computed label position from geometry, which is accurate enough
-      const labelPos = convertPoint(geometry.labelPosition);
-      const rotate = geometry.labelAngle ? `rotate=${geometry.labelAngle.toFixed(2)}` : '';
-
-      tikz += `  \\node[font=\\scriptsize, fill=white, inner sep=1pt${rotate ? ', ' + rotate : ''}] at (${labelPos.x}, ${labelPos.y}) {${escapeLaTeXText(labelText)}};\n`;
+      // Straight edge using native node references
+      tikz += `\\draw[${edgeStyleName}] (${sourceTikzId}) --${labelPart} (${targetTikzId});\n`;
     }
   });
 
-  tikz += `\n\\end{tikzpicture}`;
+  tikz += '\n\\end{tikzpicture}';
+
   return tikz;
 };
 
 // Export diagram as LaTeX
 export const exportAsLaTeX = (diagram: Diagram) => {
   const { nodes, edges } = diagram;
-  const tikzCode = generateTikZCode(nodes, edges);
 
-  // Generate diagram metadata
+  // Infer diagram type from content
+  let inferredType = diagram.type;
+  if (diagram.type === 'GENERIC' || !diagram.type) {
+    const hasVocab = nodes.some(n => n.type === 'vocabulary');
+    const hasPractice = nodes.some(n => n.type === 'practice');
+    const hasTest = nodes.some(n => n.type === 'test');
+    const hasOperate = nodes.some(n => n.type === 'operate');
+    const hasMUDNodes = hasVocab || hasPractice;
+    const hasTOTENodes = hasTest || hasOperate;
+    const hasMUDEdges = edges.some(e => ['PV', 'VP', 'PP', 'VV'].includes(e.type));
+    const hasTOTEEdges = edges.some(e => ['sequence', 'feedback', 'exit'].includes(e.type));
 
+    if ((hasMUDNodes || hasMUDEdges) && (hasTOTENodes || hasTOTEEdges)) {
+      inferredType = 'HYBRID';
+    } else if (hasMUDNodes || hasMUDEdges) {
+      inferredType = 'MUD';
+    } else if (hasTOTENodes || hasTOTEEdges) {
+      inferredType = 'TOTE';
+    }
+  }
 
+  const tikzCode = generateTikZCode(nodes, edges, inferredType);
 
-  const latexDocument = `\\documentclass[tikz,border=2pt]{standalone}
-\\usepackage{amsmath} % For \\text command
-\\usetikzlibrary{positioning,shapes.geometric,arrows.meta,fit,backgrounds}
-
-% Academic color palette (grayscale/monochrome)
-\\definecolor{vocabcolor}{gray}{0.0}      % Black borders
-\\definecolor{practicecolor}{gray}{0.0}    % Black borders
-\\definecolor{testcolor}{gray}{0.0}        % Black borders
-\\definecolor{operatecolor}{gray}{0.0}     % Black borders
-
-% Node fill colors (light grays)
-\\definecolor{vocabfill}{gray}{1.0}
-\\definecolor{practicefill}{gray}{0.9}
-\\definecolor{testfill}{gray}{0.95}
-\\definecolor{operatefill}{gray}{0.85}
-
-% Text color
-\\definecolor{textcolor}{gray}{0.2}
+  const latexDocument = `\\documentclass[border=5mm]{standalone}
+\\usepackage{tikz}
+\\usetikzlibrary{positioning, shapes.geometric, arrows.meta, fit, backgrounds}
 
 \\begin{document}
+
 ${tikzCode}
+
 \\end{document}`;
 
   const dataBlob = new Blob([latexDocument], { type: 'text/plain' });

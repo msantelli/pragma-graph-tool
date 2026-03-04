@@ -8,46 +8,46 @@ interface LegendProps {
 
 const nodeTypes = {
   MUD: [
-    { name: 'Vocabulary', shape: 'ellipse', color: '#1976D2', description: 'Linguistic/conceptual vocabulary' },
-    { name: 'Practice', shape: 'rounded-rect', color: '#F57C00', description: 'Ability, skill, or behavior' },
+    { name: 'Vocabulary', shape: 'ellipse', color: '#333333', description: 'Linguistic/conceptual vocabulary' },
+    { name: 'Practice', shape: 'rounded-rect', color: '#333333', description: 'Ability, skill, or behavior' },
   ],
   TOTE: [
-    { name: 'Test', shape: 'diamond', color: '#4CAF50', description: 'Condition check / decision point' },
-    { name: 'Operate', shape: 'rectangle', color: '#FFC107', description: 'Action or operation' },
+    { name: 'Test', shape: 'diamond', color: '#333333', description: 'Condition check / decision point' },
+    { name: 'Operate', shape: 'rectangle', color: '#333333', description: 'Action or operation' },
   ],
   HYBRID: [
-    { name: 'Vocabulary', shape: 'ellipse', color: '#1976D2', description: 'Linguistic/conceptual vocabulary' },
-    { name: 'Practice', shape: 'rounded-rect', color: '#F57C00', description: 'Ability, skill, or behavior' },
-    { name: 'Test', shape: 'diamond', color: '#4CAF50', description: 'Condition check / decision point' },
-    { name: 'Operate', shape: 'rectangle', color: '#FFC107', description: 'Action or operation' },
+    { name: 'Vocabulary', shape: 'ellipse', color: '#333333', description: 'Linguistic/conceptual vocabulary' },
+    { name: 'Practice', shape: 'rounded-rect', color: '#333333', description: 'Ability, skill, or behavior' },
+    { name: 'Test', shape: 'diamond', color: '#333333', description: 'Condition check / decision point' },
+    { name: 'Operate', shape: 'rectangle', color: '#333333', description: 'Action or operation' },
   ],
   GENERIC: [
-    { name: 'Custom', shape: 'circle', color: '#9E9E9E', description: 'Generic node' },
+    { name: 'Custom', shape: 'circle', color: '#555555', description: 'Generic node' },
   ],
 };
 
 const edgeTypes = {
   MUD: [
-    { name: 'PV', color: '#4CAF50', description: 'Practice → Vocabulary (deployment)' },
-    { name: 'VP', color: '#FF9800', description: 'Vocabulary → Practice (elaboration)' },
-    { name: 'PP', color: '#9C27B0', description: 'Practice → Practice (presupposition)' },
-    { name: 'VV', color: '#F44336', description: 'Vocabulary → Vocabulary (entailment)' },
+    { name: 'PV', color: '#333333', description: 'Practice → Vocabulary (deployment)' },
+    { name: 'VP', color: '#333333', description: 'Vocabulary → Practice (elaboration)' },
+    { name: 'PP', color: '#333333', description: 'Practice → Practice (presupposition)' },
+    { name: 'VV', color: '#333333', description: 'Vocabulary → Vocabulary (entailment)' },
   ],
   TOTE: [
-    { name: 'Sequence', color: '#2196F3', description: 'Flow from Test to Operate' },
-    { name: 'Feedback', color: '#FF5722', description: 'Return from Operate to Test' },
-    { name: 'Exit', color: '#8BC34A', description: 'Exit from Test when condition met' },
+    { name: 'Sequence', color: '#333333', description: 'Flow from Test to Operate' },
+    { name: 'Feedback', color: '#333333', description: 'Return from Operate to Test' },
+    { name: 'Exit', color: '#333333', description: 'Exit from Test when condition met' },
   ],
   HYBRID: [
-    { name: 'PV', color: '#4CAF50', description: 'Practice → Vocabulary' },
-    { name: 'VP', color: '#FF9800', description: 'Vocabulary → Practice' },
-    { name: 'PP', color: '#9C27B0', description: 'Practice → Practice' },
-    { name: 'VV', color: '#F44336', description: 'Vocabulary → Vocabulary' },
-    { name: 'Sequence', color: '#2196F3', description: 'TOTE sequence flow' },
-    { name: 'Feedback', color: '#FF5722', description: 'TOTE feedback loop' },
+    { name: 'PV', color: '#333333', description: 'Practice → Vocabulary' },
+    { name: 'VP', color: '#333333', description: 'Vocabulary → Practice' },
+    { name: 'PP', color: '#333333', description: 'Practice → Practice' },
+    { name: 'VV', color: '#333333', description: 'Vocabulary → Vocabulary' },
+    { name: 'Sequence', color: '#333333', description: 'TOTE sequence flow' },
+    { name: 'Feedback', color: '#333333', description: 'TOTE feedback loop' },
   ],
   GENERIC: [
-    { name: 'Custom', color: '#666', description: 'Generic edge' },
+    { name: 'Custom', color: '#555555', description: 'Generic edge' },
   ],
 };
 

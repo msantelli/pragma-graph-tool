@@ -48,48 +48,32 @@ export const getEdgeQualifier = (edgeType: string): 'suff' | 'nec' | null => {
 
 export const getEdgeColor = (type: string, isResultant: boolean = false): string => {
   const baseType = getBaseEdgeType(type);
-  const qualifier = getEdgeQualifier(type);
 
-  // Base colors for MUD relations
+  // Monochrome style matching Brandom's MUD conventions
+  // Edges are differentiated by labels, not colors
   let baseColor;
   switch (baseType) {
-    case 'PV': baseColor = '#4CAF50'; break; // Green
-    case 'VP': baseColor = '#FF9800'; break; // Orange  
-    case 'PP': baseColor = '#9C27B0'; break; // Purple
-    case 'VV': baseColor = '#F44336'; break; // Red
-    // TOTE relations
-    case 'sequence': baseColor = '#2196F3'; break; // Blue
-    case 'feedback': baseColor = '#FF5722'; break; // Deep Orange
-    case 'loop': baseColor = '#607D8B'; break; // Blue Grey
-    case 'exit': baseColor = '#8BC34A'; break; // Light Green
-    case 'entry': baseColor = '#4CAF50'; break; // Green
-    case 'test-pass': baseColor = '#4CAF50'; break; // Green
-    case 'test-fail': baseColor = '#F44336'; break; // Red
-    case 'unmarked': baseColor = '#666666'; break; // Neutral gray
-    case 'custom': baseColor = '#333333'; break; // Dark gray for custom
-    default: baseColor = '#666'; break;
+    // MUD relations — all black (Brandom style)
+    case 'PV': baseColor = '#333333'; break;
+    case 'VP': baseColor = '#333333'; break;
+    case 'PP': baseColor = '#333333'; break;
+    case 'VV': baseColor = '#333333'; break;
+    // TOTE relations — dark gray
+    case 'sequence': baseColor = '#333333'; break;
+    case 'feedback': baseColor = '#333333'; break;
+    case 'loop': baseColor = '#555555'; break;
+    case 'exit': baseColor = '#333333'; break;
+    case 'entry': baseColor = '#333333'; break;
+    case 'test-pass': baseColor = '#333333'; break;
+    case 'test-fail': baseColor = '#333333'; break;
+    case 'unmarked': baseColor = '#999999'; break;
+    case 'custom': baseColor = '#333333'; break;
+    default: baseColor = '#333333'; break;
   }
 
-  // Modify color based on qualifier
-  if (qualifier === 'suff') {
-    return baseColor; // Keep original color for sufficient
-  } else if (qualifier === 'nec') {
-    // Darker/more saturated for necessary
-    return baseColor.replace('#4CAF50', '#2E7D32') // Darker green
-      .replace('#FF9800', '#E65100') // Darker orange
-      .replace('#9C27B0', '#6A1B9A') // Darker purple
-      .replace('#F44336', '#C62828'); // Darker red
-  } else if (isResultant) {
-    // Lighter/more muted for resultant
-    return baseColor.replace('#4CAF50', '#81C784') // Lighter green
-      .replace('#FF9800', '#FFB74D') // Lighter orange
-      .replace('#9C27B0', '#BA68C8') // Lighter purple
-      .replace('#F44336', '#E57373') // Lighter red
-      .replace('#2196F3', '#64B5F6') // Lighter blue
-      .replace('#FF5722', '#FF8A65') // Lighter deep orange
-      .replace('#607D8B', '#90A4AE') // Lighter blue grey
-      .replace('#8BC34A', '#AED581') // Lighter light green
-      .replace('#666666', '#999999'); // Lighter gray
+  if (isResultant) {
+    // Lighter gray for resultant (dashed) edges
+    return '#999999';
   }
 
   return baseColor;

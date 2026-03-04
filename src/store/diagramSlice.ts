@@ -332,7 +332,7 @@ const diagramSlice = createSlice({
           };
           if (isDescendant(nodeId, parentId)) return;
 
-          // Validate: max depth of 2
+          // Validate: max depth of 4
           // Get depth of target parent
           const getDepth = (nId: string): number => {
             const n = state.currentDiagram!.nodes.find(nd => nd.id === nId);
@@ -350,7 +350,7 @@ const diagramSlice = createSlice({
           const subtreeDepth = getSubtreeDepth(nodeId);
 
           // Total depth would be: parentDepth + 1 (for node) + subtreeDepth
-          if (parentDepth + 1 + subtreeDepth > 2) return;
+          if (parentDepth + 1 + subtreeDepth > 4) return;
         }
 
         // Update the node

@@ -1,12 +1,12 @@
 import type { Node, Point } from '../types/all';
 
 const DEFAULT_NODE_COLORS: Record<string, { background: string; border: string }> = {
-  vocabulary: { background: '#E3F2FD', border: '#1976D2' },
-  practice: { background: '#FFF3E0', border: '#F57C00' },
-  test: { background: '#E8F5E8', border: '#4CAF50' },
-  operate: { background: '#FFF8E1', border: '#FFC107' },
-  exit: { background: '#FFEBEE', border: '#F44336' },
-  custom: { background: '#F5F5F5', border: '#757575' }
+  vocabulary: { background: '#FFFFFF', border: '#333333' },
+  practice: { background: '#FFFFFF', border: '#333333' },
+  test: { background: '#FFFFFF', border: '#333333' },
+  operate: { background: '#FFFFFF', border: '#333333' },
+  exit: { background: '#FFFFFF', border: '#333333' },
+  custom: { background: '#F5F5F5', border: '#555555' }
 };
 
 const normalizeHexColor = (value: string | undefined, fallback: string): string => {
@@ -271,7 +271,7 @@ export const isPointInsideNode = (point: Point, node: Node, allNodes: Node[]): b
 
 /**
  * Check if a node can be dropped onto a target as a child.
- * Validates: no cycles, max depth of 2, and target isn't the node itself.
+ * Validates: no cycles, max depth of 4, and target isn't the node itself.
  */
 export const isValidDropTarget = (
   draggedNodeId: string,
@@ -289,7 +289,7 @@ export const isValidDropTarget = (
   const descendants = getAllDescendants(draggedNodeId, allNodes);
   if (descendants.some(d => d.id === targetNodeId)) return false;
 
-  // Check max depth: target depth + dragged subtree depth + 1 <= 2
+  // Check max depth: target depth + dragged subtree depth + 1 <= 4
   const targetDepth = getNestingDepth(targetNode, allNodes);
 
   const getSubtreeDepth = (nodeId: string): number => {
@@ -299,7 +299,7 @@ export const isValidDropTarget = (
   };
   const subtreeDepth = getSubtreeDepth(draggedNodeId);
 
-  return targetDepth + 1 + subtreeDepth <= 2;
+  return targetDepth + 1 + subtreeDepth <= 4;
 };
 
 /**
