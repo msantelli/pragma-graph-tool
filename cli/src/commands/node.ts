@@ -20,7 +20,7 @@ export function registerNodeCommands(program: Command, getFilePath: () => string
     .option('--x <x>', 'X position', '0')
     .option('--y <y>', 'Y position', '0')
     .option('--parent <parentId>', 'Parent node ID for nesting')
-    .option('--subtype <subtype>', 'Node subtype')
+    .option('--subtype <subtype>', 'Node subtype. vocabulary: base|meta|modal|normative. practice: autonomous|dependent|algorithmic. Use "schema node-types" for details.')
     .option('--subscript <subscript>', 'Subscript text')
     .option('--secondary-label <label>', 'Secondary label text')
     .action(async (opts) => {

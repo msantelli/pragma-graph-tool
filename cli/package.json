@@ -7,7 +7,7 @@
     "pragma-cli": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node ../node_modules/esbuild/bin/esbuild dist/index.js --bundle --platform=node --format=cjs --outfile=dist/bundle.cjs",
     "dev": "tsc --watch"
   },
   "dependencies": {

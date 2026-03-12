@@ -20,7 +20,15 @@ const program = new Command();
 
 program
   .name('pragma-cli')
-  .description('CLI for Pragma Graph Tool — create and manipulate MUD/TOTE diagrams')
+  .description(`CLI for Pragma Graph Tool — create and manipulate MUD/TOTE diagrams.
+
+  Quick start:
+    pragma-cli schema all                                    # discover all types
+    pragma-cli --file d.json diagram create --name "My MUD" --type MUD
+    pragma-cli --file d.json node add --type vocabulary --label "V₁" --x 100 --y 100
+    pragma-cli --file d.json node add --type practice --label "P₁" --x 300 --y 100
+    pragma-cli --file d.json edge add --source <V1_ID> --target <P1_ID> --type VP
+    pragma-cli --file d.json export latex --raw > output.tex`)
   .version('1.0.0')
   .option('--json', 'Force JSON output')
   .option('--human', 'Force human-readable output')

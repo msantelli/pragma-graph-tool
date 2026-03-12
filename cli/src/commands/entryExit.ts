@@ -8,7 +8,7 @@ import { outputSuccess, outputError } from '../output/formatter.js';
 export function registerEntryExitCommands(program: Command, getFilePath: () => string | undefined): void {
 
   // Entry point commands
-  const entry = program.command('entry').description('Entry point commands');
+  const entry = program.command('entry').description('Entry point commands (TOTE diagrams)');
 
   entry
     .command('add')
@@ -75,7 +75,7 @@ export function registerEntryExitCommands(program: Command, getFilePath: () => s
     });
 
   // Exit point commands
-  const exit = program.command('exit').description('Exit point commands');
+  const exit = program.command('exit').description('Exit point commands (TOTE diagrams)');
 
   exit
     .command('add')

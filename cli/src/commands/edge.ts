@@ -22,7 +22,7 @@ export function registerEdgeCommands(program: Command, getFilePath: () => string
     .description('Add an edge between two nodes')
     .requiredOption('--source <id>', 'Source node ID')
     .requiredOption('--target <id>', 'Target node ID')
-    .requiredOption('--type <type>', 'Edge type')
+    .requiredOption('--type <type>', 'Edge type. MUD: PV, VP, PP, VV (add -suff/-nec for qualified). TOTE: sequence, feedback, loop, test-pass, test-fail, entry, exit. Other: resultant, unmarked, custom. Use "schema edge-types" for details.')
     .option('--label <label>', 'Edge label')
     .option('--resultant', 'Mark as resultant (dashed)')
     .option('--order <number>', 'Edge ordering number')
