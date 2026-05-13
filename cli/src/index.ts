@@ -15,6 +15,9 @@ import { registerExportCommands } from './commands/export.js';
 import { registerHistoryCommands } from './commands/history.js';
 import { registerSchemaCommands } from './commands/schema.js';
 import { registerStatusCommand } from './commands/status.js';
+import { registerCheckCommand } from './commands/check.js';
+import { registerDeriveCommand } from './commands/derive.js';
+import { registerExplainCommand } from './commands/explain.js';
 
 const program = new Command();
 
@@ -88,5 +91,8 @@ registerEntryExitCommands(program, getFilePath);
 registerExportCommands(program);
 registerHistoryCommands(program, getFilePath);
 registerSchemaCommands(program);
+registerCheckCommand(program);
+registerDeriveCommand(program, getFilePath);
+registerExplainCommand(program);
 
 program.parse();

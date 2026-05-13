@@ -2,10 +2,43 @@ import type { Edge } from './types.js';
 
 type DiagramMode = 'MUD' | 'TOTE' | 'HYBRID' | 'GENERIC';
 
+// Filter an edge-type list to those whose canonical source/target node types
+// match the given pair. Returns the input list untouched when either type is
+// absent, so the existing callers still see all types when they don't know.
+function filterByEndpoints(
+  types: Edge['type'][],
+  sourceType: string | undefined,
+  targetType: string | undefined
+): Edge['type'][] {
+  if (!sourceType || !targetType) return types;
+  const PRACT = 'practice';
+  const VOCAB = 'vocabulary';
+  const TEST = 'test';
+  const OP = 'operate';
+  return types.filter(t => {
+    switch (t) {
+      case 'PV': case 'PV-suff': case 'PV-nec':
+        return sourceType === PRACT && targetType === VOCAB;
+      case 'VP': case 'VP-suff': case 'VP-nec':
+        return sourceType === VOCAB && targetType === PRACT;
+      case 'PP': case 'PP-suff': case 'PP-nec':
+        return sourceType === PRACT && targetType === PRACT;
+      case 'VV': case 'VV-suff': case 'VV-nec':
+        return sourceType === VOCAB && targetType === VOCAB;
+      case 'test-pass':
+        return sourceType === TEST;
+      case 'test-fail':
+        return sourceType === TEST && targetType === OP;
+      default:
+        return true; // sequence/feedback/loop/entry/exit/custom/unmarked/resultant: unrestricted
+    }
+  });
+}
+
 export const getAvailableEdgeTypes = (
   mode: DiagramMode,
-  _sourceType?: string,
-  _targetType?: string,
+  sourceType?: string,
+  targetType?: string,
   isAutoDetect: boolean = true
 ): Edge['type'][] => {
   let baseTypes: Edge['type'][] = [];
@@ -26,10 +59,10 @@ export const getAvailableEdgeTypes = (
   }
 
   if (mode !== 'GENERIC') {
-    return [...baseTypes, 'unmarked'] as Edge['type'][];
+    baseTypes = [...baseTypes, 'unmarked'] as Edge['type'][];
   }
 
-  return baseTypes;
+  return filterByEndpoints(baseTypes, sourceType, targetType);
 };
 
 export const getBaseEdgeType = (edgeType: string): string => {

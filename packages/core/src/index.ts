@@ -114,6 +114,30 @@ export {
   getModeDescription
 } from './diagramUtils.js';
 
+// Validation engine (permissive Brandom/Miller-aware checks)
+export {
+  type Severity,
+  type ValidationIssue,
+  type ValidationCode,
+  validateDiagram,
+  expectedBasicMUR,
+  autoDetectMUDEdgeType,
+  autoDetectTOTEEdgeType,
+  toBasicMUD
+} from './validate.js';
+
+// Strict Brandom-canonical derivation engine
+export {
+  type CompositionRuleName,
+  type SuggestedResultant,
+  type DetectedLX,
+  type DetectedPragmaticMetavocabulary,
+  detectLXRelations,
+  detectPragmaticMetavocabulary,
+  deriveResultants,
+  buildResultantEdgePayload
+} from './derive.js';
+
 // Export utilities (pure generators)
 export {
   type ExportEdgeGeometry,

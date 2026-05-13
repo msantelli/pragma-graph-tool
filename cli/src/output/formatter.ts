@@ -23,6 +23,14 @@ function isJsonMode(): boolean {
   return !process.stdout.isTTY;
 }
 
+// Public: true only when the user explicitly requested JSON via --json.
+// Commands like `explain --style narrative` that produce plain text should
+// stay plain text under shell redirection and only switch to JSON when the
+// user opts in.
+export function isJsonExplicit(): boolean {
+  return forceJson;
+}
+
 export function outputSuccess(command: string, result: unknown): void {
   if (isJsonMode()) {
     const envelope: CLIResult = { ok: true, command, result };
