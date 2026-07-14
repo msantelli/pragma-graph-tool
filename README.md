@@ -129,7 +129,17 @@ pragma-cli node add --type vocabulary --label "V₁" --x 200 --y 100   # appears
 pragma-cli --headless status               # → mode: "headless", gui: false
 ```
 
-The connection is secured with a per-session Bearer token and only listens on `127.0.0.1`.
+The connection is secured with a per-session Bearer token and only listens on `127.0.0.1`. Every JSON envelope carries a `"mode": "gui" | "headless"` field, and `--require-gui` makes the CLI exit 1 (`GUI_UNAVAILABLE`) instead of silently falling back to headless.
+
+With `--file` in connected mode, the CLI mirrors the GUI's state into the file after every mutation, so the file always matches the canvas (the GUI remains the source of truth).
+
+#### WSL ↔ Windows
+When the GUI runs on Windows and the CLI inside WSL, discovery also scans `/mnt/c/Users/*/.pragma-graph-tool/server.json` and probes the GUI over HTTP (liveness is verified with an authenticated request, not a PID check). This works out of the box with WSL2 **mirrored networking** (`networkingMode=mirrored` in `%UserProfile%\.wslconfig`); under default NAT mode the CLI also tries the Windows host IP from `/etc/resolv.conf`.
+
+Escape hatches:
+- `PRAGMA_GUI_URL` + `PRAGMA_GUI_TOKEN` — connect to an explicit endpoint (skips file discovery; token is in the GUI's `server.json`)
+- `PRAGMA_GUI_TIMEOUT_MS` — probe/request timeout override
+- `PRAGMA_BRIDGE_BIND=0.0.0.0` (set before launching the GUI) — bind the bridge beyond loopback. Not recommended: the Bearer token travels as plaintext HTTP; use only on trusted networks.
 
 ### Headless Workflow
 Without the GUI, the CLI operates in headless mode (standalone Redux store in-process). The `--file` flag creates a stateless pipeline: each invocation loads the file, applies the command, and saves the result.

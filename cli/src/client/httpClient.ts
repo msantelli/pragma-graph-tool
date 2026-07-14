@@ -13,6 +13,10 @@ export interface GUIStatus {
   diagram: { id: string; name: string; type: string; nodes: number; edges: number } | null;
 }
 
+const REQUEST_TIMEOUT_MS = process.env.PRAGMA_GUI_TIMEOUT_MS
+  ? parseInt(process.env.PRAGMA_GUI_TIMEOUT_MS, 10)
+  : 5000;
+
 export class GUIClient {
   private conn: GUIConnection;
 
@@ -20,12 +24,16 @@ export class GUIClient {
     this.conn = conn;
   }
 
+  get connection(): GUIConnection {
+    return this.conn;
+  }
+
   private request<T>(method: string, path: string, body?: unknown): Promise<T> {
     return new Promise((resolve, reject) => {
       const payload = body ? JSON.stringify(body) : undefined;
 
       const req = http.request({
-        hostname: '127.0.0.1',
+        hostname: this.conn.host,
         port: this.conn.port,
         path,
         method,
@@ -55,7 +63,7 @@ export class GUIClient {
         reject(new Error(`Cannot connect to GUI: ${err.message}`));
       });
 
-      req.setTimeout(5000, () => {
+      req.setTimeout(REQUEST_TIMEOUT_MS, () => {
         req.destroy(new Error('GUI request timed out'));
       });
 

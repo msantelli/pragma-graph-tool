@@ -468,9 +468,12 @@ function startCLIServer() {
     }
   });
 
-  cliServer.listen(0, '127.0.0.1', () => {
+  // Loopback by default. PRAGMA_BRIDGE_BIND=0.0.0.0 opts into LAN exposure
+  // (the bearer token travels as plaintext HTTP — only use on trusted networks).
+  const bindHost = process.env.PRAGMA_BRIDGE_BIND || '127.0.0.1';
+  cliServer.listen(0, bindHost, () => {
     const port = cliServer.address().port;
-    console.log(`CLI server listening on 127.0.0.1:${port}`);
+    console.log(`CLI server listening on ${bindHost}:${port}`);
 
     // Write connection file
     if (!fs.existsSync(CONNECTION_DIR)) {

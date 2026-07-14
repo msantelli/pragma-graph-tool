@@ -2,6 +2,7 @@ import type { Diagram } from '@pragma-graph/core';
 import { GUIClient, type DispatchAction } from './client/httpClient.js';
 import * as headlessStore from './headless/headlessStore.js';
 import { saveDiagramToFile } from './headless/fileManager.js';
+import { markPersistFailure } from './output/formatter.js';
 
 let guiClient: GUIClient | null = null;
 
@@ -60,12 +61,16 @@ export function getHeadlessState() {
 }
 
 export async function autoSave(getFilePath: () => string | undefined): Promise<void> {
-  // Skip file auto-save when connected to GUI — the GUI is the source of truth
-  if (guiClient) return;
-
   const filePath = getFilePath();
-  if (filePath) {
-    const d = headlessStore.getDiagram();
+  if (!filePath) return;
+
+  try {
+    // Connected: the GUI is the source of truth — mirror its state into the
+    // file so --file always reflects what the user sees on the canvas.
+    const d = guiClient ? await guiClient.getDiagram() : headlessStore.getDiagram();
     if (d) saveDiagramToFile(d, filePath);
+  } catch (err) {
+    markPersistFailure();
+    process.stderr.write(`Warning: could not write ${filePath}: ${(err as Error).message}\n`);
   }
 }
