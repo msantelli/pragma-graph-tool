@@ -1,6 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import diagramReducer from './diagramSlice';
-import uiReducer from './uiSlice';
+import { diagramReducer, uiReducer } from '@pragma-graph/core';
 
 export const store = configureStore({
   reducer: {

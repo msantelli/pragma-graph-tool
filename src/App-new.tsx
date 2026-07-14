@@ -26,7 +26,7 @@ import {
   setShowEdgeModificationPanel,
   setSelectedNodeForCustomization,
   setSelectedEdgeForModification
-} from './store/uiSlice';
+} from '@pragma-graph/core';
 import {
   createDiagram,
   undo,
@@ -39,10 +39,11 @@ import {
   saveToHistory,
   updateNode,
   updateEdge
-} from './store/diagramSlice';
-import { getAvailableTools } from './utils/diagramUtils';
-import { exportAsJSON, exportAsSVG, exportAsLaTeX, importFromJSON, calculateDiagramBounds } from './utils/exportUtils';
-import type { Node, Edge } from './types/all';
+} from '@pragma-graph/core';
+import { getAvailableTools } from '@pragma-graph/core';
+import { exportAsJSON, exportAsSVG, exportAsLaTeX, importFromJSON } from './utils/exportUtils';
+import { calculateDiagramBounds } from '@pragma-graph/core';
+import type { Node, Edge } from '@pragma-graph/core';
 
 const AppContent: React.FC = () => {
   const dispatch = useAppDispatch();

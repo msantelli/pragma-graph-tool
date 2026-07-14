@@ -1,10 +1,10 @@
 import React from 'react';
 import { Modal } from '../Modal';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { setSelectedNodeForCustomization } from '../../store/uiSlice';
-import { updateNode, deleteNode as removeNode, saveToHistory } from '../../store/diagramSlice';
-import { getNodeColors, getNodeShape } from '../../utils/nodeUtils';
-import type { NodeStyle } from '../../types/all';
+import { setSelectedNodeForCustomization } from '@pragma-graph/core';
+import { updateNode, deleteNode as removeNode, saveToHistory } from '@pragma-graph/core';
+import { getNodeColors, getNodeShape } from '@pragma-graph/core';
+import type { NodeStyle } from '@pragma-graph/core';
 
 interface NodeCustomizationPanelProps {
   isOpen: boolean;

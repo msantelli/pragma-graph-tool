@@ -5,7 +5,7 @@ import diagramReducer, {
   addEdge,
   deleteNode,
   selectItems,
-} from './diagramSlice'
+} from './diagramSlice.js'
 
 describe('diagramSlice reducers', () => {
   it('creates a new diagram shell with cleared selection', () => {

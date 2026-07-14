@@ -7,9 +7,9 @@ import {
   clearSelection,
   createDiagram,
   saveToHistory
-} from '../store/diagramSlice';
-import { setSelectedTool } from '../store/uiSlice';
-import type { Edge, Point, NodeType } from '../types/all';
+} from '@pragma-graph/core';
+import { setSelectedTool } from '@pragma-graph/core';
+import type { Edge, Point, NodeType } from '@pragma-graph/core';
 
 export const useDiagram = () => {
   const dispatch = useAppDispatch();

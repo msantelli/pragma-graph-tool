@@ -1,0 +1,40 @@
+{
+  "id": "fixture-full-mud",
+  "name": "Full MUD",
+  "type": "MUD",
+  "nodes": [
+    { "id": "v-base", "type": "vocabulary", "subtype": "base", "position": { "x": 100, "y": 100 }, "label": "V base", "subscript": "context-homogeneous" },
+    { "id": "v-meta", "type": "vocabulary", "subtype": "meta", "position": { "x": 500, "y": 100 }, "label": "V meta", "secondaryLabel": "pragmatic metavocabulary" },
+    { "id": "p-auto", "type": "practice", "subtype": "autonomous", "position": { "x": 100, "y": 350 }, "label": "P autonomous" },
+    { "id": "p-dep", "type": "practice", "subtype": "dependent", "position": { "x": 500, "y": 350 }, "label": "P dependent" },
+    { "id": "t1", "type": "test", "position": { "x": 800, "y": 100 }, "label": "Test node", "condition": "match?" },
+    { "id": "o1", "type": "operate", "position": { "x": 800, "y": 350 }, "label": "Operate node" },
+    { "id": "x1", "type": "exit", "position": { "x": 1000, "y": 225 }, "label": "Exit node" },
+    { "id": "c1", "type": "custom", "position": { "x": 300, "y": 550 }, "label": "Custom node", "style": { "shape": "hexagon", "size": "large" } }
+  ],
+  "edges": [
+    { "id": "e-pv", "source": "p-auto", "target": "v-base", "type": "PV", "orderNumber": 1 },
+    { "id": "e-vp", "source": "v-base", "target": "p-dep", "type": "VP", "orderNumber": 2 },
+    { "id": "e-pp", "source": "p-auto", "target": "p-dep", "type": "PP" },
+    { "id": "e-vv", "source": "v-base", "target": "v-meta", "type": "VV" },
+    { "id": "e-pv-suff", "source": "p-dep", "target": "v-meta", "type": "PV-suff", "label": "PV-suff witness" },
+    { "id": "e-pv-nec", "source": "p-dep", "target": "v-base", "type": "PV-nec" },
+    { "id": "e-vp-suff", "source": "v-meta", "target": "p-auto", "type": "VP-suff" },
+    { "id": "e-vp-nec", "source": "v-meta", "target": "p-dep", "type": "VP-nec" },
+    { "id": "e-pp-suff", "source": "p-dep", "target": "p-auto", "type": "PP-suff" },
+    { "id": "e-pp-nec", "source": "p-auto", "target": "c1", "type": "PP-nec" },
+    { "id": "e-vv-suff", "source": "v-meta", "target": "v-base", "type": "VV-suff" },
+    { "id": "e-vv-nec", "source": "v-base", "target": "v-meta", "type": "VV-nec" },
+    { "id": "e-res", "source": "v-base", "target": "v-meta", "type": "resultant", "isResultant": true, "resultantFrom": ["e-vp", "e-pv-suff"], "label": "res: VV" },
+    { "id": "e-unmarked", "source": "c1", "target": "p-dep", "type": "unmarked" },
+    { "id": "e-custom", "source": "c1", "target": "v-base", "type": "custom", "label": "bespoke relation" }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z",
+    "author": "fixture",
+    "description": "Every node type and every MUD edge type"
+  }
+}

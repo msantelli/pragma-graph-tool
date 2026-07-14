@@ -149,15 +149,16 @@ pragma-cli --file diagram.json export latex --raw > diagram.tex
 - Modal system: reusable wrapper powering edge type selector, node customiser, edge editor
 - Utilities: `utils/` holds grid snapping, export pipelines, and type helpers
 - **Monorepo**: npm workspaces with `packages/core/` (shared types, store, pure utils) and `cli/` (Node.js CLI)
-- **Parallel copies**: `src/` and `packages/core/` maintain parallel copies of types, slices, and export utils; changes to export logic must be applied to both
+- **Single source of truth**: the GUI imports types, slices, utils, and export generators from `@pragma-graph/core` (vite aliases the package to `packages/core/src` so dev/HMR compile it from source); `src/` keeps only React components, hooks, and thin DOM wrappers. Golden-file tests in `tests/fidelity/` pin the export output
 
 ### Package Structure
 ```
 pragma-graph-tool/
-  src/                  # GUI (React + Vite) — exposes window.__pragma_cli__ bridge
+  src/                  # GUI (React + Vite) — components/hooks + window.__pragma_cli__ bridge
   electron/             # Electron main process — HTTP server for CLI bridge
   packages/core/        # Shared pure TypeScript: types, Redux slices, utils, export generators
   cli/                  # CLI (commander + @pragma-graph/core) — auto-connects to GUI or runs headless
+  tests/                # Fixtures + golden-file tests pinning export output
 ```
 
 Contributor assumptions: familiarity with Brandom’s inferential pragmatics and TOTE literature. No end-user onboarding text is provided in the app; the audience is expected to know the theoretical distinctions encoded by the tooling.
