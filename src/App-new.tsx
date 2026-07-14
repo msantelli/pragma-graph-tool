@@ -1,3 +1,4 @@
+import { theme } from './theme';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { store } from './store/store';
@@ -498,7 +499,7 @@ const AppContent: React.FC = () => {
                 marginTop: '1rem',
                 width: '100%',
                 padding: '0.6rem',
-                background: '#1976D2',
+                background: theme.cloth,
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',

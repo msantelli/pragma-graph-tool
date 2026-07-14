@@ -1,3 +1,4 @@
+import { theme } from '../../theme';
 import React from 'react';
 import { Modal } from '../Modal';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
@@ -133,8 +134,8 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
               onClick={() => updateEdgeType(edgeType)}
               style={{
                 padding: '8px 12px',
-                border: `2px solid ${edge.type === edgeType ? '#2196F3' : '#ddd'}`,
-                background: edge.type === edgeType ? '#E3F2FD' : '#f9f9f9',
+                border: `2px solid ${edge.type === edgeType ? theme.cloth : theme.hairline}`,
+                background: edge.type === edgeType ? '#EDF1F6' : '#f9f9f9',
                 borderRadius: '6px',
                 cursor: 'pointer',
                 textAlign: 'left',
@@ -161,7 +162,7 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
           padding: '12px',
           border: '2px solid #ddd',
           borderRadius: '6px',
-          background: edge.isResultant ? '#E8F5E8' : '#f9f9f9',
+          background: edge.isResultant ? '#EDF1F6' : '#f9f9f9',
           transition: 'all 0.2s ease'
         }}>
           <input
@@ -201,8 +202,8 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
               style={{
                 flex: 1,
                 padding: '8px',
-                border: `2px solid ${(edge.labelPosition || 'middle') === pos ? '#2196F3' : '#ddd'}`,
-                background: (edge.labelPosition || 'middle') === pos ? '#E3F2FD' : '#f9f9f9',
+                border: `2px solid ${(edge.labelPosition || 'middle') === pos ? theme.cloth : theme.hairline}`,
+                background: (edge.labelPosition || 'middle') === pos ? '#EDF1F6' : '#f9f9f9',
                 borderRadius: '6px',
                 cursor: 'pointer',
                 fontWeight: (edge.labelPosition || 'middle') === pos ? 'bold' : 'normal',
@@ -254,7 +255,7 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
           padding: '12px',
           border: '2px solid #ddd',
           borderRadius: '6px',
-          background: edge.showLabelBackground ? '#E3F2FD' : '#f9f9f9',
+          background: edge.showLabelBackground ? '#EDF1F6' : '#f9f9f9',
           transition: 'all 0.2s ease'
         }}>
           <input
@@ -347,9 +348,9 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
           onClick={deleteEdge}
           style={{
             padding: '10px 16px',
-            border: '2px solid #f44336',
+            border: `1px solid ${theme.annotation}`,
             background: '#ffebee',
-            color: '#f44336',
+            color: theme.annotation,
             borderRadius: '6px',
             cursor: 'pointer',
             fontWeight: 'bold'
@@ -361,8 +362,8 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
           onClick={handleClose}
           style={{
             padding: '10px 16px',
-            border: '2px solid #2196F3',
-            background: '#2196F3',
+            border: `1px solid ${theme.cloth}`,
+            background: theme.cloth,
             color: 'white',
             borderRadius: '6px',
             cursor: 'pointer',

@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.0 — 2026-07-14
+
+### Print-room chrome
+Full visual redesign of the instrument around the (unchanged) monochrome canvas. Five tokens now rule all chrome color — paper `#FBFAF8`, ink `#1F1E1C`, hairline `#E3E1DC`, cloth `#27476E` (structure: active tool, primary actions, focus), annotation `#A63A2B` (selection, validation, destructive — nothing else):
+
+- Header: flat paper with a hairline rule replaces the Material blue gradient; the title is set in Alegreya; segmented mode control and tool tray use cloth for the active state; the rainbow-tinted file buttons are unified as quiet outlined controls.
+- Canvas interactions: selection is annotation red (the one color that appears on the canvas), edge-source arming is cloth, entry anchors are cloth, exit anchors are ink — no more traffic-light green/red.
+- Panels and sidebar follow the same tokens; the sidebar's invented per-type color badges are gone (the diagram language is monochrome — the type name carries the information).
+- Typography: Alegreya + Alegreya Sans (Huerta Tipográfica, Buenos Aires; OFL) self-hosted as woff2 — Alegreya for the title and headings, Alegreya Sans for all UI. Works offline, in Electron, and on Netlify.
+- The Vite scaffold CSS is gone (its dark-default root made unstyled elements go dark on dark-mode systems); the app declares itself a light instrument (`color-scheme: light`).
+- PWA `theme_color`/`background_color` and the Electron window background now match the theme (no white flash on launch).
+
+Exports are untouched: node fills, edge ink, and all generators live in `@pragma-graph/core` and are pinned by the golden tests — this release recolors only the instrument.
+
 ## 1.3.0 — 2026-07-14
 
 ### Unified edge geometry (WYSIWYG exports)

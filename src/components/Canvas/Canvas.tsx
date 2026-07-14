@@ -8,6 +8,7 @@ import { addEdge, addEntryPoint, addExitPoint, updateEntryPoint, saveToHistory, 
 import { Grid } from '../Grid';
 import { getSnappedPosition, getNodeConnectionPoint } from '@pragma-graph/core';
 import { getEdgeGeometry } from './edgeGeometryAdapter';
+import { theme } from '../../theme';
 import {
   getNodeColors,
   getNodeDimensions,
@@ -297,7 +298,7 @@ export const Canvas: React.FC = () => {
         return geometry?.path ?? '';
       })
       .attr('stroke', (d: Edge) => {
-        if (selectedItems.includes(d.id)) return '#2196F3';
+        if (selectedItems.includes(d.id)) return theme.annotation;
         return getEdgeColor(d.type, d.isResultant);
       })
       .attr('stroke-dasharray', (d: Edge) => {
@@ -432,7 +433,7 @@ export const Canvas: React.FC = () => {
       }
 
       const shape = getNodeShape(d);
-      const strokeColor = isEdgeSource ? '#FF9800' : (isSelected ? '#2196F3' : colors.border);
+      const strokeColor = isEdgeSource ? theme.cloth : (isSelected ? theme.annotation : colors.border);
       const strokeWidth = isEdgeSource ? 4 : (isSelected ? 3 : 1);
 
       // Render container background if node has children
@@ -898,8 +899,8 @@ export const Canvas: React.FC = () => {
     // Entry point visual: green circle with arrow
     entryPointEnter.append('circle')
       .attr('r', 8)
-      .attr('fill', '#4CAF50')
-      .attr('stroke', '#2E7D32')
+      .attr('fill', theme.cloth)
+      .attr('stroke', theme.clothHover)
       .attr('stroke-width', 2);
 
     entryPointEnter.append('path')
@@ -924,7 +925,7 @@ export const Canvas: React.FC = () => {
 
           d3.select(this).append('path')
             .attr('d', `M ${startX},${startY} L ${endX},${endY}`)
-            .attr('stroke', '#4CAF50')
+            .attr('stroke', theme.cloth)
             .attr('stroke-width', 2)
             .attr('fill', 'none')
             .attr('marker-end', 'url(#arrow-default)');
@@ -950,8 +951,8 @@ export const Canvas: React.FC = () => {
       .attr('y', -8)
       .attr('width', 16)
       .attr('height', 16)
-      .attr('fill', '#F44336')
-      .attr('stroke', '#C62828')
+      .attr('fill', theme.ink)
+      .attr('stroke', theme.ink)
       .attr('stroke-width', 2);
 
     exitPointEnter.append('path')
@@ -976,7 +977,7 @@ export const Canvas: React.FC = () => {
 
         d3.select(this).append('path')
           .attr('d', `M ${startX},${startY} L ${endX},${endY}`)
-          .attr('stroke', '#F44336')
+          .attr('stroke', theme.ink)
           .attr('stroke-width', 2)
           .attr('fill', 'none')
           .attr('marker-end', 'url(#arrow-default)');

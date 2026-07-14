@@ -89,13 +89,13 @@ The Pragma Graph Tool is a specialized application for creating visual represent
 
 #### Vocabulary Nodes (Ellipse)
 - **Purpose**: Represent linguistic or conceptual vocabularies
-- **Visual**: Elliptical shape, blue coloring
+- **Visual**: Elliptical shape, monochrome (ink on white, as in exports)
 - **Shortcut**: `V`
 - **Example**: "Color terminology", "Modal logic vocabulary"
 
 #### Practice Nodes (Rounded Rectangle)
 - **Purpose**: Represent abilities, skills, or behavioral patterns
-- **Visual**: Rounded rectangle shape, orange coloring
+- **Visual**: Rounded rectangle shape, monochrome
 - **Shortcut**: `P`
 - **Example**: "Color discrimination ability", "Logical reasoning practice"
 
@@ -103,13 +103,13 @@ The Pragma Graph Tool is a specialized application for creating visual represent
 
 #### Test Nodes (Diamond)
 - **Purpose**: Represent condition checking or decision points
-- **Visual**: Diamond shape, green coloring
+- **Visual**: Diamond shape, monochrome
 - **Shortcut**: `T`
 - **Example**: "Is goal achieved?", "Does output match criteria?"
 
 #### Operate Nodes (Rectangle)
 - **Purpose**: Represent actions or operations to be performed
-- **Visual**: Rectangle shape, yellow coloring
+- **Visual**: Rectangle shape, monochrome
 - **Shortcut**: `O`
 - **Example**: "Adjust parameters", "Apply correction"
 
@@ -125,21 +125,21 @@ When a node's label is too long to fit within its shape, a ⚠ indicator appears
 ### Edge Types by Mode
 
 #### MUD Mode Edge Types
-- **PV (Practice → Vocabulary)**: Practice deploys or generates vocabulary (green)
-- **VP (Vocabulary → Practice)**: Vocabulary elaborates or informs practice (orange)
-- **PP (Practice → Practice)**: Practice-to-practice presupposition (purple)
-- **VV (Vocabulary → Vocabulary)**: Vocabulary-to-vocabulary entailment (red)
+- **PV (Practice → Vocabulary)**: Practice deploys or generates vocabulary
+- **VP (Vocabulary → Practice)**: Vocabulary elaborates or informs practice
+- **PP (Practice → Practice)**: Practice-to-practice presupposition
+- **VV (Vocabulary → Vocabulary)**: Vocabulary-to-vocabulary entailment
 
 Each MUD edge type has qualified variants for sufficiency and necessity:
 - **`-suff`** (e.g., `PV-suff`): Sufficient condition — the practice/vocabulary is enough on its own
 - **`-nec`** (e.g., `PV-nec`): Necessary condition — the practice/vocabulary is required but may not suffice alone
 
 #### TOTE Mode Edge Types
-- **Sequence**: Test triggers Operate action (blue)
-- **Feedback**: Operate returns to Test (orange)
+- **Sequence**: Test triggers Operate action
+- **Feedback**: Operate returns to Test
 - **Loop**: Iterative self-edge on an Operate or Test
 - **Entry**: Transition into the cycle (renders without arrowhead)
-- **Exit**: Successful completion path (green)
+- **Exit**: Successful completion path
 - **Test-Pass**: Congruent branch out of a Test
 - **Test-Fail**: Incongruent branch from a Test to an Operate
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { theme } from '../../theme';
 
 interface HeaderProps {
   // Mode and settings
@@ -120,7 +121,7 @@ const Separator: React.FC = () => (
   <div style={{
     width: '1px',
     height: '24px',
-    background: 'rgba(255,255,255,0.2)',
+    background: theme.hairline,
     margin: '0 0.5rem'
   }} />
 );
@@ -131,7 +132,7 @@ const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     fontSize: '0.65rem',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    color: 'rgba(255,255,255,0.5)',
+    color: theme.inkMuted,
     marginRight: '0.5rem'
   }}>
     {children}
@@ -182,15 +183,11 @@ export const Header: React.FC<HeaderProps> = ({
   }, [diagramMode, lastMode]);
 
   // Common button style
-  const getButtonStyle = (isActive: boolean, isDisabled: boolean, color?: string): React.CSSProperties => ({
+  const getButtonStyle = (isActive: boolean, isDisabled: boolean): React.CSSProperties => ({
     padding: '0.4rem 0.75rem',
-    border: '1px solid rgba(255,255,255,0.2)',
-    background: isDisabled
-      ? 'rgba(255,255,255,0.05)'
-      : isActive
-        ? 'rgba(255,255,255,0.25)'
-        : color || 'rgba(255,255,255,0.1)',
-    color: isDisabled ? 'rgba(255,255,255,0.3)' : 'white',
+    border: `1px solid ${isActive ? theme.cloth : theme.hairline}`,
+    background: isActive ? theme.cloth : 'transparent',
+    color: isDisabled ? theme.inkMuted : isActive ? theme.paper : theme.ink,
     borderRadius: '6px',
     cursor: isDisabled ? 'not-allowed' : 'pointer',
     fontSize: '0.85rem',
@@ -204,20 +201,20 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <div
       style={{
-        background: 'linear-gradient(135deg, #1565C0 0%, #1976D2 50%, #1E88E5 100%)',
-        color: 'white',
+        background: theme.paper,
+        color: theme.ink,
         padding: '0.75rem 1rem',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.5rem',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        borderBottom: `1px solid ${theme.hairline}`
       }}
     >
       {/* Top row: Title, Mode, Grid */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem' }}>
         {/* Title */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: '200px' }}>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.5px' }}>
+          <h1 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 700, fontFamily: "'Alegreya', Georgia, serif" }}>
             Pragma Graph Tool
           </h1>
           <a
@@ -226,7 +223,7 @@ export const Header: React.FC<HeaderProps> = ({
             rel="noopener noreferrer"
             style={{
               fontSize: '0.75rem',
-              color: 'rgba(255,255,255,0.6)',
+              color: theme.inkMuted,
               textDecoration: 'none',
             }}
           >
@@ -242,7 +239,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div style={{
             display: 'flex',
             gap: '2px',
-            background: 'rgba(0,0,0,0.15)',
+            background: theme.hairline,
             borderRadius: '8px',
             padding: '3px',
             position: 'relative'
@@ -255,8 +252,8 @@ export const Header: React.FC<HeaderProps> = ({
                 style={{
                   padding: '0.35rem 0.75rem',
                   border: 'none',
-                  background: diagramMode === mode ? 'white' : 'transparent',
-                  color: diagramMode === mode ? '#1565C0' : 'rgba(255,255,255,0.8)',
+                  background: diagramMode === mode ? theme.cloth : 'transparent',
+                  color: diagramMode === mode ? theme.paper : theme.ink,
                   borderRadius: '6px',
                   cursor: 'pointer',
                   fontSize: '0.8rem',
@@ -339,7 +336,8 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Mode change hint */}
       {showModeHint && (
         <div style={{
-          background: 'rgba(255,255,255,0.15)',
+          border: `1px solid ${theme.hairline}`,
+          color: theme.inkMuted,
           padding: '0.5rem 1rem',
           borderRadius: '6px',
           fontSize: '0.8rem',
@@ -348,7 +346,6 @@ export const Header: React.FC<HeaderProps> = ({
           gap: '0.5rem',
           animation: 'fadeIn 0.3s ease'
         }}>
-          <span style={{ fontSize: '1rem' }}>💡</span>
           <span>{ModeDescriptions[diagramMode]}</span>
         </div>
       )}
@@ -361,7 +358,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div style={{
             display: 'flex',
             gap: '4px',
-            background: 'rgba(0,0,0,0.1)',
+            background: theme.hairline,
             padding: '4px',
             borderRadius: '8px'
           }}>
@@ -372,8 +369,8 @@ export const Header: React.FC<HeaderProps> = ({
                 title={`${tool.charAt(0).toUpperCase() + tool.slice(1)} (${ToolShortcuts[tool] || '?'})`}
                 style={{
                   ...getButtonStyle(selectedTool === tool, false),
-                  background: selectedTool === tool ? 'rgba(255,255,255,0.9)' : 'transparent',
-                  color: selectedTool === tool ? '#1565C0' : 'white',
+                  background: selectedTool === tool ? theme.cloth : 'transparent',
+                  color: selectedTool === tool ? theme.paper : theme.ink,
                   border: 'none',
                   padding: '0.4rem 0.6rem',
                 }}
@@ -428,7 +425,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onGroup}
             disabled={!canGroup}
             title="Group selected nodes (select 2+ nodes)"
-            style={getButtonStyle(false, !canGroup, 'rgba(0,150,136,0.7)')}
+            style={getButtonStyle(false, !canGroup)}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
@@ -440,7 +437,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onUngroup}
             disabled={!canUngroup}
             title="Ungroup selected container"
-            style={getButtonStyle(false, !canUngroup, 'rgba(255,87,34,0.7)')}
+            style={getButtonStyle(false, !canUngroup)}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="4 2" />
@@ -457,7 +454,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onImport}
             title="Import diagram from JSON file"
-            style={getButtonStyle(false, false, 'rgba(103,58,183,0.7)')}
+            style={getButtonStyle(false, false)}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -470,7 +467,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onExportJSON}
             disabled={!hasNodes}
             title="Export as JSON (for re-importing)"
-            style={getButtonStyle(false, !hasNodes, 'rgba(76,175,80,0.7)')}
+            style={getButtonStyle(false, !hasNodes)}
           >
             <span style={{ fontFamily: 'monospace', fontSize: '0.7rem', fontWeight: 600 }}>{'{}'}</span>
             <span>JSON</span>
@@ -479,7 +476,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onExportSVG}
             disabled={!hasNodes}
             title="Export as SVG (for presentations)"
-            style={getButtonStyle(false, !hasNodes, 'rgba(255,152,0,0.7)')}
+            style={getButtonStyle(false, !hasNodes)}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -492,7 +489,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onExportLatex}
             disabled={!hasNodes}
             title="Export as LaTeX/TikZ (for papers)"
-            style={getButtonStyle(false, !hasNodes, 'rgba(233,30,99,0.7)')}
+            style={getButtonStyle(false, !hasNodes)}
           >
             <span style={{ fontFamily: 'serif', fontSize: '0.8rem', fontStyle: 'italic' }}>T<sub>E</sub>X</span>
           </button>
