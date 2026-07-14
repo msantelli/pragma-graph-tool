@@ -58,7 +58,7 @@ export default defineConfig({
           vendor: ['react', 'react-dom'],
           redux: ['@reduxjs/toolkit', 'react-redux'],
           d3: ['d3'],
-          utils: ['lodash', 'uuid']
+          utils: ['uuid']
         }
       }
     },
