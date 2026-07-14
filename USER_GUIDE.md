@@ -137,7 +137,11 @@ Each MUD edge type has qualified variants for sufficiency and necessity:
 #### TOTE Mode Edge Types
 - **Sequence**: Test triggers Operate action (blue)
 - **Feedback**: Operate returns to Test (orange)
+- **Loop**: Iterative self-edge on an Operate or Test
+- **Entry**: Transition into the cycle (renders without arrowhead)
 - **Exit**: Successful completion path (green)
+- **Test-Pass**: Congruent branch out of a Test
+- **Test-Fail**: Incongruent branch from a Test to an Operate
 
 #### Generic Mode
 - **Unmarked**: General-purpose connections
@@ -271,6 +275,19 @@ Press `?` at any time to view the keyboard shortcuts modal.
 - **Mouse Wheel**: Zoom in/out
 - **Click + Drag** (on background): Pan the canvas
 
+### Desktop App Menus
+The Electron app adds menu items (with accelerators) on top of the in-app shortcuts:
+
+| Menu | Item | Shortcut |
+|------|------|----------|
+| Edit | Select All | `Ctrl+A` |
+| View | Zoom In / Zoom Out | `Ctrl+Plus` / `Ctrl+-` |
+| View | Reset Zoom | `Ctrl+0` |
+| View | Center Diagram | `Ctrl+Shift+C` |
+| Tools | Validate Diagram | `Ctrl+Shift+V` |
+
+**Tools → Validate Diagram** runs the same Brandom/Miller-aware validation engine as the CLI's `check` verb and shows any warnings or suggestions in a dialog.
+
 ## Command-Line Interface (CLI)
 
 The Pragma Graph Tool includes a CLI for programmatic diagram creation and manipulation. It is designed for two primary use cases:
@@ -284,6 +301,9 @@ The CLI operates in two modes:
 
 ### Setup
 
+**Windows (installed app)**: the desktop installer bundles the CLI and registers `pragma-cli` on your user PATH — open a new terminal and run `pragma-cli --help`. No Node.js toolchain required.
+
+**From source** (any platform):
 ```bash
 # From the project root
 npm run build:core   # Build the shared core library
@@ -323,8 +343,12 @@ $CLI export latex --raw > figure2.tex
 |------|-------------|
 | `--json` | Force JSON output (default when stdout is piped) |
 | `--human` | Force human-readable output (default in a terminal) |
-| `--file <path>` | Auto-load diagram before command, auto-save after mutations |
+| `--file <path>` | Auto-load diagram before command, auto-save after mutations (mirrors the canvas in connected mode) |
 | `--headless` | Force headless mode (skip GUI auto-connection) |
+| `--require-gui` | Exit 1 with `GUI_UNAVAILABLE` instead of falling back to headless |
+| `--force` | Overwrite `--file` even if another process changed it since load |
+
+In headless mode the CLI detects when the `--file` was modified by another process between load and save (content-hash comparison) and refuses the write with `FILE_CONFLICT` — re-run against the current file or pass `--force`. Rewriting identical content never counts as a conflict.
 
 ### Commands
 
@@ -407,12 +431,36 @@ All mutating commands (`node add`, `edge add`, `node delete`, etc.) automaticall
 
 | Command | Description |
 |---------|-------------|
-| `schema all` | Full type schema (node types, edge types, diagram modes) |
-| `schema node-types` | Available node types with shapes, subtypes, and descriptions |
-| `schema edge-types` | Available edge types grouped by mode |
+| `schema all` | Full type schema (node types, edge types + per-type semantics, diagram modes, composition rules, common fields) |
+| `schema node-types` | Available node types with shapes, subtypes, glosses, and BSD/Miller references |
+| `schema edge-types [--details]` | Edge types grouped by mode; `--details` returns per-type gloss, qualifier, canonical endpoints, and examples |
 | `schema modes` | Diagram modes with available tool palettes |
+| `schema composition-rules` | The Brandom-canonical patterns the `derive` verb recognises |
+| `schema json-schema` | Formal JSON Schema (draft 2020-12) for diagram files, printed raw for piping |
 
-Schema commands are designed for LLM self-reference: an AI agent can call `schema all` to learn what commands and values are valid without consulting external documentation.
+Schema commands are designed for LLM self-reference: an AI agent can call `schema all` to learn what commands and values are valid without consulting external documentation. To validate a diagram file externally: `pragma-cli schema json-schema > diagram.schema.json`, then use any JSON Schema validator (ajv, etc.).
+
+#### Brandom-Aware Analysis
+
+| Command | Description |
+|---------|-------------|
+| `check [--severity warning\|suggestion\|all]` | Permissive validation against MUD/TOTE conventions (edge-endpoint mismatches, dangling references, convention hints). Reports issues; never blocks or mutates |
+| `derive [--pragmatic-metavocab] [--lx]` | Detect canonical Brandom patterns: pragmatic metavocabulary (BSD Fig 4.1: `V_A -VP-suff-> P -PV-suff-> V_B`) and elaborated-explicating LX relations (BSD Figs 4.2/4.4) |
+| `derive --apply` | Add the detected resultant MURs to the diagram as dashed `VV` edges — applied as one atomic batch, undoable with `history undo` |
+| `explain [--style narrative\|structured] [--lang en\|es]` | Prose reading of the diagram's meaning-use structure; `--style structured` returns machine-readable analysis, `--lang es` uses the thesis' Spanish terminology |
+
+Example — build BSD Figure 4.1 and derive its resultant:
+```bash
+CLI="pragma-cli --file fig41.json"
+$CLI diagram create --name "Fig 4.1" --type MUD
+VN=$($CLI node add --type vocabulary --subtype normative --label "V norm" --x 100 --y 100 | jq -r .result.id)
+VM=$($CLI node add --type vocabulary --subtype modal --label "V modal" --x 500 --y 100 | jq -r .result.id)
+P=$($CLI node add --type practice --label "P inferential" --x 300 --y 300 | jq -r .result.id)
+$CLI edge add --source $VN --target $P --type VP-suff --order 1
+$CLI edge add --source $P --target $VM --type PV-suff --order 2
+$CLI derive --apply          # adds the dashed VV resultant: "V norm is a pragmatic metavocabulary for V modal"
+$CLI explain                 # narrative reading
+```
 
 ### JSON Output Format
 
@@ -471,8 +519,9 @@ node cli/dist/index.js status
 In connected mode:
 - All commands (`node add`, `edge add`, `diagram create`, etc.) dispatch directly to the GUI's Redux store
 - Changes appear on the canvas instantly — no need to import/export files
-- The `--file` flag still works for saving backups, but auto-save is skipped (the GUI is the source of truth)
+- With `--file`, the CLI **mirrors the GUI's state into the file after every mutation**, so the file always matches the canvas (the GUI remains the source of truth). If a mirror write fails, the command still succeeds but warns on stderr and adds `"persisted": false` to the envelope
 - History commands (`undo`/`redo`) operate on the GUI's undo stack
+- Every JSON envelope carries `"mode": "gui"`; use `--require-gui` to make the CLI exit 1 (`GUI_UNAVAILABLE`) rather than silently falling back to headless when no GUI answers
 
 To force headless mode even when the GUI is running, use:
 ```bash
@@ -482,9 +531,15 @@ node cli/dist/index.js --headless --file diagram.json node add --type vocabulary
 #### How It Works
 
 1. When the Electron app starts, it launches an HTTP server on `127.0.0.1` (random port) and writes connection details to `~/.pragma-graph-tool/server.json`
-2. The CLI reads this file before each command, verifies the GUI process is alive, and sends requests over HTTP
+2. The CLI reads this file before each command and verifies liveness with an **authenticated HTTP probe** of `/api/v1/status` (not a PID check, which cannot see across OS boundaries)
 3. Authentication uses a per-session Bearer token generated at startup
 4. When the Electron app quits, the connection file is automatically deleted
+
+#### WSL ↔ Windows
+
+If the GUI runs on Windows and the CLI inside WSL, discovery additionally scans `/mnt/c/Users/*/.pragma-graph-tool/server.json` and probes `127.0.0.1` (works with WSL2 mirrored networking — `networkingMode=mirrored` in `%UserProfile%\.wslconfig`), falling back to the Windows host IP from `/etc/resolv.conf` under NAT mode. If a session file is found but nothing answers, the CLI prints a one-line stderr hint and runs headless.
+
+Environment overrides: `PRAGMA_GUI_URL` + `PRAGMA_GUI_TOKEN` (explicit endpoint, skips discovery), `PRAGMA_GUI_TIMEOUT_MS` (probe/request timeout), and `PRAGMA_BRIDGE_BIND=0.0.0.0` set before launching the GUI to bind the bridge beyond loopback (not recommended — the token travels as plaintext HTTP).
 
 ## Academic Context
 

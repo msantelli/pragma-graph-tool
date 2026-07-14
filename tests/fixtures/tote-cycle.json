@@ -1,0 +1,30 @@
+{
+  "id": "fixture-tote-cycle",
+  "name": "TOTE Cycle",
+  "type": "TOTE",
+  "nodes": [
+    { "id": "t1", "type": "test", "position": { "x": 200, "y": 100 }, "label": "Test incongruity", "condition": "nail flush?" },
+    { "id": "o1", "type": "operate", "position": { "x": 200, "y": 300 }, "label": "Hammer", "operations": ["lift", "strike"] },
+    { "id": "t2", "type": "test", "position": { "x": 500, "y": 100 }, "label": "Re-test" },
+    { "id": "x1", "type": "exit", "position": { "x": 700, "y": 100 }, "label": "Exit" }
+  ],
+  "edges": [
+    { "id": "e-seq1", "source": "t1", "target": "o1", "type": "sequence", "label": "incongruity" },
+    { "id": "e-fb", "source": "o1", "target": "t2", "type": "feedback" },
+    { "id": "e-loop", "source": "o1", "target": "o1", "type": "loop", "label": "iterate" },
+    { "id": "e-pass", "source": "t2", "target": "x1", "type": "test-pass", "label": "congruity" },
+    { "id": "e-fail", "source": "t2", "target": "o1", "type": "test-fail" },
+    { "id": "e-exit", "source": "t2", "target": "x1", "type": "exit" }
+  ],
+  "entryPoints": [
+    { "id": "entry1", "position": { "x": 50, "y": 100 }, "targetNodeId": "t1", "label": "start" }
+  ],
+  "exitPoints": [
+    { "id": "exit1", "position": { "x": 850, "y": 100 }, "sourceNodeId": "x1", "label": "done" }
+  ],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z",
+    "description": "Miller/Galanter/Pribram TOTE loop with entry and exit points"
+  }
+}

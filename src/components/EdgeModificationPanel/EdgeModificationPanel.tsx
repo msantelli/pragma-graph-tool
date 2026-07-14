@@ -1,10 +1,10 @@
 import React from 'react';
 import { Modal } from '../Modal';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { setSelectedEdgeForModification } from '../../store/uiSlice';
-import { updateEdge, deleteEdge as removeEdge, saveToHistory } from '../../store/diagramSlice';
-import { getAvailableEdgeTypes, getEdgeColor, getEdgeTypeDescription } from '../../utils/edgeUtils';
-import type { Edge } from '../../types/all';
+import { setSelectedEdgeForModification } from '@pragma-graph/core';
+import { updateEdge, deleteEdge as removeEdge, saveToHistory } from '@pragma-graph/core';
+import { getAvailableEdgeTypes, getEdgeColor, getEdgeTypeDescription } from '@pragma-graph/core';
+import type { Edge } from '@pragma-graph/core';
 
 interface EdgeModificationPanelProps {
   isOpen: boolean;

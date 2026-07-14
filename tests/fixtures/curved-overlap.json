@@ -1,0 +1,26 @@
+{
+  "id": "fixture-curved-overlap",
+  "name": "Curved and Overlapping Edges",
+  "type": "MUD",
+  "nodes": [
+    { "id": "v1", "type": "vocabulary", "position": { "x": 150, "y": 200 }, "label": "V1" },
+    { "id": "p1", "type": "practice", "position": { "x": 550, "y": 200 }, "label": "P1" },
+    { "id": "v2", "type": "vocabulary", "position": { "x": 350, "y": 450 }, "label": "V2" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "v1", "target": "p1", "type": "VP", "label": "first" },
+    { "id": "e2", "source": "v1", "target": "p1", "type": "VP-suff", "label": "second parallel" },
+    { "id": "e3", "source": "p1", "target": "v1", "type": "PV", "label": "reverse" },
+    { "id": "e4", "source": "p1", "target": "v1", "type": "PV-nec", "label": "reverse parallel" },
+    { "id": "e5", "source": "p1", "target": "p1", "type": "loop", "label": "self" },
+    { "id": "e6", "source": "v1", "target": "v2", "type": "VV" },
+    { "id": "e7", "source": "v2", "target": "p1", "type": "unmarked" }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z",
+    "description": "Parallel edges both directions, self-loop, offsets — exercises computeEdgeGeometryForExport"
+  }
+}

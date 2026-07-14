@@ -21,7 +21,12 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Workspace packages compiled from source */
+    "paths": {
+      "@pragma-graph/core": ["./packages/core/src/index.ts"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "packages/core/src"]
 }

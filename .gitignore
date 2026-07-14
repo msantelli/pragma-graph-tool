@@ -28,6 +28,12 @@ AGENTS.md
 GEMINI.md
 COMPLEX_MUD_IMPLEMENTATION.md
 
+# Generated build output (PWA dev service worker)
+dev-dist/
+
+# Local tool workspaces
+.antigravitycli/
+
 # Electron distributables (large files)
 dist-electron/*.exe
 dist-electron/*.AppImage

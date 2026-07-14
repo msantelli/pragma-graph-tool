@@ -1,16 +1,31 @@
 export interface CLIResult {
   ok: boolean;
   command: string;
+  mode?: 'gui' | 'headless';
+  /** Present (false) only when a --file mirror write failed. */
+  persisted?: boolean;
   result?: unknown;
   error?: {
     code: string;
     message: string;
     validValues?: string[];
+    hint?: string;
   };
 }
 
 let forceJson = false;
 let forceHuman = false;
+let currentMode: 'gui' | 'headless' = 'headless';
+let persistFailed = false;
+
+export function setMode(mode: 'gui' | 'headless'): void {
+  currentMode = mode;
+}
+
+/** Called by autoSave when mirroring to --file failed; surfaces in the envelope. */
+export function markPersistFailure(): void {
+  persistFailed = true;
+}
 
 export function setOutputMode(mode: 'json' | 'human' | 'auto'): void {
   forceJson = mode === 'json';
@@ -23,9 +38,23 @@ function isJsonMode(): boolean {
   return !process.stdout.isTTY;
 }
 
+// Public: true only when the user explicitly requested JSON via --json.
+// Commands like `explain --style narrative` that produce plain text should
+// stay plain text under shell redirection and only switch to JSON when the
+// user opts in.
+export function isJsonExplicit(): boolean {
+  return forceJson;
+}
+
 export function outputSuccess(command: string, result: unknown): void {
   if (isJsonMode()) {
-    const envelope: CLIResult = { ok: true, command, result };
+    const envelope: CLIResult = {
+      ok: true,
+      command,
+      mode: currentMode,
+      ...(persistFailed ? { persisted: false } : {}),
+      result
+    };
     process.stdout.write(JSON.stringify(envelope, null, 2) + '\n');
   } else {
     // Human-readable output
@@ -43,11 +72,12 @@ export function outputSuccess(command: string, result: unknown): void {
   }
 }
 
-export function outputError(command: string, code: string, message: string, validValues?: string[]): void {
+export function outputError(command: string, code: string, message: string, validValues?: string[], hint?: string): void {
   const envelope: CLIResult = {
     ok: false,
     command,
-    error: { code, message, ...(validValues ? { validValues } : {}) }
+    mode: currentMode,
+    error: { code, message, ...(validValues ? { validValues } : {}), ...(hint ? { hint } : {}) }
   };
 
   if (isJsonMode()) {

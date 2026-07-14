@@ -1,7 +1,8 @@
 import type { Diagram } from '@pragma-graph/core';
-import { GUIClient } from './client/httpClient.js';
+import { GUIClient, type DispatchAction } from './client/httpClient.js';
 import * as headlessStore from './headless/headlessStore.js';
-import { saveDiagramToFile } from './headless/fileManager.js';
+import { saveDiagramToFile, FileConflictError } from './headless/fileManager.js';
+import { markPersistFailure, outputError } from './output/formatter.js';
 
 let guiClient: GUIClient | null = null;
 
@@ -32,21 +33,21 @@ export async function requireDiagram(): Promise<Diagram> {
   return d;
 }
 
-export async function dispatch(action: { type: string; payload?: any }): Promise<void> {
+export async function dispatch(action: DispatchAction): Promise<void> {
   if (guiClient) {
     await guiClient.dispatch(action);
   } else {
-    headlessStore.getStore().dispatch(action as any);
+    headlessStore.getStore().dispatch(action as Parameters<ReturnType<typeof headlessStore.getStore>['dispatch']>[0]);
   }
 }
 
-export async function dispatchBatch(actions: Array<{ type: string; payload?: any }>): Promise<void> {
+export async function dispatchBatch(actions: DispatchAction[]): Promise<void> {
   if (guiClient) {
     await guiClient.dispatchBatch(actions);
   } else {
     const store = headlessStore.getStore();
     for (const action of actions) {
-      store.dispatch(action as any);
+      store.dispatch(action as Parameters<typeof store.dispatch>[0]);
     }
   }
 }
@@ -60,12 +61,28 @@ export function getHeadlessState() {
 }
 
 export async function autoSave(getFilePath: () => string | undefined): Promise<void> {
-  // Skip file auto-save when connected to GUI — the GUI is the source of truth
-  if (guiClient) return;
-
   const filePath = getFilePath();
-  if (filePath) {
-    const d = headlessStore.getDiagram();
+  if (!filePath) return;
+
+  try {
+    // Connected: the GUI is the source of truth — mirror its state into the
+    // file so --file always reflects what the user sees on the canvas.
+    const d = guiClient ? await guiClient.getDiagram() : headlessStore.getDiagram();
     if (d) saveDiagramToFile(d, filePath);
+  } catch (err) {
+    if (err instanceof FileConflictError && !guiClient) {
+      // Headless: the file IS the state. Refusing the write and failing hard
+      // beats silently clobbering another process's edits.
+      outputError(
+        'save',
+        'FILE_CONFLICT',
+        err.message,
+        undefined,
+        'The file was modified by another process (GUI or another CLI run). Re-run against the current file, or pass --force to overwrite.'
+      );
+      process.exit(1);
+    }
+    markPersistFailure();
+    process.stderr.write(`Warning: could not write ${filePath}: ${(err as Error).message}\n`);
   }
 }

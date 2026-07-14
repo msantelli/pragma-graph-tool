@@ -1,10 +1,10 @@
 import React from 'react';
 import { Modal } from '../Modal';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { clearPendingEdge } from '../../store/uiSlice';
-import { addEdge, saveToHistory } from '../../store/diagramSlice';
-import { getAvailableEdgeTypes, getEdgeColor, getEdgeTypeDescription } from '../../utils/edgeUtils';
-import type { Edge } from '../../types/all';
+import { clearPendingEdge } from '@pragma-graph/core';
+import { addEdge, saveToHistory } from '@pragma-graph/core';
+import { getAvailableEdgeTypes, getEdgeColor, getEdgeTypeDescription } from '@pragma-graph/core';
+import type { Edge } from '@pragma-graph/core';
 
 interface EdgeTypeSelectorProps {
   isOpen: boolean;

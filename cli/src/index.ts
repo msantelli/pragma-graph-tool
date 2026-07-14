@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { loadDiagramFromFile } from './headless/fileManager.js';
+import { CLI_VERSION } from './version.js';
+import { loadDiagramFromFile, setForceOverwrite } from './headless/fileManager.js';
 import { loadDiagramIntoStore } from './headless/headlessStore.js';
-import { setOutputMode } from './output/formatter.js';
-import { discoverGUI } from './util/discovery.js';
+import { setOutputMode, setMode, outputError } from './output/formatter.js';
+import { discoverGUI, isWSL } from './util/discovery.js';
 import { GUIClient } from './client/httpClient.js';
 import { setGUIClient } from './backend.js';
 import { registerDiagramCommands } from './commands/diagram.js';
@@ -15,6 +16,9 @@ import { registerExportCommands } from './commands/export.js';
 import { registerHistoryCommands } from './commands/history.js';
 import { registerSchemaCommands } from './commands/schema.js';
 import { registerStatusCommand } from './commands/status.js';
+import { registerCheckCommand } from './commands/check.js';
+import { registerDeriveCommand } from './commands/derive.js';
+import { registerExplainCommand } from './commands/explain.js';
 
 const program = new Command();
 
@@ -29,14 +33,18 @@ program
     pragma-cli --file d.json node add --type practice --label "P₁" --x 300 --y 100
     pragma-cli --file d.json edge add --source <V1_ID> --target <P1_ID> --type VP
     pragma-cli --file d.json export latex --raw > output.tex`)
-  .version('1.0.0')
+  .version(CLI_VERSION)
   .option('--json', 'Force JSON output')
   .option('--human', 'Force human-readable output')
   .option('--file <path>', 'Diagram file to load/save automatically')
   .option('--headless', 'Force headless mode (no GUI connection)')
+  .option('--require-gui', 'Fail (exit 1) instead of falling back to headless when no GUI is reachable')
+  .option('--force', 'Overwrite --file even if it changed on disk since it was loaded')
   .hook('preAction', async (_thisCommand, actionCommand) => {
     // Resolve global options from the root program
     const opts = program.opts();
+
+    setForceOverwrite(Boolean(opts.force));
 
     // Set output mode
     if (opts.json) setOutputMode('json');
@@ -45,19 +53,39 @@ program
 
     // Try to connect to GUI (unless --headless is set)
     if (!opts.headless) {
-      const conn = discoverGUI();
-      if (conn) {
-        const client = new GUIClient(conn);
-        try {
-          await client.getStatus(); // verify connection is alive
-          setGUIClient(client);
-        } catch {
-          // GUI not responding, fall back to headless
-        }
+      const { connection, stale } = await discoverGUI();
+      if (connection) {
+        setGUIClient(new GUIClient(connection));
+        setMode('gui');
+      } else if (stale.length > 0) {
+        // A GUI session file exists but nothing answered: say so on stderr
+        // (never stdout — that must stay machine-parseable).
+        const wslHint = isWSL()
+          ? ' If the GUI runs on Windows and this CLI in WSL, enable networkingMode=mirrored in %UserProfile%\\.wslconfig, or set PRAGMA_GUI_URL and PRAGMA_GUI_TOKEN.'
+          : '';
+        process.stderr.write(
+          `Note: found GUI session (${stale.join(', ')}) but could not connect; running headless.${wslHint}\n`
+        );
       }
     }
 
-    // Auto-load file if specified (only in headless mode)
+    if (opts.requireGui && !opts.headless) {
+      const { isConnected } = await import('./backend.js');
+      if (!isConnected()) {
+        outputError(
+          actionCommand.name(),
+          'GUI_UNAVAILABLE',
+          'No running GUI found and --require-gui was set.',
+          undefined,
+          'Start the Pragma Graph Tool GUI, or set PRAGMA_GUI_URL/PRAGMA_GUI_TOKEN, or drop --require-gui.'
+        );
+        process.exit(1);
+      }
+    }
+
+    // Auto-load file if specified. Headless: this seeds the in-process store.
+    // Connected: the GUI stays the source of truth, but loading still records
+    // the file's content hash so the mirror save can detect external writes.
     if (opts.file) {
       const commandName = actionCommand.name();
       const parentName = actionCommand.parent?.name();
@@ -88,5 +116,8 @@ registerEntryExitCommands(program, getFilePath);
 registerExportCommands(program);
 registerHistoryCommands(program, getFilePath);
 registerSchemaCommands(program);
+registerCheckCommand(program);
+registerDeriveCommand(program, getFilePath);
+registerExplainCommand(program);
 
 program.parse();

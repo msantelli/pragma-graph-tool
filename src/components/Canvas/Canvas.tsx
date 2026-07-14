@@ -3,10 +3,10 @@ import * as d3 from 'd3';
 import { useD3 } from '../../hooks/useD3';
 import { useDiagram } from '../../hooks/useDiagram';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { setZoom, setPanOffset, setCanvasSize, setPendingEdge, setShowEdgeTypeSelector, setPendingEntryExit, setSelectedNodeForCustomization, setSelectedEdgeForModification } from '../../store/uiSlice';
-import { addEdge, addEntryPoint, addExitPoint, updateEntryPoint, saveToHistory, setNodeParent } from '../../store/diagramSlice';
+import { setZoom, setPanOffset, setCanvasSize, setPendingEdge, setShowEdgeTypeSelector, setPendingEntryExit, setSelectedNodeForCustomization, setSelectedEdgeForModification } from '@pragma-graph/core';
+import { addEdge, addEntryPoint, addExitPoint, updateEntryPoint, saveToHistory, setNodeParent } from '@pragma-graph/core';
 import { Grid } from '../Grid';
-import { getSnappedPosition } from '../../utils/gridUtils';
+import { getSnappedPosition } from '@pragma-graph/core';
 import {
   getNodeColors,
   getNodeDimensions,
@@ -19,9 +19,9 @@ import {
   sortNodesForRendering,
   findContainerAtPosition,
   isValidDropTarget
-} from '../../utils/nodeUtils';
-import { getEdgeColor } from '../../utils/edgeUtils';
-import type { Node, Edge, Point } from '../../types/all';
+} from '@pragma-graph/core';
+import { getEdgeColor } from '@pragma-graph/core';
+import type { Node, Edge, Point } from '@pragma-graph/core';
 import './Canvas.css';
 
 export const Canvas: React.FC = () => {
@@ -480,7 +480,7 @@ export const Canvas: React.FC = () => {
             .attr('stroke-dasharray', isContainer ? '6,3' : null);
           break;
 
-        case 'rectangle':
+        case 'rectangle': {
           const cornerRadius = d.type === 'practice' ? 10 : 0;
           nodeGroup.append('rect')
             .attr('x', centerOffset.x - dimensions.width / 2)
@@ -494,8 +494,9 @@ export const Canvas: React.FC = () => {
             .attr('stroke-width', strokeWidth)
             .attr('stroke-dasharray', isContainer ? '6,3' : null);
           break;
+        }
 
-        case 'diamond':
+        case 'diamond': {
           const size = dimensions.radius;
           // Offset the path for diamond
           const diamond = `M ${centerOffset.x},${centerOffset.y - size} L ${centerOffset.x + size},${centerOffset.y} L ${centerOffset.x},${centerOffset.y + size} L ${centerOffset.x - size},${centerOffset.y} Z`;
@@ -507,8 +508,9 @@ export const Canvas: React.FC = () => {
             .attr('stroke-width', strokeWidth)
             .attr('stroke-dasharray', isContainer ? '6,3' : null);
           break;
+        }
 
-        case 'triangle':
+        case 'triangle': {
           const triangleSize = dimensions.radius;
           // Offset the path for triangle
           const tX = centerOffset.x;
@@ -522,8 +524,9 @@ export const Canvas: React.FC = () => {
             .attr('stroke-width', strokeWidth)
             .attr('stroke-dasharray', isContainer ? '6,3' : null);
           break;
+        }
 
-        case 'hexagon':
+        case 'hexagon': {
           const hexSize = dimensions.radius;
           const hX = centerOffset.x;
           const hY = centerOffset.y;
@@ -536,8 +539,9 @@ export const Canvas: React.FC = () => {
             .attr('stroke-width', strokeWidth)
             .attr('stroke-dasharray', isContainer ? '6,3' : null);
           break;
+        }
 
-        case 'star':
+        case 'star': {
           const starSize = dimensions.radius;
           const points = 5;
           let star = '';
@@ -557,6 +561,7 @@ export const Canvas: React.FC = () => {
             .attr('stroke-width', strokeWidth)
             .attr('stroke-dasharray', isContainer ? '6,3' : null);
           break;
+        }
 
         default:
           // Fallback to circle for unknown shapes
@@ -660,7 +665,7 @@ export const Canvas: React.FC = () => {
     // Add click and drag behavior to all nodes
     nodeEnter
       .call(d3.drag<SVGGElement, Node>()
-        .on('start', function (event, _d) {
+        .on('start', function (event) {
           // Store initial position to detect if this is a click or drag
           const element = d3.select(this);
           element.property('__dragStart', { x: event.x, y: event.y });
@@ -1472,7 +1477,7 @@ function getNodeConnectionPoint(node: Node, targetPos: Point, allNodes?: Node[])
 }
 
 // Helper function to wrap text. Returns the max number of lines produced.
-function wrapText(text: d3.Selection<SVGTextElement, any, any, any>, width: number): number {
+function wrapText(text: d3.Selection<SVGTextElement, unknown, d3.BaseType, unknown>, width: number): number {
   let maxLines = 0;
   text.each(function () {
     const textElement = d3.select(this);

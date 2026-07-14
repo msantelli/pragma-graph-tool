@@ -69,7 +69,7 @@ Evaluate against the **Comparison Criteria Checklist**:
 1. Identify the specific issues (list them)
 2. Determine modification approach:
    - **Quick fix**: Edit the `.tex` file directly
-   - **Systematic fix**: Update `src/utils/exportUtils.ts` → `generateTikZCode()` function
+   - **Systematic fix**: Update `packages/core/src/exportUtils.ts` → `generateTikZCode()` (shared by GUI and CLI; update the golden snapshots in `tests/fidelity/` afterwards with `npx vitest run tests/fidelity -u`)
 3. Make the changes
 4. **Go back to Step 2** (re-compile)
 

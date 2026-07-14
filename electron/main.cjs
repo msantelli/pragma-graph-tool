@@ -271,6 +271,40 @@ function createMenu() {
       ]
     },
     {
+      label: 'Tools',
+      submenu: [
+        {
+          label: 'Validate Diagram',
+          accelerator: 'CmdOrCtrl+Shift+V',
+          click: async () => {
+            try {
+              const issues = await mainWindow.webContents.executeJavaScript(
+                `(function() { return window.validateDiagram ? window.validateDiagram() : []; })()`
+              );
+              if (!issues || issues.length === 0) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Validate Diagram',
+                  message: 'No issues found',
+                  detail: 'The diagram passes all Brandom/Miller-aware checks.'
+                });
+                return;
+              }
+              const lines = issues.map(i => `[${i.severity}] ${i.message}`).join('\n');
+              dialog.showMessageBox(mainWindow, {
+                type: 'warning',
+                title: 'Validate Diagram',
+                message: `${issues.length} issue${issues.length === 1 ? '' : 's'} found`,
+                detail: lines
+              });
+            } catch (err) {
+              dialog.showErrorBox('Validate Diagram', `Validation failed: ${err.message}`);
+            }
+          }
+        }
+      ]
+    },
+    {
       label: 'Help',
       submenu: [
         {
@@ -280,7 +314,7 @@ function createMenu() {
               type: 'info',
               title: 'About',
               message: 'Pragma Graph Tool',
-              detail: 'Interactive visualization tool for Meaning-Use Diagrams and TOTE Cycles based on Robert Brandom\'s philosophical framework.\n\nVersion: 1.0.0\nAuthor: Mauro Santelli\nInstitution: Universidad de Buenos Aires - Instituto de Investigaciones Filosóficas, SADAF (CONICET) - GEML\nContact: mesantelli@uba.ar\n\nBuilt with Electron and React'
+              detail: `Interactive visualization tool for Meaning-Use Diagrams and TOTE Cycles based on Robert Brandom's philosophical framework.\n\nVersion: ${app.getVersion()}\nAuthor: Mauro Santelli\nInstitution: Universidad de Buenos Aires - Instituto de Investigaciones Filosóficas, SADAF (CONICET) - GEML\nContact: mesantelli@uba.ar\n\nBuilt with Electron and React`
             });
           }
         },
@@ -468,9 +502,12 @@ function startCLIServer() {
     }
   });
 
-  cliServer.listen(0, '127.0.0.1', () => {
+  // Loopback by default. PRAGMA_BRIDGE_BIND=0.0.0.0 opts into LAN exposure
+  // (the bearer token travels as plaintext HTTP — only use on trusted networks).
+  const bindHost = process.env.PRAGMA_BRIDGE_BIND || '127.0.0.1';
+  cliServer.listen(0, bindHost, () => {
     const port = cliServer.address().port;
-    console.log(`CLI server listening on 127.0.0.1:${port}`);
+    console.log(`CLI server listening on ${bindHost}:${port}`);
 
     // Write connection file
     if (!fs.existsSync(CONNECTION_DIR)) {
@@ -480,8 +517,8 @@ function startCLIServer() {
       port,
       token: cliToken,
       pid: process.pid,
-      version: '1.0.0'
-    }, null, 2) + '\n');
+      version: app.getVersion()
+    }, null, 2) + '\n', { mode: 0o600 });
   });
 }
 

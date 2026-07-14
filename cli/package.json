@@ -1,20 +1,21 @@
 {
   "name": "pragma-cli",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "bin": {
     "pragma-cli": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc && node ../node_modules/esbuild/bin/esbuild dist/index.js --bundle --platform=node --format=cjs --outfile=dist/bundle.cjs",
+    "build": "tsc && esbuild dist/index.js --bundle --platform=node --format=cjs --outfile=dist/bundle.cjs",
     "dev": "tsc --watch"
   },
   "dependencies": {
     "@pragma-graph/core": "file:../packages/core",
-    "commander": "^13.1.0"
+    "commander": "13.1.0"
   },
   "devDependencies": {
-    "typescript": "~5.8.3"
+    "esbuild": "0.25.8",
+    "typescript": "5.8.3"
   }
 }

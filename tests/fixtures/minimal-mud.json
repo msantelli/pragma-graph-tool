@@ -1,0 +1,18 @@
+{
+  "id": "fixture-minimal-mud",
+  "name": "Minimal MUD",
+  "type": "MUD",
+  "nodes": [
+    { "id": "v1", "type": "vocabulary", "position": { "x": 100, "y": 100 }, "label": "V1" },
+    { "id": "p1", "type": "practice", "position": { "x": 300, "y": 100 }, "label": "P1" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "p1", "target": "v1", "type": "PV" }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z"
+  }
+}
