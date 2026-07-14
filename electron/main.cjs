@@ -26,6 +26,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
+    backgroundColor: '#FBFAF8',
     minWidth: 800,
     minHeight: 600,
     icon: path.join(__dirname, '../public/icons/icon.svg'),

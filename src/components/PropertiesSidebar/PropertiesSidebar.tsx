@@ -1,3 +1,4 @@
+import { theme } from '../../theme';
 import React from 'react';
 import type { Node, Edge } from '@pragma-graph/core';
 
@@ -150,7 +151,7 @@ const NodeProperties: React.FC<{
           width: '32px',
           height: '32px',
           borderRadius: '6px',
-          background: node.style?.fill || getDefaultNodeColor(node.type),
+          background: node.style?.fill || getDefaultNodeColor(),
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -235,7 +236,7 @@ const NodeProperties: React.FC<{
         style={{
           width: '100%',
           padding: '0.6rem',
-          background: '#1976D2',
+          background: theme.cloth,
           color: 'white',
           border: 'none',
           borderRadius: '6px',
@@ -293,7 +294,7 @@ const EdgeProperties: React.FC<{
           width: '32px',
           height: '32px',
           borderRadius: '6px',
-          background: getEdgeTypeColor(edge.type),
+          background: getEdgeTypeColor(),
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -364,10 +365,10 @@ const EdgeProperties: React.FC<{
       {edge.isResultant && (
         <div style={{
           padding: '0.5rem',
-          background: 'rgba(156, 39, 176, 0.1)',
+          background: '#EDF1F6',
           borderRadius: '4px',
           fontSize: '0.8rem',
-          color: '#9C27B0',
+          color: theme.cloth,
           marginBottom: '1rem',
         }}>
           ✓ Resultant Edge
@@ -379,7 +380,7 @@ const EdgeProperties: React.FC<{
         style={{
           width: '100%',
           padding: '0.6rem',
-          background: '#1976D2',
+          background: theme.cloth,
           color: 'white',
           border: 'none',
           borderRadius: '6px',
@@ -402,27 +403,16 @@ const EdgeProperties: React.FC<{
 };
 
 // Helper functions
-function getDefaultNodeColor(type: string): string {
-  switch (type) {
-    case 'vocabulary': return '#1976D2';
-    case 'practice': return '#F57C00';
-    case 'test': return '#4CAF50';
-    case 'operate': return '#FFC107';
-    default: return '#9E9E9E';
-  }
+// The diagram language is monochrome; type badges stay ink so the sidebar
+// does not invent a color code the canvas and exports do not have.
+function getDefaultNodeColor(): string {
+  return theme.ink;
 }
 
-function getEdgeTypeColor(type: string): string {
-  switch (type) {
-    case 'PV': return '#4CAF50';
-    case 'VP': return '#FF9800';
-    case 'PP': return '#9C27B0';
-    case 'VV': return '#F44336';
-    case 'sequence': return '#2196F3';
-    case 'feedback': return '#FF5722';
-    case 'exit': return '#8BC34A';
-    default: return '#666';
-  }
+// Same rule as node badges: the diagram language is monochrome, so the
+// sidebar does not invent a per-type color code. The type name carries it.
+function getEdgeTypeColor(): string {
+  return theme.ink;
 }
 
 export default PropertiesSidebar;

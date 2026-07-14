@@ -1,11 +1,103 @@
+/*
+ * Print-room theme foundation.
+ *
+ * Five tokens rule all chrome color. The diagram canvas itself stays
+ * monochrome (#333 ink on white — owned by @pragma-graph/core so exports
+ * match); these tokens style only the instrument around it.
+ * JS-side consumers (D3, inline styles) read the same values from
+ * src/theme.ts — keep the two files in sync.
+ */
+
+/* Alegreya — display face for the app title and dialog headings.
+   Variable weight file (500–700). Huerta Tipográfica, Buenos Aires; OFL. */
+@font-face {
+  font-family: 'Alegreya';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('./assets/fonts/alegreya-500-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2013-2014, U+2018-201A, U+201C-201E, U+2039-203A;
+}
+@font-face {
+  font-family: 'Alegreya';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('./assets/fonts/alegreya-500-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0;
+}
+
+/* Alegreya Sans — the UI face: controls, labels, panels. */
+@font-face {
+  font-family: 'Alegreya Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/alegreya-sans-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2013-2014, U+2018-201A, U+201C-201E, U+2039-203A;
+}
+@font-face {
+  font-family: 'Alegreya Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/alegreya-sans-400-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0;
+}
+@font-face {
+  font-family: 'Alegreya Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./assets/fonts/alegreya-sans-500-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2013-2014, U+2018-201A, U+201C-201E, U+2039-203A;
+}
+@font-face {
+  font-family: 'Alegreya Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./assets/fonts/alegreya-sans-500-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0;
+}
+@font-face {
+  font-family: 'Alegreya Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./assets/fonts/alegreya-sans-700-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2013-2014, U+2018-201A, U+201C-201E, U+2039-203A;
+}
+@font-face {
+  font-family: 'Alegreya Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./assets/fonts/alegreya-sans-700-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0;
+}
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* tokens */
+  --pg-paper: #FBFAF8;      /* chrome background */
+  --pg-ink: #1F1E1C;        /* text, titles */
+  --pg-ink-muted: #6D6A64;  /* secondary text */
+  --pg-hairline: #E3E1DC;   /* borders, dividers */
+  --pg-cloth: #27476E;      /* structure: active tool, primary action, focus */
+  --pg-cloth-hover: #1D3A5D;
+  --pg-annotation: #A63A2B; /* selection, validation, destructive — nothing else */
+
+  --pg-font-ui: 'Alegreya Sans', system-ui, 'Segoe UI', sans-serif;
+  --pg-font-display: 'Alegreya', Georgia, serif;
+
+  font-family: var(--pg-font-ui);
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* The output medium is paper: the app is a light-theme instrument. */
+  color-scheme: light;
+  color: var(--pg-ink);
+  background-color: var(--pg-paper);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,11 +107,11 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--pg-cloth);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--pg-cloth-hover);
 }
 
 body {
@@ -33,39 +125,11 @@ body {
   height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
 }
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+  outline: 2px solid var(--pg-cloth);
+  outline-offset: 1px;
 }

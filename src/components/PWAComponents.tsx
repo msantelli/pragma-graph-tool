@@ -1,3 +1,4 @@
+import { theme } from '../theme';
 import React, { useState } from 'react';
 import { usePWA } from '../hooks/usePWA';
 
@@ -37,7 +38,7 @@ export const InstallPrompt: React.FC = () => {
       bottom: '20px',
       left: '50%',
       transform: 'translateX(-50%)',
-      backgroundColor: '#2196f3',
+      backgroundColor: theme.cloth,
       color: 'white',
       padding: '16px 24px',
       borderRadius: '8px',
@@ -61,7 +62,7 @@ export const InstallPrompt: React.FC = () => {
           onClick={promptInstall}
           style={{
             backgroundColor: 'white',
-            color: '#2196f3',
+            color: theme.cloth,
             border: 'none',
             padding: '8px 16px',
             borderRadius: '4px',

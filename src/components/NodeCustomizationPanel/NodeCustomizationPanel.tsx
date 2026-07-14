@@ -1,3 +1,4 @@
+import { theme } from '../../theme';
 import React from 'react';
 import { Modal } from '../Modal';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
@@ -188,7 +189,7 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
               style={{
                 flex: 1,
                 padding: '8px 12px',
-                border: `2px solid ${currentStyle.size === size ? '#4CAF50' : '#ddd'}`,
+                border: `2px solid ${currentStyle.size === size ? theme.cloth : theme.hairline}`,
                 background: currentStyle.size === size ? '#d7eed7' : '#f1f1f1',
                 borderRadius: '6px',
                 cursor: 'pointer',
@@ -218,8 +219,8 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
                 onClick={() => updateNodeStyle({ shape })}
                 style={{
                   padding: '12px 8px',
-                  border: `2px solid ${isSelected ? '#4CAF50' : '#ddd'}`,
-                  background: isSelected ? '#E8F5E8' : '#f9f9f9',
+                  border: `2px solid ${isSelected ? theme.cloth : theme.hairline}`,
+                  background: isSelected ? '#EDF1F6' : '#f9f9f9',
                   borderRadius: '6px',
                   cursor: 'pointer',
                   fontSize: '12px',
@@ -232,7 +233,7 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
                   color: '#333',
                   transition: 'all 0.2s ease'
                 }}
-                onFocus={(e) => (e.target as HTMLButtonElement).style.outline = '2px solid #4CAF50'}
+                onFocus={(e) => (e.target as HTMLButtonElement).style.outline = `2px solid ${theme.cloth}`}
                 onBlur={(e) => (e.target as HTMLButtonElement).style.outline = 'none'}
               >
                 <div style={{ fontSize: '16px' }}>
@@ -318,9 +319,9 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
             flex: '1',
             minWidth: '120px',
             padding: '10px 16px',
-            border: '2px solid #FF9800',
-            background: '#FFF3E0',
-            color: '#FF9800',
+            border: `1px solid ${theme.hairline}`,
+            background: '#EDF1F6',
+            color: theme.inkMuted,
             borderRadius: '6px',
             cursor: 'pointer',
             fontWeight: 'bold',
@@ -335,9 +336,9 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
             flex: '1',
             minWidth: '120px',
             padding: '10px 16px',
-            border: '2px solid #f44336',
+            border: `1px solid ${theme.annotation}`,
             background: '#ffebee',
-            color: '#f44336',
+            color: theme.annotation,
             borderRadius: '6px',
             cursor: 'pointer',
             fontWeight: 'bold',
@@ -352,8 +353,8 @@ export const NodeCustomizationPanel: React.FC<NodeCustomizationPanelProps> = ({ 
             flex: '1',
             minWidth: '120px',
             padding: '10px 16px',
-            border: '2px solid #4CAF50',
-            background: '#4CAF50',
+            border: `1px solid ${theme.cloth}`,
+            background: theme.cloth,
             color: 'white',
             borderRadius: '6px',
             cursor: 'pointer',

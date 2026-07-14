@@ -1,3 +1,4 @@
+import { theme } from '../theme';
 import React, { useState, useEffect } from 'react';
 
 const MobileWarning: React.FC = () => {
@@ -59,7 +60,7 @@ const MobileWarning: React.FC = () => {
             height="64"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#1976D2"
+            stroke={theme.cloth}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -99,7 +100,7 @@ const MobileWarning: React.FC = () => {
           style={{
             width: '100%',
             padding: '0.875rem 1.5rem',
-            background: '#1976D2',
+            background: theme.cloth,
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -108,8 +109,8 @@ const MobileWarning: React.FC = () => {
             fontWeight: 500,
             transition: 'background 0.2s',
           }}
-          onMouseOver={(e) => (e.currentTarget.style.background = '#1565C0')}
-          onMouseOut={(e) => (e.currentTarget.style.background = '#1976D2')}
+          onMouseOver={(e) => (e.currentTarget.style.background = theme.clothHover)}
+          onMouseOut={(e) => (e.currentTarget.style.background = theme.cloth)}
         >
           Continue anyway
         </button>
