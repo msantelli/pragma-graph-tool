@@ -1,0 +1,397 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`unified geometry matches historical canvas behavior for curved-overlap.json > edge e1 1`] = `
+{
+  "labelAngle": 0.13499,
+  "labelPosition": {
+    "x": 349.072974,
+    "y": 238.821153,
+  },
+  "path": "M 196.42383454426297 209.2847669088526 Q 350 240 500 210",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for curved-overlap.json > edge e2 1`] = `
+{
+  "labelAngle": 0.005576,
+  "labelPosition": {
+    "x": 349.888986,
+    "y": 222.326023,
+  },
+  "path": "M 199.56139503413175 203.30409300227547 Q 350 213.33333333333334 500 203.33333333333334",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for curved-overlap.json > edge e3 1`] = `
+{
+  "labelAngle": -0.005576,
+  "labelPosition": {
+    "x": 349.888986,
+    "y": 177.673977,
+  },
+  "path": "M 500 196.66666666666666 Q 350 186.66666666666666 199.56139503413175 196.69590699772453",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for curved-overlap.json > edge e4 1`] = `
+{
+  "labelAngle": -0.13499,
+  "labelPosition": {
+    "x": 349.072974,
+    "y": 161.178847,
+  },
+  "path": "M 500 190 Q 350 160 196.42383454426297 190.7152330911474",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for curved-overlap.json > edge e5 1`] = `
+{
+  "labelAngle": null,
+  "labelPosition": {
+    "x": 630,
+    "y": 170,
+  },
+  "path": "M 600 187.5 C 680 187.5 680 212.5 600 212.5",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for curved-overlap.json > edge e6 1`] = `
+{
+  "labelAngle": 51.340192,
+  "labelPosition": {
+    "x": 240.629574,
+    "y": 332.496341,
+  },
+  "path": "M 168.56953381770518 223.21191727213147 L 331.4304661822948 426.7880827278685",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for curved-overlap.json > edge e7 1`] = `
+{
+  "labelAngle": -51.340192,
+  "labelPosition": {
+    "x": 458.655193,
+    "y": 333.390382,
+  },
+  "path": "M 368.5695338177052 426.7880827278685 L 530 225",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-custom 1`] = `
+{
+  "labelAngle": 66.037511,
+  "labelPosition": {
+    "x": 209.687715,
+    "y": 317.250786,
+  },
+  "path": "M 286.59743062023625 519.8442188955315 L 110.84652289093282 124.40467650459883",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-pp 1`] = `
+{
+  "labelAngle": 0,
+  "labelPosition": {
+    "x": 300,
+    "y": 311,
+  },
+  "path": "M 150 340 Q 300 310 450 340",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-pp-nec 1`] = `
+{
+  "labelAngle": 45,
+  "labelPosition": {
+    "x": 192.347457,
+    "y": 459.318019,
+  },
+  "path": "M 125 375 L 276.6654762208439 526.665476220844",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-pp-suff 1`] = `
+{
+  "labelAngle": 0,
+  "labelPosition": {
+    "x": 300,
+    "y": 389,
+  },
+  "path": "M 450 360 Q 300 390 150 360",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-pv 1`] = `
+{
+  "labelAngle": 90,
+  "labelPosition": {
+    "x": 112,
+    "y": 225,
+  },
+  "path": "M 100 325 L 100 125",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-pv-nec 1`] = `
+{
+  "labelAngle": 32.53333,
+  "labelPosition": {
+    "x": 275.499618,
+    "y": 254.063374,
+  },
+  "path": "M 450 329.41227728342386 Q 278.8000423998728 258.91993216020353 124.5146366115761 121.78894554471586",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-pv-suff 1`] = `
+{
+  "labelAngle": -89.971261,
+  "labelPosition": {
+    "x": 462.02512,
+    "y": 224.914482,
+  },
+  "path": "M 492 325 Q 460 225 492.10047494466636 124.68601579791763",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-res 1`] = `
+{
+  "labelAngle": 0,
+  "labelPosition": {
+    "x": 300,
+    "y": 61.357617,
+  },
+  "path": "M 146.42383454426297 90.71523309114741 Q 300 60 453.57616545573705 90.71523309114741",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-unmarked 1`] = `
+{
+  "labelAngle": -45,
+  "labelPosition": {
+    "x": 407.652543,
+    "y": 459.318019,
+  },
+  "path": "M 323.3345237791561 526.665476220844 L 475 375",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-vp 1`] = `
+{
+  "labelAngle": 32.105439,
+  "labelPosition": {
+    "x": 320.658065,
+    "y": 193.904145,
+  },
+  "path": "M 138.5969001135754 115.89244554515355 Q 321.1999576001272 191.08006783979647 471.87262164515204 325",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-vp-nec 1`] = `
+{
+  "labelAngle": 89.971261,
+  "labelPosition": {
+    "x": 537.97488,
+    "y": 224.914482,
+  },
+  "path": "M 507.89952505533364 124.68601579791763 Q 540 225 508 325",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-vp-suff 1`] = `
+{
+  "labelAngle": -32.005383,
+  "labelPosition": {
+    "x": 298.022637,
+    "y": 212.08488,
+  },
+  "path": "M 468.76524762227876 119.52172023607577 L 140 325",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-vv 1`] = `
+{
+  "labelAngle": 0,
+  "labelPosition": {
+    "x": 300,
+    "y": 77.681287,
+  },
+  "path": "M 149.56139503413175 96.69590699772455 Q 300 86.66666666666667 450.43860496586825 96.69590699772455",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-vv-nec 1`] = `
+{
+  "labelAngle": 0,
+  "labelPosition": {
+    "x": 300,
+    "y": 122.318713,
+  },
+  "path": "M 149.56139503413175 103.30409300227545 Q 300 113.33333333333333 450.43860496586825 103.30409300227545",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for full-mud.json > edge e-vv-suff 1`] = `
+{
+  "labelAngle": 0,
+  "labelPosition": {
+    "x": 300,
+    "y": 138.642383,
+  },
+  "path": "M 453.57616545573705 109.28476690885259 Q 300 140 146.42383454426297 109.28476690885259",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for latex-hostile.json > edge e1 1`] = `
+{
+  "labelAngle": 90,
+  "labelPosition": {
+    "x": 112,
+    "y": 225,
+  },
+  "path": "M 100 325 L 100 125",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for latex-hostile.json > edge e2 1`] = `
+{
+  "labelAngle": 32.005383,
+  "labelPosition": {
+    "x": 289.257389,
+    "y": 232.43684,
+  },
+  "path": "M 131.2347523777212 119.52172023607577 L 460 325",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for latex-hostile.json > edge e3 1`] = `
+{
+  "labelAngle": 0,
+  "labelPosition": {
+    "x": 300,
+    "y": 362,
+  },
+  "path": "M 150 350 L 450 350",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for latex-hostile.json > edge e4 1`] = `
+{
+  "labelAngle": 0,
+  "labelPosition": {
+    "x": 300,
+    "y": 88,
+  },
+  "path": "M 450 100 L 150 100",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for minimal-mud.json > edge e1 1`] = `
+{
+  "labelAngle": 0,
+  "labelPosition": {
+    "x": 200,
+    "y": 88,
+  },
+  "path": "M 250 100 L 150 100",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for nested-sizing.json > edge e1 1`] = `
+{
+  "labelAngle": 14.036243,
+  "labelPosition": {
+    "x": 294.450252,
+    "y": 330.98188,
+  },
+  "path": "M 264.7213595499958 311.180339887499 L 330 327.5",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for nested-sizing.json > edge e2 1`] = `
+{
+  "labelAngle": -29.096463,
+  "labelPosition": {
+    "x": 568.965969,
+    "y": 185.056695,
+  },
+  "path": "M 454.54545454545456 235 L 671.7157287525381 114.14213562373095",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for nested-sizing.json > edge e3 1`] = `
+{
+  "labelAngle": 90,
+  "labelPosition": {
+    "x": 688,
+    "y": 241.8,
+  },
+  "path": "M 700 120 L 700 363.6",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for tote-cycle.json > edge e-exit 1`] = `
+{
+  "labelAngle": -4.427365,
+  "labelPosition": {
+    "x": 592.918604,
+    "y": 58.442041,
+  },
+  "path": "M 525.9973473447873 89.6010610620851 Q 600 60 650 80",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for tote-cycle.json > edge e-fail 1`] = `
+{
+  "labelAngle": -33.414934,
+  "labelPosition": {
+    "x": 330.662561,
+    "y": 167.95222,
+  },
+  "path": "M 473.8913904623414 110.11634855123539 Q 327.8119921509908 166.71798822648626 223.97397639228726 275",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for tote-cycle.json > edge e-fb 1`] = `
+{
+  "labelAngle": -34.822098,
+  "labelPosition": {
+    "x": 376.743442,
+    "y": 228.342954,
+  },
+  "path": "M 250 280.62641264628866 Q 372.1880078490092 233.28201177351374 480.62005920745247 120.20935166890202",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for tote-cycle.json > edge e-loop 1`] = `
+{
+  "labelAngle": null,
+  "labelPosition": {
+    "x": 280,
+    "y": 270,
+  },
+  "path": "M 250 287.5 C 330 287.5 330 312.5 250 312.5",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for tote-cycle.json > edge e-pass 1`] = `
+{
+  "labelAngle": 4.427365,
+  "labelPosition": {
+    "x": 592.918604,
+    "y": 141.557959,
+  },
+  "path": "M 525.9973473447873 110.3989389379149 Q 600 140 650 120",
+}
+`;
+
+exports[`unified geometry matches historical canvas behavior for tote-cycle.json > edge e-seq1 1`] = `
+{
+  "labelAngle": 90,
+  "labelPosition": {
+    "x": 188,
+    "y": 201.5,
+  },
+  "path": "M 200 128 L 200 275",
+}
+`;
