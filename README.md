@@ -20,26 +20,31 @@ Research-oriented editor for Meaning-Use Diagrams (MUD) and Test-Operate-Test-Ex
 
 ### CLI (new in v1.2)
 - Headless command-line interface for programmatic diagram creation and manipulation
-- **GUI Bridge**: auto-connects to the running Electron app — CLI commands update the canvas in real time
-- Designed for LLM integration: structured JSON output, schema discovery, error envelopes with valid-value hints
+- **GUI Bridge**: auto-connects to the running Electron app — CLI commands update the canvas in real time; works across the WSL ↔ Windows boundary
+- Designed for LLM integration: structured JSON output with explicit `mode` reporting, schema discovery, a formal JSON Schema (`schema json-schema`), error envelopes with valid-value hints
+- **Brandom-aware verbs**: `check` (validation against MUD/TOTE conventions), `derive` (detect and apply canonical resultant MURs — pragmatic metavocabulary, LX), `explain` (bilingual prose reading of the diagram)
 - Full diagram lifecycle: create, load, save, node/edge CRUD, entry/exit points, grouping
 - All three export formats (JSON, SVG, LaTeX/TikZ) available from the terminal
 - Undo/redo support with history snapshots
-- Auto-load/save with `--file` flag for stateless scripting workflows
+- Auto-load/save with `--file` flag; in connected mode the file mirrors the canvas after every mutation; conflicting external writes are detected (content hash) and refused unless `--force`
+- Bundled with the Windows installer: `pragma-cli` is registered on the user PATH, so installed users need no Node.js toolchain
 
 ## Getting Started
 
 ### GUI (web/desktop)
 ```bash
 npm install
-npm run dev      # Vite dev server on http://localhost:5173
-npm run build    # Production bundle
-npm run lint     # ESLint
-npx tsc --noEmit # Type check
+npm run dev          # Vite dev server on http://localhost:5173
+npm run build        # Production bundle
+npm run build:check  # Type-check then build
+npm run lint         # ESLint
+npm test             # Vitest: unit tests + golden-file export-fidelity tests
 ```
-Desktop builds remain under `dist-electron/` and are not covered by this README.
+Desktop builds land under `dist-electron/` (`npm run build:win|mac|linux`).
 
 ### CLI
+On Windows, the desktop installer already registers `pragma-cli` on your PATH — skip the build steps and just run `pragma-cli --help` in a new terminal. From source:
+
 ```bash
 # Build the shared core and CLI
 npm run build:core
@@ -113,14 +118,29 @@ Commands:
 ### Output Format
 All commands produce a JSON envelope when piped or when `--json` is passed:
 ```json
-{"ok": true,  "command": "node.add", "result": {"id": "...", "type": "vocabulary", ...}}
-{"ok": false, "command": "node.add", "error": {"code": "INVALID_NODE_TYPE", "message": "...", "validValues": [...]}}
+{"ok": true,  "command": "node.add", "mode": "gui", "result": {"id": "...", "type": "vocabulary", ...}}
+{"ok": false, "command": "node.add", "mode": "headless", "error": {"code": "INVALID_NODE_TYPE", "message": "...", "validValues": [...], "hint": "..."}}
 ```
+
+Errors go to stderr with exit code 1; success to stdout with exit code 0. `mode` says whether the command ran against the live GUI or the in-process headless store.
 
 The `validValues` field in error responses makes the CLI self-correcting for LLMs: an agent can read the valid options and retry without consulting documentation.
 
 ### Schema Discovery
-`pragma-cli schema all` outputs the complete type system (node types with shapes/subtypes, edge types grouped by mode, diagram modes with available tools). This enables an LLM to construct valid commands without external documentation.
+`pragma-cli schema all` outputs the complete type system (node types with shapes/subtypes, edge types grouped by mode plus per-type Brandom semantics under `edgeTypeDetails`, diagram modes with available tools, and the composition rules `derive` recognises). This enables an LLM to construct valid commands without external documentation. `pragma-cli schema json-schema` prints a formal JSON Schema (draft 2020-12) for the diagram file format, suitable for external validators. All of this metadata lives in `@pragma-graph/core` (`schemaMeta.ts`, `jsonSchema.ts`) — one source of truth shared with the GUI.
+
+### Brandom-Aware Analysis
+Three verbs understand the diagrams as *Meaning-Use Analysis*, not just graphs:
+
+```bash
+pragma-cli check                        # permissive validation: warnings/suggestions, never blocks
+pragma-cli derive --pragmatic-metavocab # detect V_A -VP-suff-> P -PV-suff-> V_B patterns (BSD Fig 4.1)
+pragma-cli derive --lx                  # detect elaborated-explicating (LX) relations (BSD Figs 4.2/4.4)
+pragma-cli derive --apply               # add the detected resultant MURs to the diagram (atomic)
+pragma-cli explain --style narrative --lang en|es   # prose reading of the diagram
+```
+
+`schema composition-rules` documents the patterns `derive` recognises. In the GUI (desktop), **Tools → Validate Diagram** (`Ctrl+Shift+V`) runs the same validation engine.
 
 ### Connected Mode (GUI Bridge)
 When the Electron desktop app is running, the CLI automatically detects it and sends commands via HTTP to the GUI's Redux store. Changes appear on the canvas instantly.
@@ -176,6 +196,14 @@ pragma-graph-tool/
   tests/                # Fixtures + golden-file tests pinning export output
 ```
 
+### Testing
+```bash
+npm test                            # everything
+npx vitest run tests/fidelity       # golden-file export tests only
+npx vitest run tests/fidelity -u    # re-anchor goldens after an INTENTIONAL export change
+```
+The golden snapshots in `tests/fidelity/__snapshots__/` are the fidelity contract between GUI and CLI export output — they were anchored against the GUI's original generators, so any diff is either an intentional format change (update and review) or a regression. Other suites: core reducer tests, schema-metadata consistency (every type-union literal must have metadata), JSON Schema validation (ajv) over the fixtures, CLI discovery (real loopback server), and the `--file` conflict guard.
+
 Contributor assumptions: familiarity with Brandom’s inferential pragmatics and TOTE literature. No end-user onboarding text is provided in the app; the audience is expected to know the theoretical distinctions encoded by the tooling.
 
 ## Deployment
@@ -200,7 +228,7 @@ The included `netlify.toml` configures:
 - PWA support with proper headers
 - Optimal caching for static assets
 
-A `.netlifyignore` file excludes `electron/`, `cli/`, `packages/`, `dist-electron/`, and `research/` from the deploy artifact. This does not affect the build step — `npm install` and `vite build` still have full repo access.
+A `.netlifyignore` file excludes `electron/`, `cli/`, `dist-electron/`, and `research/` from the deploy artifact (`packages/core` must stay included — the web build compiles it from source). This does not affect the build step — `npm install` and `vite build` still have full repo access.
 
 ### Desktop Distribution
 Desktop builds are available for multiple platforms:
