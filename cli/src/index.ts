@@ -4,8 +4,8 @@ import { Command } from 'commander';
 import { CLI_VERSION } from './version.js';
 import { loadDiagramFromFile } from './headless/fileManager.js';
 import { loadDiagramIntoStore } from './headless/headlessStore.js';
-import { setOutputMode } from './output/formatter.js';
-import { discoverGUI } from './util/discovery.js';
+import { setOutputMode, setMode, outputError } from './output/formatter.js';
+import { discoverGUI, isWSL } from './util/discovery.js';
 import { GUIClient } from './client/httpClient.js';
 import { setGUIClient } from './backend.js';
 import { registerDiagramCommands } from './commands/diagram.js';
@@ -38,6 +38,7 @@ program
   .option('--human', 'Force human-readable output')
   .option('--file <path>', 'Diagram file to load/save automatically')
   .option('--headless', 'Force headless mode (no GUI connection)')
+  .option('--require-gui', 'Fail (exit 1) instead of falling back to headless when no GUI is reachable')
   .hook('preAction', async (_thisCommand, actionCommand) => {
     // Resolve global options from the root program
     const opts = program.opts();
@@ -49,15 +50,33 @@ program
 
     // Try to connect to GUI (unless --headless is set)
     if (!opts.headless) {
-      const conn = discoverGUI();
-      if (conn) {
-        const client = new GUIClient(conn);
-        try {
-          await client.getStatus(); // verify connection is alive
-          setGUIClient(client);
-        } catch {
-          // GUI not responding, fall back to headless
-        }
+      const { connection, stale } = await discoverGUI();
+      if (connection) {
+        setGUIClient(new GUIClient(connection));
+        setMode('gui');
+      } else if (stale.length > 0) {
+        // A GUI session file exists but nothing answered: say so on stderr
+        // (never stdout — that must stay machine-parseable).
+        const wslHint = isWSL()
+          ? ' If the GUI runs on Windows and this CLI in WSL, enable networkingMode=mirrored in %UserProfile%\\.wslconfig, or set PRAGMA_GUI_URL and PRAGMA_GUI_TOKEN.'
+          : '';
+        process.stderr.write(
+          `Note: found GUI session (${stale.join(', ')}) but could not connect; running headless.${wslHint}\n`
+        );
+      }
+    }
+
+    if (opts.requireGui && !opts.headless) {
+      const { isConnected } = await import('./backend.js');
+      if (!isConnected()) {
+        outputError(
+          actionCommand.name(),
+          'GUI_UNAVAILABLE',
+          'No running GUI found and --require-gui was set.',
+          undefined,
+          'Start the Pragma Graph Tool GUI, or set PRAGMA_GUI_URL/PRAGMA_GUI_TOKEN, or drop --require-gui.'
+        );
+        process.exit(1);
       }
     }
 

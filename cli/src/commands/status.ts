@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { getDiagram, isConnected } from '../backend.js';
+import { getDiagram, isConnected, getGUIClient } from '../backend.js';
 import { outputSuccess } from '../output/formatter.js';
 
 export function registerStatusCommand(program: Command): void {
@@ -8,10 +8,16 @@ export function registerStatusCommand(program: Command): void {
     .description('Show CLI status and connection info')
     .action(async () => {
       const diagram = await getDiagram();
+      const conn = getGUIClient()?.connection;
 
       outputSuccess('status', {
         mode: isConnected() ? 'connected' : 'headless',
         gui: isConnected(),
+        ...(conn ? {
+          endpoint: `http://${conn.host}:${conn.port}`,
+          discoverySource: conn.source,
+          guiVersion: conn.version
+        } : {}),
         diagram: diagram ? {
           id: diagram.id,
           name: diagram.name,
