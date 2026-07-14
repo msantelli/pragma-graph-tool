@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3.0 — 2026-07-14
+
+### Unified edge geometry (WYSIWYG exports)
+One edge-geometry implementation (`packages/core/src/edgeGeometry.ts`) now drives the Canvas renderer, the SVG exporter, and the TikZ bend angles. Previously three independent implementations disagreed — measured at **19 of 36 fixture edges** differing between screen and export. The canvas's historical on-screen behavior is the canonical semantics (pinned by 36 snapshots in `tests/fidelity/geometry-unified.test.ts`), so **the canvas renders exactly as before** and exports changed to match it:
+
+- Parallel/opposite edges fan out over the same 80px offset range in exports as on screen (SVG previously used 60px).
+- Edges between nested-related nodes (container ↔ child) group and curve apart in exports as they do on screen (previously they overlapped in exports).
+- Edges from/to container nodes connect at the container boundary in exports, as rendered (previously at the small node shape — up to ~100px off).
+- `labelPosition` (start/middle/end) and the user's `labelOffset` are honored in SVG exports (previously ignored).
+- TikZ bends derive from the same grouping/ordering/orientation, so curves bow on the same side as the canvas (reverse-direction edges previously bowed on the wrong side).
+
+Export golden snapshots were re-anchored accordingly; `Canvas.tsx` shrank by ~370 lines.
+
 ## 1.2.0 — 2026-07-14
 
 ### CLI

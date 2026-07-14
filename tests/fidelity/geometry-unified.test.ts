@@ -9,7 +9,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import * as path from 'node:path';
 
-import { getEdgeGeometry } from '../../src/components/Canvas/Canvas';
+import { getEdgeGeometry } from '../../src/components/Canvas/edgeGeometryAdapter';
 import type { Diagram } from '@pragma-graph/core';
 
 const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'fixtures');

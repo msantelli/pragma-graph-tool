@@ -1,7 +1,7 @@
 {
   "name": "pragma-graph-tool",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Interactive visualization tool for Meaning-Use Diagrams and TOTE Cycles based on Robert Brandom's philosophical framework",
   "author": {
     "name": "Mauro Santelli",

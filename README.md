@@ -181,7 +181,7 @@ pragma-cli --file diagram.json export latex --raw > diagram.tex
 
 ## Architecture Notes
 - State: Redux Toolkit (`diagramSlice`, `uiSlice`) with history tracking and modal flags
-- Canvas: React + D3 for zoom/pan, snapping, entry/exit markers, and edge routing
+- Canvas: React + D3 for zoom/pan, snapping, and entry/exit markers; edge routing comes from core’s unified `edgeGeometry` (the same functions the exporters use, so screen and export always agree)
 - Modal system: reusable wrapper powering edge type selector, node customiser, edge editor
 - Utilities: `utils/` holds grid snapping, export pipelines, and type helpers
 - **Monorepo**: npm workspaces with `packages/core/` (shared types, store, pure utils) and `cli/` (Node.js CLI)
