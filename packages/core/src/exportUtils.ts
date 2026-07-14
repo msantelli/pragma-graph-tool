@@ -11,280 +11,21 @@ import {
   getNestingDepth,
   calculateContainerBounds
 } from './nodeUtils.js';
-import type { Diagram, Node, Edge, Point } from './types.js';
+import type { Diagram, Node, Edge } from './types.js';
 
-const EDGE_OFFSET_RANGE = 60;
-const EDGE_LABEL_OFFSET = 14;
 
-type EdgeGeometryType = 'straight' | 'curve' | 'loop';
+import { computeEdgeGeometry, getEdgeOffset, type EdgeGeometry } from './edgeGeometry.js';
 
-export interface ExportEdgeGeometry {
-  type: EdgeGeometryType;
-  start: Point;
-  end: Point;
-  control?: Point;
-  control2?: Point;
-  path: string;
-  labelPosition: Point;
-  labelAngle: number | null;
-}
+// The export geometry IS the canvas geometry — one implementation in
+// edgeGeometry.ts, pinned to the historical on-screen behavior.
+export type ExportEdgeGeometry = EdgeGeometry;
 
-const normalizeAngle = (angleDeg: number): number => {
-  let angle = angleDeg;
-  if (angle > 180) angle -= 360;
-  if (angle <= -180) angle += 360;
-  if (angle > 90) angle -= 180;
-  if (angle <= -90) angle += 180;
-  return angle;
-};
+export const computeEdgeGeometryForExport = (
+  edge: Edge,
+  nodes: Node[],
+  allEdges: Edge[]
+): ExportEdgeGeometry | null => computeEdgeGeometry(edge, nodes, allEdges);
 
-const getEdgeOffsetForExport = (currentEdge: Edge, allEdges: Edge[]): number => {
-  const relatedEdges = allEdges.filter(edge =>
-    (edge.source === currentEdge.source && edge.target === currentEdge.target) ||
-    (edge.source === currentEdge.target && edge.target === currentEdge.source)
-  );
-
-  if (relatedEdges.length <= 1) return 0;
-
-  relatedEdges.sort((a, b) => a.id.localeCompare(b.id));
-  const currentIndex = relatedEdges.findIndex(edge => edge.id === currentEdge.id);
-  const totalEdges = relatedEdges.length;
-  const orientationSign = currentEdge.source < currentEdge.target ? 1 : -1;
-
-  if (totalEdges === 2) {
-    const baseOffset = currentIndex === 0 ? -EDGE_OFFSET_RANGE / 2 : EDGE_OFFSET_RANGE / 2;
-    return baseOffset * orientationSign;
-  }
-
-  const step = totalEdges > 1 ? EDGE_OFFSET_RANGE / (totalEdges - 1) : 0;
-  const baseOffset = (currentIndex - (totalEdges - 1) / 2) * step;
-  return baseOffset * orientationSign;
-};
-
-const getNodeConnectionPointForExport = (node: Node, targetPos: Point, allNodes: Node[]): Point => {
-  const nodePos = toAbsolutePosition(node, allNodes);
-  const { x: nodeX, y: nodeY } = nodePos;
-  const { x: targetX, y: targetY } = targetPos;
-
-  const dx = targetX - nodeX;
-  const dy = targetY - nodeY;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-
-  if (distance === 0) return { x: nodeX, y: nodeY };
-
-  const normalizedDx = dx / distance;
-  const normalizedDy = dy / distance;
-
-  const dimensions = getNodeDimensions(node);
-  const shape = getNodeShape(node);
-
-  let offsetX = 0;
-  let offsetY = 0;
-
-  switch (shape) {
-    case 'ellipse': {
-      const rx = dimensions.width / 2;
-      const ry = dimensions.height / 2;
-      const t = Math.atan2(normalizedDy * rx, normalizedDx * ry);
-      offsetX = rx * Math.cos(t);
-      offsetY = ry * Math.sin(t);
-      break;
-    }
-    case 'rectangle': {
-      const w = dimensions.width / 2;
-      const h = dimensions.height / 2;
-      if (Math.abs(normalizedDx) * h > Math.abs(normalizedDy) * w) {
-        offsetX = normalizedDx > 0 ? w : -w;
-        offsetY = (normalizedDy * w) / Math.abs(normalizedDx || 1);
-      } else {
-        offsetX = (normalizedDx * h) / Math.abs(normalizedDy || 1);
-        offsetY = normalizedDy > 0 ? h : -h;
-      }
-      break;
-    }
-    case 'diamond': {
-      const diamondRadius = dimensions.radius * 0.8;
-      offsetX = normalizedDx * diamondRadius;
-      offsetY = normalizedDy * diamondRadius;
-      break;
-    }
-    default: {
-      offsetX = normalizedDx * dimensions.radius;
-      offsetY = normalizedDy * dimensions.radius;
-      break;
-    }
-  }
-
-  return {
-    x: nodeX + offsetX,
-    y: nodeY + offsetY
-  };
-};
-
-const computeCurvedEdgeGeometry = (sourceNode: Node, targetNode: Node, offset: number, allNodes: Node[]): ExportEdgeGeometry => {
-  const sourcePos = toAbsolutePosition(sourceNode, allNodes);
-  const targetPos = toAbsolutePosition(targetNode, allNodes);
-
-  const midX = (sourcePos.x + targetPos.x) / 2;
-  const midY = (sourcePos.y + targetPos.y) / 2;
-  const dx = targetPos.x - sourcePos.x;
-  const dy = targetPos.y - sourcePos.y;
-  const length = Math.sqrt(dx * dx + dy * dy);
-
-  if (length === 0) {
-    const start = sourcePos;
-    const end = targetPos;
-    return {
-      type: 'straight',
-      start,
-      end,
-      path: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
-      labelPosition: { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 },
-      labelAngle: 0
-    };
-  }
-
-  const perpX = -dy / length;
-  const perpY = dx / length;
-  const controlX = midX + perpX * offset;
-  const controlY = midY + perpY * offset;
-
-  const controlPos = { x: controlX, y: controlY };
-  const start = getNodeConnectionPointForExport(sourceNode, controlPos, allNodes);
-  const end = getNodeConnectionPointForExport(targetNode, controlPos, allNodes);
-  const path = `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`;
-
-  const t = 0.5;
-  const oneMinusT = 1 - t;
-  const midPoint = {
-    x: oneMinusT * oneMinusT * start.x + 2 * oneMinusT * t * controlX + t * t * end.x,
-    y: oneMinusT * oneMinusT * start.y + 2 * oneMinusT * t * controlY + t * t * end.y
-  };
-
-  const dxdt =
-    2 * oneMinusT * (controlX - start.x) +
-    2 * t * (end.x - controlX);
-  const dydt =
-    2 * oneMinusT * (controlY - start.y) +
-    2 * t * (end.y - controlY);
-  const tangentLength = Math.sqrt(dxdt * dxdt + dydt * dydt) || 1;
-  const normalX = (-dydt / tangentLength) * Math.sign(offset || 1);
-  const normalY = (dxdt / tangentLength) * Math.sign(offset || 1);
-
-  const labelPosition = {
-    x: midPoint.x + normalX * EDGE_LABEL_OFFSET,
-    y: midPoint.y + normalY * EDGE_LABEL_OFFSET
-  };
-
-  const labelAngle = normalizeAngle((Math.atan2(dydt, dxdt) * 180) / Math.PI);
-
-  return {
-    type: 'curve',
-    start,
-    end,
-    control: { x: controlX, y: controlY },
-    path,
-    labelPosition,
-    labelAngle
-  };
-};
-
-const computeStraightEdgeGeometry = (sourceNode: Node, targetNode: Node, allNodes: Node[]): ExportEdgeGeometry => {
-  const sourcePos = toAbsolutePosition(sourceNode, allNodes);
-  const targetPos = toAbsolutePosition(targetNode, allNodes);
-
-  const start = getNodeConnectionPointForExport(sourceNode, targetPos, allNodes);
-  const end = getNodeConnectionPointForExport(targetNode, sourcePos, allNodes);
-  const path = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
-
-  const midX = (start.x + end.x) / 2;
-  const midY = (start.y + end.y) / 2;
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const length = Math.sqrt(dx * dx + dy * dy) || 1;
-  const normalX = -dy / length;
-  const normalY = dx / length;
-
-  const labelPosition = {
-    x: midX + normalX * (EDGE_LABEL_OFFSET - 2),
-    y: midY + normalY * (EDGE_LABEL_OFFSET - 2)
-  };
-
-  const labelAngle = normalizeAngle((Math.atan2(dy, dx) * 180) / Math.PI);
-
-  return {
-    type: 'straight',
-    start,
-    end,
-    path,
-    labelPosition,
-    labelAngle
-  };
-};
-
-const computeLoopEdgeGeometry = (node: Node, allNodes: Node[]): ExportEdgeGeometry => {
-  const dimensions = getNodeDimensions(node);
-  const shape = getNodeShape(node);
-  const pos = toAbsolutePosition(node, allNodes);
-
-  let loopStartX: number;
-  let loopStartY: number;
-  let loopEndX: number;
-  let loopEndY: number;
-
-  if (shape === 'rectangle') {
-    loopStartX = pos.x + dimensions.width / 2;
-    loopStartY = pos.y - dimensions.height / 4;
-    loopEndX = pos.x + dimensions.width / 2;
-    loopEndY = pos.y + dimensions.height / 4;
-  } else {
-    const radius = dimensions.radius;
-    loopStartX = pos.x + radius * 0.7;
-    loopStartY = pos.y - radius * 0.7;
-    loopEndX = pos.x + radius * 0.7;
-    loopEndY = pos.y + radius * 0.7;
-  }
-
-  const loopSize = Math.max(dimensions.width, dimensions.height) * 0.8;
-  const control1 = { x: loopStartX + loopSize, y: loopStartY };
-  const control2 = { x: loopEndX + loopSize, y: loopEndY };
-  const path = `M ${loopStartX} ${loopStartY} C ${control1.x} ${control1.y} ${control2.x} ${control2.y} ${loopEndX} ${loopEndY}`;
-
-  const labelPosition = {
-    x: pos.x + Math.max(dimensions.width, dimensions.height) * 0.8,
-    y: pos.y - Math.max(dimensions.height, 40) * 0.6
-  };
-
-  return {
-    type: 'loop',
-    start: { x: loopStartX, y: loopStartY },
-    end: { x: loopEndX, y: loopEndY },
-    control: control1,
-    control2,
-    path,
-    labelPosition,
-    labelAngle: null
-  };
-};
-
-export const computeEdgeGeometryForExport = (edge: Edge, nodes: Node[], allEdges: Edge[]): ExportEdgeGeometry | null => {
-  const sourceNode = nodes.find(n => n.id === edge.source);
-  const targetNode = nodes.find(n => n.id === edge.target);
-
-  if (!sourceNode || !targetNode) return null;
-
-  if (edge.source === edge.target) {
-    return computeLoopEdgeGeometry(sourceNode, nodes);
-  }
-
-  const offset = getEdgeOffsetForExport(edge, allEdges);
-
-  if (offset === 0) {
-    return computeStraightEdgeGeometry(sourceNode, targetNode, nodes);
-  }
-
-  return computeCurvedEdgeGeometry(sourceNode, targetNode, offset, nodes);
-};
 
 export const calculateDiagramBounds = (nodes: Node[]) => {
   if (nodes.length === 0) {
@@ -379,22 +120,16 @@ export const generateTikZCode = (nodes: Node[], edges: Edge[], diagramType: stri
     nodeIdMap.set(node.id, `${prefix}${counters[prefix]}`);
   });
 
-  const edgePairKey = (a: string, b: string) => [a, b].sort().join('::');
-  const edgePairCounts = new Map<string, Edge[]>();
-  edges.forEach(edge => {
-    const key = edgePairKey(edge.source, edge.target);
-    if (!edgePairCounts.has(key)) edgePairCounts.set(key, []);
-    edgePairCounts.get(key)!.push(edge);
-  });
-
+  // Bend angles derive from the SAME grouping/ordering/orientation as the
+  // canvas and SVG (unified edgeGeometry): 40px of perpendicular offset maps
+  // to a 15° bend. The sign flips because the canvas y-axis points down
+  // while TikZ's points up ("bend left" = visually the canvas's positive
+  // perpendicular side after the flip).
   const edgeBendAngles = new Map<string, number>();
-  edgePairCounts.forEach((group) => {
-    if (group.length <= 1) return;
-    const step = Math.min(30, 60 / group.length);
-    group.forEach((edge, i) => {
-      const angle = (i - (group.length - 1) / 2) * step;
-      edgeBendAngles.set(edge.id, angle);
-    });
+  edges.forEach(edge => {
+    if (edge.source === edge.target) return;
+    const offset = getEdgeOffset(edge, edges, nodes);
+    if (offset !== 0) edgeBendAngles.set(edge.id, -offset * (15 / 40));
   });
 
   let tikz = `\\begin{tikzpicture}[>=Stealth, thick, font=\\small]\n\n`;

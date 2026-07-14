@@ -154,6 +154,18 @@ export {
 // JSON Schema for the diagram file format
 export { DIAGRAM_JSON_SCHEMA } from './jsonSchema.js';
 
+// Unified edge geometry (single implementation for canvas + exports)
+export {
+  type EdgeGeometry,
+  type EdgeGeometryType,
+  type EdgeGroupPlacement,
+  computeEdgeGeometry,
+  getEdgeGroupPlacement,
+  getEdgeOffset,
+  getNodeConnectionPoint,
+  isNodeRelated
+} from './edgeGeometry.js';
+
 // Export utilities (pure generators)
 export {
   type ExportEdgeGeometry,

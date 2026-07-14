@@ -133,10 +133,10 @@ exports[`export parity for curved-overlap.json > LaTeX document is identical > l
 \\node[vocabulary] (V2) at (0.00, -3.13) {V2};
 
 % --- Edges ---
-\\draw[vp] (V1) to[bend right=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {first} (P1);
-\\draw[vp] (V1) to[bend right=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {second parallel} (P1);
-\\draw[pv] (P1) to[bend left=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse} (V1);
-\\draw[pv] (P1) to[bend left=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse parallel} (V1);
+\\draw[vp] (V1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {first} (P1);
+\\draw[vp] (V1) to[bend right=5] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {second parallel} (P1);
+\\draw[pv] (P1) to[bend right=5] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse} (V1);
+\\draw[pv] (P1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse parallel} (V1);
 \\draw[feedback] (P1) to[loop above, looseness=5] node[above, font=\\scriptsize] {self} (P1);
 \\draw[vv] (V1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V2);
 \\draw[unmarked] (V2) -- (P1);
@@ -167,14 +167,14 @@ exports[`export parity for curved-overlap.json > SVG content is identical > svg 
   </defs>
 
   <!-- Edges -->
-  <path d="M 197.89 207.18 Q 350.00 230.00 500.00 207.50" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="349.46" y="232.67" transform="rotate(0.06, 349.46, 232.67)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">first</text>
-  <path d="M 199.75 202.49 Q 350.00 210.00 500.00 202.50" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="349.94" y="220.25" transform="rotate(0.00, 349.94, 220.25)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">second parallel</text>
-  <path d="M 500.00 197.50 Q 350.00 190.00 199.75 197.51" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="349.94" y="179.75" transform="rotate(-0.00, 349.94, 179.75)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">reverse</text>
-  <path d="M 500.00 192.50 Q 350.00 170.00 197.89 192.82" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="349.46" y="167.33" transform="rotate(-0.06, 349.46, 167.33)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">reverse parallel</text>
+  <path d="M 196.42 209.28 Q 350.00 240.00 500.00 210.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="349.07" y="238.82" transform="rotate(0.13, 349.07, 238.82)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">first</text>
+  <path d="M 199.56 203.30 Q 350.00 213.33 500.00 203.33" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="349.89" y="222.33" transform="rotate(0.01, 349.89, 222.33)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">second parallel</text>
+  <path d="M 500.00 196.67 Q 350.00 186.67 199.56 196.70" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="349.89" y="177.67" transform="rotate(-0.01, 349.89, 177.67)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">reverse</text>
+  <path d="M 500.00 190.00 Q 350.00 160.00 196.42 190.72" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="349.07" y="161.18" transform="rotate(-0.13, 349.07, 161.18)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">reverse parallel</text>
   <path d="M 600.00 187.50 C 680.00 187.50 680.00 212.50 600.00 212.50" stroke="#555555" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
   <text class="edge-text" x="630.00" y="170.00" fill="#555555" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">self</text>
   <path d="M 168.57 223.21 L 331.43 426.79" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
@@ -223,10 +223,10 @@ exports[`export parity for curved-overlap.json > TikZ code is identical > tikz 1
 \\node[vocabulary] (V2) at (0.00, -3.13) {V2};
 
 % --- Edges ---
-\\draw[vp] (V1) to[bend right=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {first} (P1);
-\\draw[vp] (V1) to[bend right=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {second parallel} (P1);
-\\draw[pv] (P1) to[bend left=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse} (V1);
-\\draw[pv] (P1) to[bend left=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse parallel} (V1);
+\\draw[vp] (V1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {first} (P1);
+\\draw[vp] (V1) to[bend right=5] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {second parallel} (P1);
+\\draw[pv] (P1) to[bend right=5] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse} (V1);
+\\draw[pv] (P1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse parallel} (V1);
 \\draw[feedback] (P1) to[loop above, looseness=5] node[above, font=\\scriptsize] {self} (P1);
 \\draw[vv] (V1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V2);
 \\draw[unmarked] (V2) -- (P1);
@@ -495,18 +495,18 @@ exports[`export parity for full-mud.json > LaTeX document is identical > latex 1
 
 % --- Edges ---
 \\draw[pv] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {1: PV} (V1);
-\\draw[vp] (V1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {2: VP} (P2);
-\\draw[pp] (P1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP} (P2);
-\\draw[vv] (V1) to[bend right=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V2);
-\\draw[pv] (P2) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV-suff witness} (V2);
+\\draw[vp] (V1) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {2: VP} (P2);
+\\draw[pp] (P1) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP} (P2);
+\\draw[vv] (V1) to[bend left=5] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V2);
+\\draw[pv] (P2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV-suff witness} (V2);
 \\draw[pv] (P2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV-nec} (V1);
 \\draw[vp] (V2) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VP-suff} (P1);
 \\draw[vp] (V2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VP-nec} (P2);
 \\draw[pp] (P2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP-suff} (P1);
 \\draw[pp] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP-nec} (C1);
-\\draw[vv] (V2) to[bend right=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-suff} (V1);
-\\draw[vv] (V1) to[bend left=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-nec} (V2);
-\\draw[resultant] (V1) to[bend left=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {res: VV} (V2);
+\\draw[vv] (V2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-suff} (V1);
+\\draw[vv] (V1) to[bend right=5] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-nec} (V2);
+\\draw[resultant] (V1) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {res: VV} (V2);
 \\draw[unmarked] (C1) -- (P2);
 \\draw[customedge] (C1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {bespoke relation} (V1);
 
@@ -538,30 +538,30 @@ exports[`export parity for full-mud.json > SVG content is identical > svg 1`] = 
   <!-- Edges -->
   <path d="M 100.00 325.00 L 100.00 125.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
   <text class="edge-text" x="112.00" y="225.00" transform="rotate(90.00, 112.00, 225.00)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV</text>
-  <path d="M 136.75 116.95 Q 315.90 199.56 469.41 325.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="316.91" y="198.40" transform="rotate(32.02, 316.91, 198.40)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VP</text>
-  <path d="M 150.00 342.50 Q 300.00 320.00 450.00 342.50" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="300.00" y="317.25" transform="rotate(0.00, 300.00, 317.25)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PP</text>
-  <path d="M 149.75 97.51 Q 300.00 90.00 450.25 97.51" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="300.00" y="79.76" transform="rotate(0.00, 300.00, 79.76)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VV</text>
-  <path d="M 494.00 325.00 Q 470.00 225.00 494.04 124.82" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="468.01" y="224.95" transform="rotate(-89.99, 468.01, 224.95)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV-suff witness</text>
-  <path d="M 450.00 326.94 Q 284.10 250.44 126.10 121.32" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="278.57" y="249.11" transform="rotate(32.41, 278.57, 249.11)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV-nec</text>
+  <path d="M 138.60 115.89 Q 321.20 191.08 471.87 325.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="320.66" y="193.90" transform="rotate(32.11, 320.66, 193.90)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VP</text>
+  <path d="M 150.00 340.00 Q 300.00 310.00 450.00 340.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="311.00" transform="rotate(0.00, 300.00, 311.00)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PP</text>
+  <path d="M 149.56 96.70 Q 300.00 86.67 450.44 96.70" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="77.68" transform="rotate(0.00, 300.00, 77.68)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VV</text>
+  <path d="M 492.00 325.00 Q 460.00 225.00 492.10 124.69" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="462.03" y="224.91" transform="rotate(-89.97, 462.03, 224.91)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV-suff witness</text>
+  <path d="M 450.00 329.41 Q 278.80 258.92 124.51 121.79" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="275.50" y="254.06" transform="rotate(32.53, 275.50, 254.06)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV-nec</text>
   <path d="M 468.77 119.52 L 140.00 325.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
   <text class="edge-text" x="298.02" y="212.08" transform="rotate(-32.01, 298.02, 212.08)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VP-suff</text>
-  <path d="M 505.96 124.82 Q 530.00 225.00 506.00 325.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="531.99" y="224.95" transform="rotate(89.99, 531.99, 224.95)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VP-nec</text>
-  <path d="M 450.00 357.50 Q 300.00 380.00 150.00 357.50" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="300.00" y="382.75" transform="rotate(0.00, 300.00, 382.75)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PP-suff</text>
+  <path d="M 507.90 124.69 Q 540.00 225.00 508.00 325.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="537.97" y="224.91" transform="rotate(89.97, 537.97, 224.91)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VP-nec</text>
+  <path d="M 450.00 360.00 Q 300.00 390.00 150.00 360.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="389.00" transform="rotate(0.00, 300.00, 389.00)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PP-suff</text>
   <path d="M 125.00 375.00 L 276.67 526.67" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
   <text class="edge-text" x="192.35" y="459.32" transform="rotate(45.00, 192.35, 459.32)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PP-nec</text>
-  <path d="M 452.11 107.18 Q 300.00 130.00 147.89 107.18" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="300.00" y="132.59" transform="rotate(0.00, 300.00, 132.59)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VV-suff</text>
-  <path d="M 149.75 102.49 Q 300.00 110.00 450.25 102.49" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="300.00" y="120.24" transform="rotate(0.00, 300.00, 120.24)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VV-nec</text>
-  <path d="M 147.89 92.82 Q 300.00 70.00 452.11 92.82" stroke="#333333" stroke-width="2" stroke-dasharray="8,4" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="300.00" y="67.41" transform="rotate(0.00, 300.00, 67.41)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">res: VV</text>
+  <path d="M 453.58 109.28 Q 300.00 140.00 146.42 109.28" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="138.64" transform="rotate(0.00, 300.00, 138.64)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VV-suff</text>
+  <path d="M 149.56 103.30 Q 300.00 113.33 450.44 103.30" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="122.32" transform="rotate(0.00, 300.00, 122.32)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VV-nec</text>
+  <path d="M 146.42 90.72 Q 300.00 60.00 453.58 90.72" stroke="#333333" stroke-width="2" stroke-dasharray="8,4" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="61.36" transform="rotate(0.00, 300.00, 61.36)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">res: VV</text>
   <path d="M 323.33 526.67 L 475.00 375.00" stroke="#999999" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
   <path d="M 286.60 519.84 L 110.85 124.40" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
   <text class="edge-text" x="209.69" y="317.25" transform="rotate(66.04, 209.69, 317.25)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">bespoke relation</text>
@@ -636,18 +636,18 @@ exports[`export parity for full-mud.json > TikZ code is identical > tikz 1`] = `
 
 % --- Edges ---
 \\draw[pv] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {1: PV} (V1);
-\\draw[vp] (V1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {2: VP} (P2);
-\\draw[pp] (P1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP} (P2);
-\\draw[vv] (V1) to[bend right=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V2);
-\\draw[pv] (P2) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV-suff witness} (V2);
+\\draw[vp] (V1) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {2: VP} (P2);
+\\draw[pp] (P1) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP} (P2);
+\\draw[vv] (V1) to[bend left=5] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V2);
+\\draw[pv] (P2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV-suff witness} (V2);
 \\draw[pv] (P2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV-nec} (V1);
 \\draw[vp] (V2) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VP-suff} (P1);
 \\draw[vp] (V2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VP-nec} (P2);
 \\draw[pp] (P2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP-suff} (P1);
 \\draw[pp] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP-nec} (C1);
-\\draw[vv] (V2) to[bend right=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-suff} (V1);
-\\draw[vv] (V1) to[bend left=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-nec} (V2);
-\\draw[resultant] (V1) to[bend left=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {res: VV} (V2);
+\\draw[vv] (V2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-suff} (V1);
+\\draw[vv] (V1) to[bend right=5] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-nec} (V2);
+\\draw[resultant] (V1) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {res: VV} (V2);
 \\draw[unmarked] (C1) -- (P2);
 \\draw[customedge] (C1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {bespoke relation} (V1);
 
@@ -1217,8 +1217,8 @@ exports[`export parity for nested-sizing.json > SVG content is identical > svg 1
   <!-- Edges -->
   <path d="M 264.72 311.18 L 330.00 327.50" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
   <text class="edge-text" x="294.45" y="330.98" transform="rotate(14.04, 294.45, 330.98)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VP</text>
-  <path d="M 350.00 275.00 L 671.72 114.14" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="516.22" y="205.30" transform="rotate(-26.57, 516.22, 205.30)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV</text>
+  <path d="M 454.55 235.00 L 671.72 114.14" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="568.97" y="185.06" transform="rotate(-29.10, 568.97, 185.06)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV</text>
   <path d="M 700.00 120.00 L 700.00 363.60" stroke="#999999" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
 
   <!-- Nodes -->
@@ -1484,7 +1484,7 @@ exports[`export parity for tote-cycle.json > LaTeX document is identical > latex
 \\draw[feedback] (O1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {feedback} (T2);
 \\draw[feedback] (O1) to[loop above, looseness=5] node[above, font=\\scriptsize] {iterate} (O1);
 \\draw[exitedge] (T2) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {congruity} (X1);
-\\draw[sequence] (T2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {test-fail} (O1);
+\\draw[sequence] (T2) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {test-fail} (O1);
 \\draw[exitedge] (T2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {exit} (X1);
 
 \\end{tikzpicture}
@@ -1515,16 +1515,16 @@ exports[`export parity for tote-cycle.json > SVG content is identical > svg 1`] 
   <!-- Edges -->
   <path d="M 200.00 128.00 L 200.00 275.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
   <text class="edge-text" x="188.00" y="201.50" transform="rotate(90.00, 188.00, 201.50)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">incongruity</text>
-  <path d="M 250.00 277.48 Q 366.64 224.96 479.57 119.15" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="373.66" y="223.16" transform="rotate(-34.60, 373.66, 223.16)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">feedback</text>
+  <path d="M 250.00 280.63 Q 372.19 233.28 480.62 120.21" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="376.74" y="228.34" transform="rotate(-34.82, 376.74, 228.34)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">feedback</text>
   <path d="M 250.00 287.50 C 330.00 287.50 330.00 312.50 250.00 312.50" stroke="#555555" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
   <text class="edge-text" x="280.00" y="270.00" fill="#555555" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">iterate</text>
-  <path d="M 526.82 108.05 Q 600.00 130.00 650.00 115.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="593.42" y="134.74" transform="rotate(3.23, 593.42, 134.74)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">congruity</text>
-  <path d="M 474.47 111.50 Q 333.36 175.04 226.68 275.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="334.26" y="172.46" transform="rotate(-33.42, 334.26, 172.46)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">test-fail</text>
-  <path d="M 526.82 91.95 Q 600.00 70.00 650.00 85.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
-  <text class="edge-text" x="593.42" y="65.26" transform="rotate(-3.23, 593.42, 65.26)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">exit</text>
+  <path d="M 526.00 110.40 Q 600.00 140.00 650.00 120.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="592.92" y="141.56" transform="rotate(4.43, 592.92, 141.56)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">congruity</text>
+  <path d="M 473.89 110.12 Q 327.81 166.72 223.97 275.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="330.66" y="167.95" transform="rotate(-33.41, 330.66, 167.95)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">test-fail</text>
+  <path d="M 526.00 89.60 Q 600.00 60.00 650.00 80.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="592.92" y="58.44" transform="rotate(-4.43, 592.92, 58.44)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">exit</text>
 
   <!-- Nodes -->
   <path d="M 200.00,65.00 L 235.00,100.00 L 200.00,135.00 L 165.00,100.00 Z" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
@@ -1575,7 +1575,7 @@ exports[`export parity for tote-cycle.json > TikZ code is identical > tikz 1`] =
 \\draw[feedback] (O1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {feedback} (T2);
 \\draw[feedback] (O1) to[loop above, looseness=5] node[above, font=\\scriptsize] {iterate} (O1);
 \\draw[exitedge] (T2) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {congruity} (X1);
-\\draw[sequence] (T2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {test-fail} (O1);
+\\draw[sequence] (T2) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {test-fail} (O1);
 \\draw[exitedge] (T2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {exit} (X1);
 
 \\end{tikzpicture}"
