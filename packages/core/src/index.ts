@@ -138,6 +138,22 @@ export {
   buildResultantEdgePayload
 } from './derive.js';
 
+// Schema metadata (single source of truth for schema discovery)
+export {
+  type NodeTypeMeta,
+  type EdgeTypeMeta,
+  NODE_TYPES,
+  EDGE_TYPES_DETAILS,
+  EDGE_TYPES_GROUPED,
+  DIAGRAM_MODES,
+  BRANDOM_COMPOSITION_RULES,
+  COMMON_NODE_FIELDS,
+  COMMON_EDGE_FIELDS
+} from './schemaMeta.js';
+
+// JSON Schema for the diagram file format
+export { DIAGRAM_JSON_SCHEMA } from './jsonSchema.js';
+
 // Export utilities (pure generators)
 export {
   type ExportEdgeGeometry,

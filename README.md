@@ -92,6 +92,8 @@ Global options:
   --human         Force human-readable output (default in TTY)
   --file <path>   Auto-load/save diagram between invocations
   --headless      Force headless mode (no GUI connection)
+  --require-gui   Exit 1 instead of falling back to headless
+  --force         Overwrite --file even if it changed on disk since load
 
 Commands:
   status                              Show connection and diagram summary
@@ -102,7 +104,10 @@ Commands:
   exit     add|list|delete              TOTE exit points
   export   json|svg|latex               Export to file/stdout
   history  undo|redo|save               Undo/redo with snapshots
-  schema   all|node-types|edge-types|modes  Type schema discovery
+  schema   all|node-types|edge-types|modes|composition-rules|json-schema  Type schema discovery
+  check    [--severity]                 Brandom/Miller-aware validation (never blocks)
+  derive   [--lx] [--apply]             Detect/derive canonical resultant MURs
+  explain  [--style] [--lang]           Prose explanation of the diagram
 ```
 
 ### Output Format

@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { CLI_VERSION } from './version.js';
-import { loadDiagramFromFile } from './headless/fileManager.js';
+import { loadDiagramFromFile, setForceOverwrite } from './headless/fileManager.js';
 import { loadDiagramIntoStore } from './headless/headlessStore.js';
 import { setOutputMode, setMode, outputError } from './output/formatter.js';
 import { discoverGUI, isWSL } from './util/discovery.js';
@@ -39,9 +39,12 @@ program
   .option('--file <path>', 'Diagram file to load/save automatically')
   .option('--headless', 'Force headless mode (no GUI connection)')
   .option('--require-gui', 'Fail (exit 1) instead of falling back to headless when no GUI is reachable')
+  .option('--force', 'Overwrite --file even if it changed on disk since it was loaded')
   .hook('preAction', async (_thisCommand, actionCommand) => {
     // Resolve global options from the root program
     const opts = program.opts();
+
+    setForceOverwrite(Boolean(opts.force));
 
     // Set output mode
     if (opts.json) setOutputMode('json');

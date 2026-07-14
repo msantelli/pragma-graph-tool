@@ -271,6 +271,40 @@ function createMenu() {
       ]
     },
     {
+      label: 'Tools',
+      submenu: [
+        {
+          label: 'Validate Diagram',
+          accelerator: 'CmdOrCtrl+Shift+V',
+          click: async () => {
+            try {
+              const issues = await mainWindow.webContents.executeJavaScript(
+                `(function() { return window.validateDiagram ? window.validateDiagram() : []; })()`
+              );
+              if (!issues || issues.length === 0) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Validate Diagram',
+                  message: 'No issues found',
+                  detail: 'The diagram passes all Brandom/Miller-aware checks.'
+                });
+                return;
+              }
+              const lines = issues.map(i => `[${i.severity}] ${i.message}`).join('\n');
+              dialog.showMessageBox(mainWindow, {
+                type: 'warning',
+                title: 'Validate Diagram',
+                message: `${issues.length} issue${issues.length === 1 ? '' : 's'} found`,
+                detail: lines
+              });
+            } catch (err) {
+              dialog.showErrorBox('Validate Diagram', `Validation failed: ${err.message}`);
+            }
+          }
+        }
+      ]
+    },
+    {
       label: 'Help',
       submenu: [
         {

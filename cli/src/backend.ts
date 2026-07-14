@@ -1,8 +1,8 @@
 import type { Diagram } from '@pragma-graph/core';
 import { GUIClient, type DispatchAction } from './client/httpClient.js';
 import * as headlessStore from './headless/headlessStore.js';
-import { saveDiagramToFile } from './headless/fileManager.js';
-import { markPersistFailure } from './output/formatter.js';
+import { saveDiagramToFile, FileConflictError } from './headless/fileManager.js';
+import { markPersistFailure, outputError } from './output/formatter.js';
 
 let guiClient: GUIClient | null = null;
 
@@ -70,6 +70,18 @@ export async function autoSave(getFilePath: () => string | undefined): Promise<v
     const d = guiClient ? await guiClient.getDiagram() : headlessStore.getDiagram();
     if (d) saveDiagramToFile(d, filePath);
   } catch (err) {
+    if (err instanceof FileConflictError && !guiClient) {
+      // Headless: the file IS the state. Refusing the write and failing hard
+      // beats silently clobbering another process's edits.
+      outputError(
+        'save',
+        'FILE_CONFLICT',
+        err.message,
+        undefined,
+        'The file was modified by another process (GUI or another CLI run). Re-run against the current file, or pass --force to overwrite.'
+      );
+      process.exit(1);
+    }
     markPersistFailure();
     process.stderr.write(`Warning: could not write ${filePath}: ${(err as Error).message}\n`);
   }
