@@ -1,7 +1,7 @@
 {
   "name": "pragma-graph-tool",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Interactive visualization tool for Meaning-Use Diagrams and TOTE Cycles based on Robert Brandom's philosophical framework",
   "author": {
     "name": "Mauro Santelli",
@@ -27,13 +27,12 @@
     "build:mac": "npm run build:core && npm run build:cli && npm run build && electron-builder --mac",
     "build:linux": "npm run build:core && npm run build:cli && npm run build && electron-builder --linux",
     "pack": "electron-builder --dir",
-    "dist": "npm run build && electron-builder --publish=never"
+    "dist": "npm run build && electron-builder --publish=never",
+    "test": "vitest run"
   },
   "dependencies": {
     "@reduxjs/toolkit": "2.8.2",
     "d3": "7.9.0",
-    "file-saver": "2.0.5",
-    "lodash": "4.17.21",
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "react-redux": "9.2.0",
@@ -43,7 +42,6 @@
     "@eslint/js": "9.32.0",
     "@testing-library/react": "16.3.0",
     "@types/d3": "7.4.3",
-    "@types/lodash": "4.17.20",
     "@types/react": "19.1.9",
     "@types/react-dom": "19.1.7",
     "@types/uuid": "10.0.0",
@@ -135,12 +133,6 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "include": "build/installer.nsh"
-    }
-  },
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
     }
   }
 }

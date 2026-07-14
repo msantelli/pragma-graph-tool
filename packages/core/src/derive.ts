@@ -52,29 +52,6 @@ export interface DetectedPragmaticMetavocabulary {
 
 // --- Helpers ------------------------------------------------------------
 
-function indexEdgesByEndpoint(
-  edges: Edge[],
-  matchType: (t: EdgeType) => boolean
-): Map<string, Edge[]> {
-  const out = new Map<string, Edge[]>();
-  for (const e of edges) {
-    if (!matchType(e.type)) continue;
-    const list = out.get(e.source) ?? [];
-    list.push(e);
-    out.set(e.source, list);
-  }
-  return out;
-}
-
-function edgesBetween(
-  edges: Edge[],
-  src: string,
-  tgt: string,
-  matchType: (t: EdgeType) => boolean
-): Edge[] {
-  return edges.filter(e => e.source === src && e.target === tgt && matchType(e.type));
-}
-
 function nodeName(nodes: Node[], id: string): string {
   const n = nodes.find(x => x.id === id);
   return n?.label ?? id;

@@ -1,5 +1,17 @@
 import * as http from 'node:http';
+import type { Diagram, Node, Edge } from '@pragma-graph/core';
 import type { GUIConnection } from '../util/discovery.js';
+
+export interface DispatchAction {
+  type: string;
+  payload?: unknown;
+}
+
+export interface GUIStatus {
+  gui: boolean;
+  pid: number;
+  diagram: { id: string; name: string; type: string; nodes: number; edges: number } | null;
+}
 
 export class GUIClient {
   private conn: GUIConnection;
@@ -8,7 +20,7 @@ export class GUIClient {
     this.conn = conn;
   }
 
-  private request(method: string, path: string, body?: unknown): Promise<any> {
+  private request<T>(method: string, path: string, body?: unknown): Promise<T> {
     return new Promise((resolve, reject) => {
       const payload = body ? JSON.stringify(body) : undefined;
 
@@ -31,7 +43,7 @@ export class GUIClient {
             if (!parsed.ok) {
               reject(new Error(parsed.error || 'GUI request failed'));
             } else {
-              resolve(parsed.result);
+              resolve(parsed.result as T);
             }
           } catch {
             reject(new Error(`Invalid response from GUI: ${data.slice(0, 200)}`));
@@ -52,31 +64,31 @@ export class GUIClient {
     });
   }
 
-  async getStatus(): Promise<any> {
+  async getStatus(): Promise<GUIStatus> {
     return this.request('GET', '/api/v1/status');
   }
 
-  async getDiagram(): Promise<any> {
+  async getDiagram(): Promise<Diagram | null> {
     return this.request('GET', '/api/v1/diagram');
   }
 
-  async getNodes(): Promise<any[]> {
+  async getNodes(): Promise<Node[]> {
     return this.request('GET', '/api/v1/diagram/nodes');
   }
 
-  async getEdges(): Promise<any[]> {
+  async getEdges(): Promise<Edge[]> {
     return this.request('GET', '/api/v1/diagram/edges');
   }
 
-  async dispatch(action: { type: string; payload?: any }): Promise<any> {
+  async dispatch(action: DispatchAction): Promise<Diagram | null> {
     return this.request('POST', '/api/v1/dispatch', { action });
   }
 
-  async dispatchBatch(actions: Array<{ type: string; payload?: any }>): Promise<any> {
+  async dispatchBatch(actions: DispatchAction[]): Promise<Diagram | null> {
     return this.request('POST', '/api/v1/dispatch/batch', { actions });
   }
 
-  async exportDiagram(format: string): Promise<any> {
+  async exportDiagram(format: string): Promise<Diagram | null> {
     return this.request('POST', `/api/v1/export/${format}`);
   }
 }

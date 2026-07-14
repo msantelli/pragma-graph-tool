@@ -280,7 +280,7 @@ function createMenu() {
               type: 'info',
               title: 'About',
               message: 'Pragma Graph Tool',
-              detail: 'Interactive visualization tool for Meaning-Use Diagrams and TOTE Cycles based on Robert Brandom\'s philosophical framework.\n\nVersion: 1.0.0\nAuthor: Mauro Santelli\nInstitution: Universidad de Buenos Aires - Instituto de Investigaciones Filosóficas, SADAF (CONICET) - GEML\nContact: mesantelli@uba.ar\n\nBuilt with Electron and React'
+              detail: `Interactive visualization tool for Meaning-Use Diagrams and TOTE Cycles based on Robert Brandom's philosophical framework.\n\nVersion: ${app.getVersion()}\nAuthor: Mauro Santelli\nInstitution: Universidad de Buenos Aires - Instituto de Investigaciones Filosóficas, SADAF (CONICET) - GEML\nContact: mesantelli@uba.ar\n\nBuilt with Electron and React`
             });
           }
         },
@@ -480,8 +480,8 @@ function startCLIServer() {
       port,
       token: cliToken,
       pid: process.pid,
-      version: '1.0.0'
-    }, null, 2) + '\n');
+      version: app.getVersion()
+    }, null, 2) + '\n', { mode: 0o600 });
   });
 }
 

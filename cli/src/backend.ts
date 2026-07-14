@@ -1,5 +1,5 @@
 import type { Diagram } from '@pragma-graph/core';
-import { GUIClient } from './client/httpClient.js';
+import { GUIClient, type DispatchAction } from './client/httpClient.js';
 import * as headlessStore from './headless/headlessStore.js';
 import { saveDiagramToFile } from './headless/fileManager.js';
 
@@ -32,21 +32,21 @@ export async function requireDiagram(): Promise<Diagram> {
   return d;
 }
 
-export async function dispatch(action: { type: string; payload?: any }): Promise<void> {
+export async function dispatch(action: DispatchAction): Promise<void> {
   if (guiClient) {
     await guiClient.dispatch(action);
   } else {
-    headlessStore.getStore().dispatch(action as any);
+    headlessStore.getStore().dispatch(action as Parameters<ReturnType<typeof headlessStore.getStore>['dispatch']>[0]);
   }
 }
 
-export async function dispatchBatch(actions: Array<{ type: string; payload?: any }>): Promise<void> {
+export async function dispatchBatch(actions: DispatchAction[]): Promise<void> {
   if (guiClient) {
     await guiClient.dispatchBatch(actions);
   } else {
     const store = headlessStore.getStore();
     for (const action of actions) {
-      store.dispatch(action as any);
+      store.dispatch(action as Parameters<typeof store.dispatch>[0]);
     }
   }
 }

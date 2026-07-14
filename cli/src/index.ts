@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { CLI_VERSION } from './version.js';
 import { loadDiagramFromFile } from './headless/fileManager.js';
 import { loadDiagramIntoStore } from './headless/headlessStore.js';
 import { setOutputMode } from './output/formatter.js';
@@ -32,7 +33,7 @@ program
     pragma-cli --file d.json node add --type practice --label "P₁" --x 300 --y 100
     pragma-cli --file d.json edge add --source <V1_ID> --target <P1_ID> --type VP
     pragma-cli --file d.json export latex --raw > output.tex`)
-  .version('1.0.0')
+  .version(CLI_VERSION)
   .option('--json', 'Force JSON output')
   .option('--human', 'Force human-readable output')
   .option('--file <path>', 'Diagram file to load/save automatically')

@@ -19,6 +19,8 @@ import {
   setSnapToGrid,
   setGridSpacing,
   setSelectedTool,
+  setZoom,
+  setPanOffset,
   setShowEdgeTypeSelector,
   setShowCustomizationPanel,
   setShowEdgeModificationPanel,
@@ -30,6 +32,7 @@ import {
   undo,
   redo,
   selectNodes,
+  selectAll,
   loadDiagram,
   groupNodesIntoContainer,
   ungroupContainer,
@@ -38,7 +41,7 @@ import {
   updateEdge
 } from './store/diagramSlice';
 import { getAvailableTools } from './utils/diagramUtils';
-import { exportAsJSON, exportAsSVG, exportAsLaTeX, importFromJSON } from './utils/exportUtils';
+import { exportAsJSON, exportAsSVG, exportAsLaTeX, importFromJSON, calculateDiagramBounds } from './utils/exportUtils';
 import type { Node, Edge } from './types/all';
 
 const AppContent: React.FC = () => {
@@ -98,22 +101,62 @@ const AppContent: React.FC = () => {
 
   // Expose bridge for Electron main process / CLI integration
   React.useEffect(() => {
-    (window as any).__pragma_cli__ = {
+    window.__pragma_cli__ = {
       getState: () => store.getState(),
-      dispatch: (action: any) => store.dispatch(action),
+      dispatch: (action) => store.dispatch(action),
     };
-    (window as any).clearDiagram = () => store.dispatch(createDiagram({ name: 'Untitled', type: 'MUD' }));
-    (window as any).importDiagram = (d: any) => store.dispatch(loadDiagram(d));
-    (window as any).exportDiagram = () => store.getState().diagram.currentDiagram;
-    (window as any).undo = () => store.dispatch(undo());
-    (window as any).redo = () => store.dispatch(redo());
+    window.clearDiagram = () => store.dispatch(createDiagram({ name: 'Untitled', type: 'MUD' }));
+    window.importDiagram = (d) => store.dispatch(loadDiagram(d));
+    window.exportDiagram = () => store.getState().diagram.currentDiagram;
+    window.undo = () => store.dispatch(undo());
+    window.redo = () => store.dispatch(redo());
+    window.selectAll = () => store.dispatch(selectAll());
+
+    // Zoom/view handlers for the Electron View menu. Zoom keeps the viewport
+    // center fixed; state lives in uiSlice so Canvas re-renders from Redux.
+    const zoomBy = (factor: number) => {
+      const { zoom, panOffset, canvasSize } = store.getState().ui;
+      const newZoom = Math.min(4, Math.max(0.1, zoom * factor));
+      if (newZoom === zoom) return;
+      const cx = canvasSize.width / 2;
+      const cy = canvasSize.height / 2;
+      const scale = newZoom / zoom;
+      store.dispatch(setZoom(newZoom));
+      store.dispatch(setPanOffset({
+        x: cx - (cx - panOffset.x) * scale,
+        y: cy - (cy - panOffset.y) * scale
+      }));
+    };
+    window.zoomIn = () => zoomBy(1.3);
+    window.zoomOut = () => zoomBy(1 / 1.3);
+    window.resetZoom = () => {
+      store.dispatch(setZoom(1));
+      store.dispatch(setPanOffset({ x: 0, y: 0 }));
+    };
+    window.centerDiagram = () => {
+      const state = store.getState();
+      const nodes = state.diagram.currentDiagram?.nodes ?? [];
+      const { zoom, canvasSize } = state.ui;
+      const bounds = calculateDiagramBounds(nodes);
+      const boundsCenterX = (bounds.minX + bounds.maxX) / 2;
+      const boundsCenterY = (bounds.minY + bounds.maxY) / 2;
+      store.dispatch(setPanOffset({
+        x: canvasSize.width / 2 - boundsCenterX * zoom,
+        y: canvasSize.height / 2 - boundsCenterY * zoom
+      }));
+    };
     return () => {
-      delete (window as any).__pragma_cli__;
-      delete (window as any).clearDiagram;
-      delete (window as any).importDiagram;
-      delete (window as any).exportDiagram;
-      delete (window as any).undo;
-      delete (window as any).redo;
+      delete window.__pragma_cli__;
+      delete window.clearDiagram;
+      delete window.importDiagram;
+      delete window.exportDiagram;
+      delete window.undo;
+      delete window.redo;
+      delete window.selectAll;
+      delete window.zoomIn;
+      delete window.zoomOut;
+      delete window.resetZoom;
+      delete window.centerDiagram;
     };
   }, []);
 
