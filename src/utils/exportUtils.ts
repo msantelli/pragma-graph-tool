@@ -271,7 +271,7 @@ const computeLoopEdgeGeometry = (node: Node, allNodes: Node[]): ExportEdgeGeomet
   };
 };
 
-const computeEdgeGeometryForExport = (edge: Edge, nodes: Node[], allEdges: Edge[]): ExportEdgeGeometry | null => {
+export const computeEdgeGeometryForExport = (edge: Edge, nodes: Node[], allEdges: Edge[]): ExportEdgeGeometry | null => {
   const sourceNode = nodes.find(n => n.id === edge.source);
   const targetNode = nodes.find(n => n.id === edge.target);
 
@@ -325,7 +325,7 @@ export const calculateDiagramBounds = (nodes: Node[]) => {
 };
 
 // Export diagram as JSON
-export const exportAsJSON = (diagram: Diagram) => {
+export const generateJSONExport = (diagram: Diagram): string => {
   const exportData = {
     ...diagram,
     metadata: {
@@ -334,8 +334,11 @@ export const exportAsJSON = (diagram: Diagram) => {
       version: '1.1'
     }
   };
+  return JSON.stringify(exportData, null, 2);
+};
 
-  const dataStr = JSON.stringify(exportData, null, 2);
+export const exportAsJSON = (diagram: Diagram) => {
+  const dataStr = generateJSONExport(diagram);
   const dataBlob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(dataBlob);
 
@@ -392,8 +395,8 @@ const generateSVGText = (
   ).join('\n');
 };
 
-// Export diagram as SVG
-export const exportAsSVG = (diagram: Diagram) => {
+// Generate SVG document content (pure)
+export const generateSVGContent = (diagram: Diagram): string => {
   const { nodes, edges } = diagram;
   const bounds = calculateDiagramBounds(nodes);
 
@@ -542,6 +545,12 @@ export const exportAsSVG = (diagram: Diagram) => {
   });
 
   svgContent += '</svg>';
+  return svgContent;
+};
+
+// Export diagram as SVG (browser download)
+export const exportAsSVG = (diagram: Diagram) => {
+  const svgContent = generateSVGContent(diagram);
 
   const dataBlob = new Blob([svgContent], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(dataBlob);
@@ -572,7 +581,7 @@ const getEdgeColorSVG = (edgeType: string): string => {
 };
 
 // LaTeX content detection and escaping
-const isLaTeXContent = (text: string): boolean => {
+export const isLaTeXContent = (text: string): boolean => {
   const latexPatterns = [
     /\\\w+/, // LaTeX commands like \alpha, \beta
     /\$.*?\$/, // Math mode
@@ -587,7 +596,7 @@ const isLaTeXContent = (text: string): boolean => {
   return latexPatterns.some(pattern => pattern.test(text));
 };
 
-const escapeLaTeXText = (text: string): string => {
+export const escapeLaTeXText = (text: string): string => {
   if (isLaTeXContent(text)) {
     // Preserve LaTeX content, only escape TikZ-breaking characters
     return text.replace(/([&%])/g, '\\$1');
@@ -604,7 +613,7 @@ const escapeLaTeXText = (text: string): string => {
 // Generate TikZ code for LaTeX export
 // Uses native TikZ node references, fit library for containers,
 // and bend left/right for curved edges (idiomatic TikZ).
-const generateTikZCode = (nodes: Node[], edges: Edge[], diagramType: string): string => {
+export const generateTikZCode = (nodes: Node[], edges: Edge[], diagramType: string): string => {
   if (nodes.length === 0) return '\\begin{tikzpicture}\n\\end{tikzpicture}';
 
   // Calculate bounds and normalize coordinates
@@ -870,7 +879,7 @@ const generateTikZCode = (nodes: Node[], edges: Edge[], diagramType: string): st
 };
 
 // Export diagram as LaTeX
-export const exportAsLaTeX = (diagram: Diagram) => {
+export const generateLaTeXDocument = (diagram: Diagram): string => {
   const { nodes, edges } = diagram;
 
   // Infer diagram type from content
@@ -896,7 +905,7 @@ export const exportAsLaTeX = (diagram: Diagram) => {
 
   const tikzCode = generateTikZCode(nodes, edges, inferredType);
 
-  const latexDocument = `\\documentclass[border=5mm]{standalone}
+  return `\\documentclass[border=5mm]{standalone}
 \\usepackage{tikz}
 \\usetikzlibrary{positioning, shapes.geometric, arrows.meta, fit, backgrounds}
 
@@ -905,6 +914,11 @@ export const exportAsLaTeX = (diagram: Diagram) => {
 ${tikzCode}
 
 \\end{document}`;
+};
+
+// Export diagram as LaTeX (browser download)
+export const exportAsLaTeX = (diagram: Diagram) => {
+  const latexDocument = generateLaTeXDocument(diagram);
 
   const dataBlob = new Blob([latexDocument], { type: 'text/plain' });
   const url = URL.createObjectURL(dataBlob);

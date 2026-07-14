@@ -1,0 +1,1582 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`export parity for curved-overlap.json > JSON export is identical modulo timestamp > json 1`] = `
+"{
+  "id": "fixture-curved-overlap",
+  "name": "Curved and Overlapping Edges",
+  "type": "MUD",
+  "nodes": [
+    {
+      "id": "v1",
+      "type": "vocabulary",
+      "position": {
+        "x": 150,
+        "y": 200
+      },
+      "label": "V1"
+    },
+    {
+      "id": "p1",
+      "type": "practice",
+      "position": {
+        "x": 550,
+        "y": 200
+      },
+      "label": "P1"
+    },
+    {
+      "id": "v2",
+      "type": "vocabulary",
+      "position": {
+        "x": 350,
+        "y": 450
+      },
+      "label": "V2"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "v1",
+      "target": "p1",
+      "type": "VP",
+      "label": "first"
+    },
+    {
+      "id": "e2",
+      "source": "v1",
+      "target": "p1",
+      "type": "VP-suff",
+      "label": "second parallel"
+    },
+    {
+      "id": "e3",
+      "source": "p1",
+      "target": "v1",
+      "type": "PV",
+      "label": "reverse"
+    },
+    {
+      "id": "e4",
+      "source": "p1",
+      "target": "v1",
+      "type": "PV-nec",
+      "label": "reverse parallel"
+    },
+    {
+      "id": "e5",
+      "source": "p1",
+      "target": "p1",
+      "type": "loop",
+      "label": "self"
+    },
+    {
+      "id": "e6",
+      "source": "v1",
+      "target": "v2",
+      "type": "VV"
+    },
+    {
+      "id": "e7",
+      "source": "v2",
+      "target": "p1",
+      "type": "unmarked"
+    }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z",
+    "description": "Parallel edges both directions, self-loop, offsets — exercises computeEdgeGeometryForExport",
+    "exported": "<normalized>",
+    "version": "1.1"
+  }
+}"
+`;
+
+exports[`export parity for curved-overlap.json > LaTeX document is identical > latex 1`] = `
+"\\documentclass[border=5mm]{standalone}
+\\usepackage{tikz}
+\\usetikzlibrary{positioning, shapes.geometric, arrows.meta, fit, backgrounds}
+
+\\begin{document}
+
+\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % MUD styles (Brandom, Between Saying and Doing)
+  vocabulary/.style={ellipse, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.2cm, text centered, align=center},
+  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.4cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  pv/.style={->, thick},
+  vp/.style={->, thick},
+  pp/.style={->, thick},
+  vv/.style={->, thick},
+  resultant/.style={->, thick, dashed},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+\\node[vocabulary] (V1) at (-5.00, 3.13) {V1};
+\\node[practice] (P1) at (5.00, 3.13) {P1};
+\\node[vocabulary] (V2) at (0.00, -3.13) {V2};
+
+% --- Edges ---
+\\draw[vp] (V1) to[bend right=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {first} (P1);
+\\draw[vp] (V1) to[bend right=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {second parallel} (P1);
+\\draw[pv] (P1) to[bend left=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse} (V1);
+\\draw[pv] (P1) to[bend left=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse parallel} (V1);
+\\draw[feedback] (P1) to[loop above, looseness=5] node[above, font=\\scriptsize] {self} (P1);
+\\draw[vv] (V1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V2);
+\\draw[unmarked] (V2) -- (P1);
+
+\\end{tikzpicture}
+
+\\end{document}"
+`;
+
+exports[`export parity for curved-overlap.json > SVG content is identical > svg 1`] = `
+"<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="50 100 600 450"
+     width="600" height="450">
+
+  <!-- Styles -->
+  <style>
+    .node-text { font-family: Arial, sans-serif; text-anchor: middle; }
+    .edge-text { font-family: Arial, sans-serif; text-anchor: middle; font-size: 12px; }
+  </style>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7"
+            refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+  </defs>
+
+  <!-- Edges -->
+  <path d="M 197.89 207.18 Q 350.00 230.00 500.00 207.50" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="349.46" y="232.67" transform="rotate(0.06, 349.46, 232.67)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">first</text>
+  <path d="M 199.75 202.49 Q 350.00 210.00 500.00 202.50" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="349.94" y="220.25" transform="rotate(0.00, 349.94, 220.25)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">second parallel</text>
+  <path d="M 500.00 197.50 Q 350.00 190.00 199.75 197.51" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="349.94" y="179.75" transform="rotate(-0.00, 349.94, 179.75)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">reverse</text>
+  <path d="M 500.00 192.50 Q 350.00 170.00 197.89 192.82" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="349.46" y="167.33" transform="rotate(-0.06, 349.46, 167.33)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">reverse parallel</text>
+  <path d="M 600.00 187.50 C 680.00 187.50 680.00 212.50 600.00 212.50" stroke="#555555" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="630.00" y="170.00" fill="#555555" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">self</text>
+  <path d="M 168.57 223.21 L 331.43 426.79" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="240.63" y="332.50" transform="rotate(51.34, 240.63, 332.50)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VV</text>
+  <path d="M 368.57 426.79 L 530.00 225.00" stroke="#999999" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+
+  <!-- Nodes -->
+  <ellipse cx="150" cy="200" rx="50.00" ry="25.00" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="150" y="200" font-size="14" class="node-text" fill="#333333" text-anchor="middle">V1</text>
+  <rect x="500.00" y="175.00" width="100.00" height="50.00" rx="10" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="550" y="200" font-size="14" class="node-text" fill="#333333" text-anchor="middle">P1</text>
+  <ellipse cx="350" cy="450" rx="50.00" ry="25.00" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="350" y="450" font-size="14" class="node-text" fill="#333333" text-anchor="middle">V2</text>
+</svg>"
+`;
+
+exports[`export parity for curved-overlap.json > TikZ code is identical > tikz 1`] = `
+"\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % MUD styles (Brandom, Between Saying and Doing)
+  vocabulary/.style={ellipse, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.2cm, text centered, align=center},
+  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.4cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  pv/.style={->, thick},
+  vp/.style={->, thick},
+  pp/.style={->, thick},
+  vv/.style={->, thick},
+  resultant/.style={->, thick, dashed},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+\\node[vocabulary] (V1) at (-5.00, 3.13) {V1};
+\\node[practice] (P1) at (5.00, 3.13) {P1};
+\\node[vocabulary] (V2) at (0.00, -3.13) {V2};
+
+% --- Edges ---
+\\draw[vp] (V1) to[bend right=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {first} (P1);
+\\draw[vp] (V1) to[bend right=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {second parallel} (P1);
+\\draw[pv] (P1) to[bend left=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse} (V1);
+\\draw[pv] (P1) to[bend left=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {reverse parallel} (V1);
+\\draw[feedback] (P1) to[loop above, looseness=5] node[above, font=\\scriptsize] {self} (P1);
+\\draw[vv] (V1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V2);
+\\draw[unmarked] (V2) -- (P1);
+
+\\end{tikzpicture}"
+`;
+
+exports[`export parity for full-mud.json > JSON export is identical modulo timestamp > json 1`] = `
+"{
+  "id": "fixture-full-mud",
+  "name": "Full MUD",
+  "type": "MUD",
+  "nodes": [
+    {
+      "id": "v-base",
+      "type": "vocabulary",
+      "subtype": "base",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "label": "V base",
+      "subscript": "context-homogeneous"
+    },
+    {
+      "id": "v-meta",
+      "type": "vocabulary",
+      "subtype": "meta",
+      "position": {
+        "x": 500,
+        "y": 100
+      },
+      "label": "V meta",
+      "secondaryLabel": "pragmatic metavocabulary"
+    },
+    {
+      "id": "p-auto",
+      "type": "practice",
+      "subtype": "autonomous",
+      "position": {
+        "x": 100,
+        "y": 350
+      },
+      "label": "P autonomous"
+    },
+    {
+      "id": "p-dep",
+      "type": "practice",
+      "subtype": "dependent",
+      "position": {
+        "x": 500,
+        "y": 350
+      },
+      "label": "P dependent"
+    },
+    {
+      "id": "t1",
+      "type": "test",
+      "position": {
+        "x": 800,
+        "y": 100
+      },
+      "label": "Test node",
+      "condition": "match?"
+    },
+    {
+      "id": "o1",
+      "type": "operate",
+      "position": {
+        "x": 800,
+        "y": 350
+      },
+      "label": "Operate node"
+    },
+    {
+      "id": "x1",
+      "type": "exit",
+      "position": {
+        "x": 1000,
+        "y": 225
+      },
+      "label": "Exit node"
+    },
+    {
+      "id": "c1",
+      "type": "custom",
+      "position": {
+        "x": 300,
+        "y": 550
+      },
+      "label": "Custom node",
+      "style": {
+        "shape": "hexagon",
+        "size": "large"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-pv",
+      "source": "p-auto",
+      "target": "v-base",
+      "type": "PV",
+      "orderNumber": 1
+    },
+    {
+      "id": "e-vp",
+      "source": "v-base",
+      "target": "p-dep",
+      "type": "VP",
+      "orderNumber": 2
+    },
+    {
+      "id": "e-pp",
+      "source": "p-auto",
+      "target": "p-dep",
+      "type": "PP"
+    },
+    {
+      "id": "e-vv",
+      "source": "v-base",
+      "target": "v-meta",
+      "type": "VV"
+    },
+    {
+      "id": "e-pv-suff",
+      "source": "p-dep",
+      "target": "v-meta",
+      "type": "PV-suff",
+      "label": "PV-suff witness"
+    },
+    {
+      "id": "e-pv-nec",
+      "source": "p-dep",
+      "target": "v-base",
+      "type": "PV-nec"
+    },
+    {
+      "id": "e-vp-suff",
+      "source": "v-meta",
+      "target": "p-auto",
+      "type": "VP-suff"
+    },
+    {
+      "id": "e-vp-nec",
+      "source": "v-meta",
+      "target": "p-dep",
+      "type": "VP-nec"
+    },
+    {
+      "id": "e-pp-suff",
+      "source": "p-dep",
+      "target": "p-auto",
+      "type": "PP-suff"
+    },
+    {
+      "id": "e-pp-nec",
+      "source": "p-auto",
+      "target": "c1",
+      "type": "PP-nec"
+    },
+    {
+      "id": "e-vv-suff",
+      "source": "v-meta",
+      "target": "v-base",
+      "type": "VV-suff"
+    },
+    {
+      "id": "e-vv-nec",
+      "source": "v-base",
+      "target": "v-meta",
+      "type": "VV-nec"
+    },
+    {
+      "id": "e-res",
+      "source": "v-base",
+      "target": "v-meta",
+      "type": "resultant",
+      "isResultant": true,
+      "resultantFrom": [
+        "e-vp",
+        "e-pv-suff"
+      ],
+      "label": "res: VV"
+    },
+    {
+      "id": "e-unmarked",
+      "source": "c1",
+      "target": "p-dep",
+      "type": "unmarked"
+    },
+    {
+      "id": "e-custom",
+      "source": "c1",
+      "target": "v-base",
+      "type": "custom",
+      "label": "bespoke relation"
+    }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z",
+    "author": "fixture",
+    "description": "Every node type and every MUD edge type",
+    "exported": "<normalized>",
+    "version": "1.1"
+  }
+}"
+`;
+
+exports[`export parity for full-mud.json > LaTeX document is identical > latex 1`] = `
+"\\documentclass[border=5mm]{standalone}
+\\usepackage{tikz}
+\\usetikzlibrary{positioning, shapes.geometric, arrows.meta, fit, backgrounds}
+
+\\begin{document}
+
+\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % MUD styles (Brandom, Between Saying and Doing)
+  vocabulary/.style={ellipse, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.2cm, text centered, align=center},
+  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.4cm, text centered, align=center},
+  % TOTE styles (Miller et al., Plans and the Structure of Behavior)
+  test/.style={diamond, draw=black, thick, aspect=2,
+    minimum width=2cm, text width=1.4cm, text centered, align=center},
+  operate/.style={rectangle, draw=black, thick,
+    minimum width=2.5cm, minimum height=1cm,
+    text width=2.1cm, text centered, align=center},
+  exitnode/.style={rectangle, draw=black, thick,
+    minimum width=1.5cm, minimum height=0.8cm,
+    text width=1.1cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  pv/.style={->, thick},
+  vp/.style={->, thick},
+  pp/.style={->, thick},
+  vv/.style={->, thick},
+  resultant/.style={->, thick, dashed},
+  sequence/.style={->, thick},
+  feedback/.style={->, thick},
+  exitedge/.style={->, thick},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+\\node[vocabulary] (V1) at (-6.14, 3.07) {V base\\\\ {\\scriptsize\\itshape context-homogeneous}};
+\\node[vocabulary] (V2) at (-0.68, 3.07) {V meta\\\\ pragmatic metavocabulary};
+\\node[practice] (P1) at (-6.14, -0.34) {P autonomous};
+\\node[practice] (P2) at (-0.68, -0.34) {P dependent};
+\\node[test] (T1) at (3.41, 3.07) {Test node};
+\\node[operate] (O1) at (3.41, -0.34) {Operate node};
+\\node[exitnode] (X1) at (6.14, 1.36) {Exit node};
+\\node[custom] (C1) at (-3.41, -3.07) {Custom node};
+
+% --- Edges ---
+\\draw[pv] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {1: PV} (V1);
+\\draw[vp] (V1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {2: VP} (P2);
+\\draw[pp] (P1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP} (P2);
+\\draw[vv] (V1) to[bend right=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V2);
+\\draw[pv] (P2) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV-suff witness} (V2);
+\\draw[pv] (P2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV-nec} (V1);
+\\draw[vp] (V2) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VP-suff} (P1);
+\\draw[vp] (V2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VP-nec} (P2);
+\\draw[pp] (P2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP-suff} (P1);
+\\draw[pp] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP-nec} (C1);
+\\draw[vv] (V2) to[bend right=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-suff} (V1);
+\\draw[vv] (V1) to[bend left=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-nec} (V2);
+\\draw[resultant] (V1) to[bend left=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {res: VV} (V2);
+\\draw[unmarked] (C1) -- (P2);
+\\draw[customedge] (C1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {bespoke relation} (V1);
+
+\\end{tikzpicture}
+
+\\end{document}"
+`;
+
+exports[`export parity for full-mud.json > SVG content is identical > svg 1`] = `
+"<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1100 650"
+     width="1100" height="650">
+
+  <!-- Styles -->
+  <style>
+    .node-text { font-family: Arial, sans-serif; text-anchor: middle; }
+    .edge-text { font-family: Arial, sans-serif; text-anchor: middle; font-size: 12px; }
+  </style>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7"
+            refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+  </defs>
+
+  <!-- Edges -->
+  <path d="M 100.00 325.00 L 100.00 125.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="112.00" y="225.00" transform="rotate(90.00, 112.00, 225.00)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV</text>
+  <path d="M 136.75 116.95 Q 315.90 199.56 469.41 325.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="316.91" y="198.40" transform="rotate(32.02, 316.91, 198.40)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VP</text>
+  <path d="M 150.00 342.50 Q 300.00 320.00 450.00 342.50" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="317.25" transform="rotate(0.00, 300.00, 317.25)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PP</text>
+  <path d="M 149.75 97.51 Q 300.00 90.00 450.25 97.51" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="79.76" transform="rotate(0.00, 300.00, 79.76)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VV</text>
+  <path d="M 494.00 325.00 Q 470.00 225.00 494.04 124.82" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="468.01" y="224.95" transform="rotate(-89.99, 468.01, 224.95)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV-suff witness</text>
+  <path d="M 450.00 326.94 Q 284.10 250.44 126.10 121.32" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="278.57" y="249.11" transform="rotate(32.41, 278.57, 249.11)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV-nec</text>
+  <path d="M 468.77 119.52 L 140.00 325.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="298.02" y="212.08" transform="rotate(-32.01, 298.02, 212.08)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VP-suff</text>
+  <path d="M 505.96 124.82 Q 530.00 225.00 506.00 325.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="531.99" y="224.95" transform="rotate(89.99, 531.99, 224.95)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VP-nec</text>
+  <path d="M 450.00 357.50 Q 300.00 380.00 150.00 357.50" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="382.75" transform="rotate(0.00, 300.00, 382.75)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PP-suff</text>
+  <path d="M 125.00 375.00 L 276.67 526.67" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="192.35" y="459.32" transform="rotate(45.00, 192.35, 459.32)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PP-nec</text>
+  <path d="M 452.11 107.18 Q 300.00 130.00 147.89 107.18" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="132.59" transform="rotate(0.00, 300.00, 132.59)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VV-suff</text>
+  <path d="M 149.75 102.49 Q 300.00 110.00 450.25 102.49" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="120.24" transform="rotate(0.00, 300.00, 120.24)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VV-nec</text>
+  <path d="M 147.89 92.82 Q 300.00 70.00 452.11 92.82" stroke="#333333" stroke-width="2" stroke-dasharray="8,4" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="67.41" transform="rotate(0.00, 300.00, 67.41)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">res: VV</text>
+  <path d="M 323.33 526.67 L 475.00 375.00" stroke="#999999" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <path d="M 286.60 519.84 L 110.85 124.40" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="209.69" y="317.25" transform="rotate(66.04, 209.69, 317.25)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">bespoke relation</text>
+
+  <!-- Nodes -->
+  <ellipse cx="100" cy="100" rx="50.00" ry="25.00" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="100" y="100" font-size="14" class="node-text" fill="#333333" text-anchor="middle">V base</text>
+  <ellipse cx="500" cy="100" rx="50.00" ry="25.00" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="500" y="100" font-size="14" class="node-text" fill="#333333" text-anchor="middle">V meta</text>
+  <rect x="50.00" y="325.00" width="100.00" height="50.00" rx="10" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="100" y="350" font-size="14" class="node-text" fill="#333333" text-anchor="middle">P autonomous</text>
+  <rect x="450.00" y="325.00" width="100.00" height="50.00" rx="10" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="500" y="350" font-size="14" class="node-text" fill="#333333" text-anchor="middle">P dependent</text>
+  <path d="M 800.00,65.00 L 835.00,100.00 L 800.00,135.00 L 765.00,100.00 Z" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="800" y="100" font-size="14" class="node-text" fill="#333333" text-anchor="middle">Test node</text>
+  <rect x="750.00" y="325.00" width="100.00" height="50.00" rx="10" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="800" y="350" font-size="14" class="node-text" fill="#333333" text-anchor="middle">Operate node</text>
+  <rect x="950.00" y="200.00" width="100.00" height="50.00" rx="10" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="1000" y="225" font-size="14" class="node-text" fill="#333333" text-anchor="middle">Exit node</text>
+  <ellipse cx="300" cy="550" rx="65.00" ry="32.50" fill="#F5F5F5" stroke="#555555" stroke-width="2" />
+  <text x="300" y="550" font-size="18" class="node-text" fill="#333333" text-anchor="middle">Custom node</text>
+</svg>"
+`;
+
+exports[`export parity for full-mud.json > TikZ code is identical > tikz 1`] = `
+"\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % MUD styles (Brandom, Between Saying and Doing)
+  vocabulary/.style={ellipse, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.2cm, text centered, align=center},
+  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.4cm, text centered, align=center},
+  % TOTE styles (Miller et al., Plans and the Structure of Behavior)
+  test/.style={diamond, draw=black, thick, aspect=2,
+    minimum width=2cm, text width=1.4cm, text centered, align=center},
+  operate/.style={rectangle, draw=black, thick,
+    minimum width=2.5cm, minimum height=1cm,
+    text width=2.1cm, text centered, align=center},
+  exitnode/.style={rectangle, draw=black, thick,
+    minimum width=1.5cm, minimum height=0.8cm,
+    text width=1.1cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  pv/.style={->, thick},
+  vp/.style={->, thick},
+  pp/.style={->, thick},
+  vv/.style={->, thick},
+  resultant/.style={->, thick, dashed},
+  sequence/.style={->, thick},
+  feedback/.style={->, thick},
+  exitedge/.style={->, thick},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+\\node[vocabulary] (V1) at (-6.14, 3.07) {V base\\\\ {\\scriptsize\\itshape context-homogeneous}};
+\\node[vocabulary] (V2) at (-0.68, 3.07) {V meta\\\\ pragmatic metavocabulary};
+\\node[practice] (P1) at (-6.14, -0.34) {P autonomous};
+\\node[practice] (P2) at (-0.68, -0.34) {P dependent};
+\\node[test] (T1) at (3.41, 3.07) {Test node};
+\\node[operate] (O1) at (3.41, -0.34) {Operate node};
+\\node[exitnode] (X1) at (6.14, 1.36) {Exit node};
+\\node[custom] (C1) at (-3.41, -3.07) {Custom node};
+
+% --- Edges ---
+\\draw[pv] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {1: PV} (V1);
+\\draw[vp] (V1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {2: VP} (P2);
+\\draw[pp] (P1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP} (P2);
+\\draw[vv] (V1) to[bend right=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V2);
+\\draw[pv] (P2) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV-suff witness} (V2);
+\\draw[pv] (P2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV-nec} (V1);
+\\draw[vp] (V2) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VP-suff} (P1);
+\\draw[vp] (V2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VP-nec} (P2);
+\\draw[pp] (P2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP-suff} (P1);
+\\draw[pp] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PP-nec} (C1);
+\\draw[vv] (V2) to[bend right=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-suff} (V1);
+\\draw[vv] (V1) to[bend left=8] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV-nec} (V2);
+\\draw[resultant] (V1) to[bend left=23] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {res: VV} (V2);
+\\draw[unmarked] (C1) -- (P2);
+\\draw[customedge] (C1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {bespoke relation} (V1);
+
+\\end{tikzpicture}"
+`;
+
+exports[`export parity for latex-hostile.json > JSON export is identical modulo timestamp > json 1`] = `
+"{
+  "id": "fixture-latex-hostile",
+  "name": "LaTeX Hostile & <Unsafe> \\"Labels\\"",
+  "type": "MUD",
+  "nodes": [
+    {
+      "id": "v1",
+      "type": "vocabulary",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "label": "A & B % C $ D # E"
+    },
+    {
+      "id": "v2",
+      "type": "vocabulary",
+      "position": {
+        "x": 500,
+        "y": 100
+      },
+      "label": "under_score {brace} ~tilde^ hat"
+    },
+    {
+      "id": "p1",
+      "type": "practice",
+      "position": {
+        "x": 100,
+        "y": 350
+      },
+      "label": "back\\\\slash and $x_1 \\\\to y^2$ math"
+    },
+    {
+      "id": "p2",
+      "type": "practice",
+      "position": {
+        "x": 500,
+        "y": 350
+      },
+      "label": "V₁ subscript unicode → arrow",
+      "subscript": "50% of $100 & more"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "p1",
+      "target": "v1",
+      "type": "PV",
+      "label": "100% & counting"
+    },
+    {
+      "id": "e2",
+      "source": "v1",
+      "target": "p2",
+      "type": "VP",
+      "label": "$\\\\mathcal{L}$ already-latex"
+    },
+    {
+      "id": "e3",
+      "source": "p1",
+      "target": "p2",
+      "type": "PP",
+      "label": "plain_label #3"
+    },
+    {
+      "id": "e4",
+      "source": "v2",
+      "target": "v1",
+      "type": "VV"
+    }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z",
+    "description": "Labels exercising escapeLaTeXText and isLaTeXContent passthrough",
+    "exported": "<normalized>",
+    "version": "1.1"
+  }
+}"
+`;
+
+exports[`export parity for latex-hostile.json > LaTeX document is identical > latex 1`] = `
+"\\documentclass[border=5mm]{standalone}
+\\usepackage{tikz}
+\\usetikzlibrary{positioning, shapes.geometric, arrows.meta, fit, backgrounds}
+
+\\begin{document}
+
+\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % MUD styles (Brandom, Between Saying and Doing)
+  vocabulary/.style={ellipse, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.2cm, text centered, align=center},
+  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.4cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  pv/.style={->, thick},
+  vp/.style={->, thick},
+  pp/.style={->, thick},
+  vv/.style={->, thick},
+  resultant/.style={->, thick, dashed},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+\\node[vocabulary] (V1) at (-5.00, 3.13) {A \\& B \\% C \\$ D \\# E};
+\\node[vocabulary] (V2) at (5.00, 3.13) {under_score {brace} ~tilde^ hat};
+\\node[practice] (P1) at (-5.00, -3.13) {back\\slash and $x_1 \\to y^2$ math};
+\\node[practice] (P2) at (5.00, -3.13) {V₁ subscript unicode → arrow\\\\ {\\scriptsize\\itshape 50\\% of \\$100 \\& more}};
+
+% --- Edges ---
+\\draw[pv] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {100\\% \\& counting} (V1);
+\\draw[vp] (V1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {$\\mathcal{L}$ already-latex} (P2);
+\\draw[pp] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {plain_label #3} (P2);
+\\draw[vv] (V2) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V1);
+
+\\end{tikzpicture}
+
+\\end{document}"
+`;
+
+exports[`export parity for latex-hostile.json > SVG content is identical > svg 1`] = `
+"<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 600 450"
+     width="600" height="450">
+
+  <!-- Styles -->
+  <style>
+    .node-text { font-family: Arial, sans-serif; text-anchor: middle; }
+    .edge-text { font-family: Arial, sans-serif; text-anchor: middle; font-size: 12px; }
+  </style>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7"
+            refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+  </defs>
+
+  <!-- Edges -->
+  <path d="M 100.00 325.00 L 100.00 125.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="112.00" y="225.00" transform="rotate(90.00, 112.00, 225.00)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">100% & counting</text>
+  <path d="M 131.23 119.52 L 460.00 325.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="289.26" y="232.44" transform="rotate(32.01, 289.26, 232.44)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">$\\mathcal{L}$ already-latex</text>
+  <path d="M 150.00 350.00 L 450.00 350.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="362.00" transform="rotate(0.00, 300.00, 362.00)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">plain_label #3</text>
+  <path d="M 450.00 100.00 L 150.00 100.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="300.00" y="88.00" transform="rotate(0.00, 300.00, 88.00)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VV</text>
+
+  <!-- Nodes -->
+  <ellipse cx="100" cy="100" rx="50.00" ry="25.00" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="100" y="100" font-size="14" class="node-text" fill="#333333" text-anchor="middle">A & B % C $ D # E</text>
+  <ellipse cx="500" cy="100" rx="50.00" ry="25.00" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="500" y="74.8" font-size="14" class="node-text" fill="#333333" text-anchor="middle">under_score</text>
+<text x="500" y="91.6" font-size="14" class="node-text" fill="#333333" text-anchor="middle">{brace}</text>
+<text x="500" y="108.4" font-size="14" class="node-text" fill="#333333" text-anchor="middle">~tilde^</text>
+<text x="500" y="125.2" font-size="14" class="node-text" fill="#333333" text-anchor="middle">hat</text>
+  <rect x="50.00" y="325.00" width="100.00" height="50.00" rx="10" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="100" y="324.8" font-size="14" class="node-text" fill="#333333" text-anchor="middle">back\\slash</text>
+<text x="100" y="341.6" font-size="14" class="node-text" fill="#333333" text-anchor="middle">and $x_1</text>
+<text x="100" y="358.40000000000003" font-size="14" class="node-text" fill="#333333" text-anchor="middle">\\to y^2$</text>
+<text x="100" y="375.20000000000005" font-size="14" class="node-text" fill="#333333" text-anchor="middle">math</text>
+  <rect x="450.00" y="325.00" width="100.00" height="50.00" rx="10" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="500" y="324.8" font-size="14" class="node-text" fill="#333333" text-anchor="middle">V₁</text>
+<text x="500" y="341.6" font-size="14" class="node-text" fill="#333333" text-anchor="middle">subscript</text>
+<text x="500" y="358.40000000000003" font-size="14" class="node-text" fill="#333333" text-anchor="middle">unicode →</text>
+<text x="500" y="375.20000000000005" font-size="14" class="node-text" fill="#333333" text-anchor="middle">arrow</text>
+</svg>"
+`;
+
+exports[`export parity for latex-hostile.json > TikZ code is identical > tikz 1`] = `
+"\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % MUD styles (Brandom, Between Saying and Doing)
+  vocabulary/.style={ellipse, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.2cm, text centered, align=center},
+  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.4cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  pv/.style={->, thick},
+  vp/.style={->, thick},
+  pp/.style={->, thick},
+  vv/.style={->, thick},
+  resultant/.style={->, thick, dashed},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+\\node[vocabulary] (V1) at (-5.00, 3.13) {A \\& B \\% C \\$ D \\# E};
+\\node[vocabulary] (V2) at (5.00, 3.13) {under_score {brace} ~tilde^ hat};
+\\node[practice] (P1) at (-5.00, -3.13) {back\\slash and $x_1 \\to y^2$ math};
+\\node[practice] (P2) at (5.00, -3.13) {V₁ subscript unicode → arrow\\\\ {\\scriptsize\\itshape 50\\% of \\$100 \\& more}};
+
+% --- Edges ---
+\\draw[pv] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {100\\% \\& counting} (V1);
+\\draw[vp] (V1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {$\\mathcal{L}$ already-latex} (P2);
+\\draw[pp] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {plain_label #3} (P2);
+\\draw[vv] (V2) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VV} (V1);
+
+\\end{tikzpicture}"
+`;
+
+exports[`export parity for minimal-mud.json > JSON export is identical modulo timestamp > json 1`] = `
+"{
+  "id": "fixture-minimal-mud",
+  "name": "Minimal MUD",
+  "type": "MUD",
+  "nodes": [
+    {
+      "id": "v1",
+      "type": "vocabulary",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "label": "V1"
+    },
+    {
+      "id": "p1",
+      "type": "practice",
+      "position": {
+        "x": 300,
+        "y": 100
+      },
+      "label": "P1"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "p1",
+      "target": "v1",
+      "type": "PV"
+    }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z",
+    "exported": "<normalized>",
+    "version": "1.1"
+  }
+}"
+`;
+
+exports[`export parity for minimal-mud.json > LaTeX document is identical > latex 1`] = `
+"\\documentclass[border=5mm]{standalone}
+\\usepackage{tikz}
+\\usetikzlibrary{positioning, shapes.geometric, arrows.meta, fit, backgrounds}
+
+\\begin{document}
+
+\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % MUD styles (Brandom, Between Saying and Doing)
+  vocabulary/.style={ellipse, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.2cm, text centered, align=center},
+  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.4cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  pv/.style={->, thick},
+  vp/.style={->, thick},
+  pp/.style={->, thick},
+  vv/.style={->, thick},
+  resultant/.style={->, thick, dashed},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+\\node[vocabulary] (V1) at (-3.75, 0.00) {V1};
+\\node[practice] (P1) at (3.75, 0.00) {P1};
+
+% --- Edges ---
+\\draw[pv] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV} (V1);
+
+\\end{tikzpicture}
+
+\\end{document}"
+`;
+
+exports[`export parity for minimal-mud.json > SVG content is identical > svg 1`] = `
+"<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 400 200"
+     width="400" height="200">
+
+  <!-- Styles -->
+  <style>
+    .node-text { font-family: Arial, sans-serif; text-anchor: middle; }
+    .edge-text { font-family: Arial, sans-serif; text-anchor: middle; font-size: 12px; }
+  </style>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7"
+            refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+  </defs>
+
+  <!-- Edges -->
+  <path d="M 250.00 100.00 L 150.00 100.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="200.00" y="88.00" transform="rotate(0.00, 200.00, 88.00)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV</text>
+
+  <!-- Nodes -->
+  <ellipse cx="100" cy="100" rx="50.00" ry="25.00" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="100" y="100" font-size="14" class="node-text" fill="#333333" text-anchor="middle">V1</text>
+  <rect x="250.00" y="75.00" width="100.00" height="50.00" rx="10" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="300" y="100" font-size="14" class="node-text" fill="#333333" text-anchor="middle">P1</text>
+</svg>"
+`;
+
+exports[`export parity for minimal-mud.json > TikZ code is identical > tikz 1`] = `
+"\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % MUD styles (Brandom, Between Saying and Doing)
+  vocabulary/.style={ellipse, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.2cm, text centered, align=center},
+  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.4cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  pv/.style={->, thick},
+  vp/.style={->, thick},
+  pp/.style={->, thick},
+  vv/.style={->, thick},
+  resultant/.style={->, thick, dashed},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+\\node[vocabulary] (V1) at (-3.75, 0.00) {V1};
+\\node[practice] (P1) at (3.75, 0.00) {P1};
+
+% --- Edges ---
+\\draw[pv] (P1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV} (V1);
+
+\\end{tikzpicture}"
+`;
+
+exports[`export parity for nested-sizing.json > JSON export is identical modulo timestamp > json 1`] = `
+"{
+  "id": "fixture-nested-sizing",
+  "name": "Nested Containers and Overflowing Labels",
+  "type": "HYBRID",
+  "nodes": [
+    {
+      "id": "container1",
+      "type": "practice",
+      "position": {
+        "x": 300,
+        "y": 300
+      },
+      "label": "Container practice with a fairly long label"
+    },
+    {
+      "id": "child-v",
+      "type": "vocabulary",
+      "parentId": "container1",
+      "position": {
+        "x": -80,
+        "y": 0
+      },
+      "label": "Nested vocabulary child node with an extremely long label that should wrap or overflow"
+    },
+    {
+      "id": "child-p",
+      "type": "practice",
+      "parentId": "container1",
+      "position": {
+        "x": 80,
+        "y": 40
+      },
+      "label": "Nested practice"
+    },
+    {
+      "id": "v-large",
+      "type": "vocabulary",
+      "position": {
+        "x": 700,
+        "y": 100
+      },
+      "label": "This vocabulary node has an exceptionally verbose label intended to exercise uniform node sizing and overflow indicators added in 775c2f9",
+      "style": {
+        "size": "small"
+      }
+    },
+    {
+      "id": "t-sized",
+      "type": "test",
+      "position": {
+        "x": 700,
+        "y": 400
+      },
+      "label": "Sized test",
+      "style": {
+        "size": "large",
+        "shape": "diamond"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "child-v",
+      "target": "child-p",
+      "type": "VP"
+    },
+    {
+      "id": "e2",
+      "source": "container1",
+      "target": "v-large",
+      "type": "PV"
+    },
+    {
+      "id": "e3",
+      "source": "v-large",
+      "target": "t-sized",
+      "type": "unmarked"
+    }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z",
+    "description": "parentId nesting, container bounds, size styles, overflow labels",
+    "exported": "<normalized>",
+    "version": "1.1"
+  }
+}"
+`;
+
+exports[`export parity for nested-sizing.json > LaTeX document is identical > latex 1`] = `
+"\\documentclass[border=5mm]{standalone}
+\\usepackage{tikz}
+\\usetikzlibrary{positioning, shapes.geometric, arrows.meta, fit, backgrounds}
+
+\\begin{document}
+
+\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % MUD styles (Brandom, Between Saying and Doing)
+  vocabulary/.style={ellipse, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.2cm, text centered, align=center},
+  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.4cm, text centered, align=center},
+  % TOTE styles (Miller et al., Plans and the Structure of Behavior)
+  test/.style={diamond, draw=black, thick, aspect=2,
+    minimum width=2cm, text width=1.4cm, text centered, align=center},
+  operate/.style={rectangle, draw=black, thick,
+    minimum width=2.5cm, minimum height=1cm,
+    text width=2.1cm, text centered, align=center},
+  exitnode/.style={rectangle, draw=black, thick,
+    minimum width=1.5cm, minimum height=0.8cm,
+    text width=1.1cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  pv/.style={->, thick},
+  vp/.style={->, thick},
+  pp/.style={->, thick},
+  vv/.style={->, thick},
+  resultant/.style={->, thick, dashed},
+  sequence/.style={->, thick},
+  feedback/.style={->, thick},
+  exitedge/.style={->, thick},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+% WARNING: label may overflow — consider shortening
+\\node[vocabulary] (V1) at (-5.29, -1.10) {Nested vocabulary child node with an extremely long label that should wrap or overflow};
+\\node[practice] (P1) at (-1.76, -1.99) {Nested practice};
+% WARNING: label may overflow — consider shortening
+\\node[vocabulary] (V2) at (5.29, 3.31) {This vocabulary node has an exceptionally verbose label intended to exercise uniform node sizing and overflow indicators added in 775c2f9};
+\\node[test] (T1) at (5.29, -3.31) {Sized test};
+
+% --- Containers (using fit) ---
+\\node[container, fit=(V1) (P1), label=above:{Container practice with a fairly long label}] (G1) {};
+
+% --- Edges ---
+\\draw[vp] (V1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VP} (P1);
+\\draw[pv] (G1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV} (V2);
+\\draw[unmarked] (V2) -- (T1);
+
+\\end{tikzpicture}
+
+\\end{document}"
+`;
+
+exports[`export parity for nested-sizing.json > SVG content is identical > svg 1`] = `
+"<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="120 0 680 500"
+     width="680" height="500">
+
+  <!-- Styles -->
+  <style>
+    .node-text { font-family: Arial, sans-serif; text-anchor: middle; }
+    .edge-text { font-family: Arial, sans-serif; text-anchor: middle; font-size: 12px; }
+  </style>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7"
+            refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+  </defs>
+
+  <!-- Edges -->
+  <path d="M 264.72 311.18 L 330.00 327.50" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="294.45" y="330.98" transform="rotate(14.04, 294.45, 330.98)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">VP</text>
+  <path d="M 350.00 275.00 L 671.72 114.14" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="516.22" y="205.30" transform="rotate(-26.57, 516.22, 205.30)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">PV</text>
+  <path d="M 700.00 120.00 L 700.00 363.60" stroke="#999999" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+
+  <!-- Nodes -->
+  <rect x="130.00" y="235.00" width="340.00" height="170.00" rx="8" fill="#FFFFFF" fill-opacity="0.2" stroke="#333333" stroke-width="1" stroke-dasharray="6,3" />
+  <text x="300" y="225.00" font-size="12" class="node-text" fill="#333333" text-anchor="middle">Container practice with a fairly long label</text>
+  <ellipse cx="220" cy="300" rx="50.00" ry="25.00" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="220" y="207.6" font-size="14" class="node-text" fill="#333333" text-anchor="middle">Nested</text>
+<text x="220" y="224.4" font-size="14" class="node-text" fill="#333333" text-anchor="middle">vocabulary</text>
+<text x="220" y="241.2" font-size="14" class="node-text" fill="#333333" text-anchor="middle">child</text>
+<text x="220" y="258" font-size="14" class="node-text" fill="#333333" text-anchor="middle">node with</text>
+<text x="220" y="274.8" font-size="14" class="node-text" fill="#333333" text-anchor="middle">an</text>
+<text x="220" y="291.6" font-size="14" class="node-text" fill="#333333" text-anchor="middle">extremely</text>
+<text x="220" y="308.4" font-size="14" class="node-text" fill="#333333" text-anchor="middle">long</text>
+<text x="220" y="325.2" font-size="14" class="node-text" fill="#333333" text-anchor="middle">label</text>
+<text x="220" y="342" font-size="14" class="node-text" fill="#333333" text-anchor="middle">that</text>
+<text x="220" y="358.8" font-size="14" class="node-text" fill="#333333" text-anchor="middle">should</text>
+<text x="220" y="375.6" font-size="14" class="node-text" fill="#333333" text-anchor="middle">wrap or</text>
+<text x="220" y="392.4" font-size="14" class="node-text" fill="#333333" text-anchor="middle">overflow</text>
+  <rect x="330.00" y="315.00" width="100.00" height="50.00" rx="10" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="380" y="340" font-size="14" class="node-text" fill="#333333" text-anchor="middle">Nested practice</text>
+  <ellipse cx="700" cy="100" rx="40.00" ry="20.00" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="700" y="-22.39999999999999" font-size="12" class="node-text" fill="#333333" text-anchor="middle">This</text>
+<text x="700" y="-7.999999999999993" font-size="12" class="node-text" fill="#333333" text-anchor="middle">vocabulary</text>
+<text x="700" y="6.400000000000006" font-size="12" class="node-text" fill="#333333" text-anchor="middle">node has</text>
+<text x="700" y="20.800000000000004" font-size="12" class="node-text" fill="#333333" text-anchor="middle">an</text>
+<text x="700" y="35.2" font-size="12" class="node-text" fill="#333333" text-anchor="middle">exceptionally</text>
+<text x="700" y="49.60000000000001" font-size="12" class="node-text" fill="#333333" text-anchor="middle">verbose</text>
+<text x="700" y="64" font-size="12" class="node-text" fill="#333333" text-anchor="middle">label</text>
+<text x="700" y="78.39999999999999" font-size="12" class="node-text" fill="#333333" text-anchor="middle">intended</text>
+<text x="700" y="92.8" font-size="12" class="node-text" fill="#333333" text-anchor="middle">to</text>
+<text x="700" y="107.2" font-size="12" class="node-text" fill="#333333" text-anchor="middle">exercise</text>
+<text x="700" y="121.60000000000001" font-size="12" class="node-text" fill="#333333" text-anchor="middle">uniform</text>
+<text x="700" y="136" font-size="12" class="node-text" fill="#333333" text-anchor="middle">node</text>
+<text x="700" y="150.39999999999998" font-size="12" class="node-text" fill="#333333" text-anchor="middle">sizing</text>
+<text x="700" y="164.8" font-size="12" class="node-text" fill="#333333" text-anchor="middle">and</text>
+<text x="700" y="179.2" font-size="12" class="node-text" fill="#333333" text-anchor="middle">overflow</text>
+<text x="700" y="193.59999999999997" font-size="12" class="node-text" fill="#333333" text-anchor="middle">indicators</text>
+<text x="700" y="208" font-size="12" class="node-text" fill="#333333" text-anchor="middle">added in</text>
+<text x="700" y="222.39999999999998" font-size="12" class="node-text" fill="#333333" text-anchor="middle">775c2f9</text>
+  <path d="M 700.00,354.50 L 745.50,400.00 L 700.00,445.50 L 654.50,400.00 Z" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="700" y="400" font-size="18" class="node-text" fill="#333333" text-anchor="middle">Sized test</text>
+</svg>"
+`;
+
+exports[`export parity for nested-sizing.json > TikZ code is identical > tikz 1`] = `
+"\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % MUD styles (Brandom, Between Saying and Doing)
+  vocabulary/.style={ellipse, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.2cm, text centered, align=center},
+  practice/.style={rectangle, rounded corners=3pt, draw=black, thick,
+    minimum width=2.8cm, minimum height=1.2cm,
+    text width=2.4cm, text centered, align=center},
+  % TOTE styles (Miller et al., Plans and the Structure of Behavior)
+  test/.style={diamond, draw=black, thick, aspect=2,
+    minimum width=2cm, text width=1.4cm, text centered, align=center},
+  operate/.style={rectangle, draw=black, thick,
+    minimum width=2.5cm, minimum height=1cm,
+    text width=2.1cm, text centered, align=center},
+  exitnode/.style={rectangle, draw=black, thick,
+    minimum width=1.5cm, minimum height=0.8cm,
+    text width=1.1cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  pv/.style={->, thick},
+  vp/.style={->, thick},
+  pp/.style={->, thick},
+  vv/.style={->, thick},
+  resultant/.style={->, thick, dashed},
+  sequence/.style={->, thick},
+  feedback/.style={->, thick},
+  exitedge/.style={->, thick},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+% WARNING: label may overflow — consider shortening
+\\node[vocabulary] (V1) at (-5.29, -1.10) {Nested vocabulary child node with an extremely long label that should wrap or overflow};
+\\node[practice] (P1) at (-1.76, -1.99) {Nested practice};
+% WARNING: label may overflow — consider shortening
+\\node[vocabulary] (V2) at (5.29, 3.31) {This vocabulary node has an exceptionally verbose label intended to exercise uniform node sizing and overflow indicators added in 775c2f9};
+\\node[test] (T1) at (5.29, -3.31) {Sized test};
+
+% --- Containers (using fit) ---
+\\node[container, fit=(V1) (P1), label=above:{Container practice with a fairly long label}] (G1) {};
+
+% --- Edges ---
+\\draw[vp] (V1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {VP} (P1);
+\\draw[pv] (G1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {PV} (V2);
+\\draw[unmarked] (V2) -- (T1);
+
+\\end{tikzpicture}"
+`;
+
+exports[`export parity for tote-cycle.json > JSON export is identical modulo timestamp > json 1`] = `
+"{
+  "id": "fixture-tote-cycle",
+  "name": "TOTE Cycle",
+  "type": "TOTE",
+  "nodes": [
+    {
+      "id": "t1",
+      "type": "test",
+      "position": {
+        "x": 200,
+        "y": 100
+      },
+      "label": "Test incongruity",
+      "condition": "nail flush?"
+    },
+    {
+      "id": "o1",
+      "type": "operate",
+      "position": {
+        "x": 200,
+        "y": 300
+      },
+      "label": "Hammer",
+      "operations": [
+        "lift",
+        "strike"
+      ]
+    },
+    {
+      "id": "t2",
+      "type": "test",
+      "position": {
+        "x": 500,
+        "y": 100
+      },
+      "label": "Re-test"
+    },
+    {
+      "id": "x1",
+      "type": "exit",
+      "position": {
+        "x": 700,
+        "y": 100
+      },
+      "label": "Exit"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-seq1",
+      "source": "t1",
+      "target": "o1",
+      "type": "sequence",
+      "label": "incongruity"
+    },
+    {
+      "id": "e-fb",
+      "source": "o1",
+      "target": "t2",
+      "type": "feedback"
+    },
+    {
+      "id": "e-loop",
+      "source": "o1",
+      "target": "o1",
+      "type": "loop",
+      "label": "iterate"
+    },
+    {
+      "id": "e-pass",
+      "source": "t2",
+      "target": "x1",
+      "type": "test-pass",
+      "label": "congruity"
+    },
+    {
+      "id": "e-fail",
+      "source": "t2",
+      "target": "o1",
+      "type": "test-fail"
+    },
+    {
+      "id": "e-exit",
+      "source": "t2",
+      "target": "x1",
+      "type": "exit"
+    }
+  ],
+  "entryPoints": [
+    {
+      "id": "entry1",
+      "position": {
+        "x": 50,
+        "y": 100
+      },
+      "targetNodeId": "t1",
+      "label": "start"
+    }
+  ],
+  "exitPoints": [
+    {
+      "id": "exit1",
+      "position": {
+        "x": 850,
+        "y": 100
+      },
+      "sourceNodeId": "x1",
+      "label": "done"
+    }
+  ],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z",
+    "description": "Miller/Galanter/Pribram TOTE loop with entry and exit points",
+    "exported": "<normalized>",
+    "version": "1.1"
+  }
+}"
+`;
+
+exports[`export parity for tote-cycle.json > LaTeX document is identical > latex 1`] = `
+"\\documentclass[border=5mm]{standalone}
+\\usepackage{tikz}
+\\usetikzlibrary{positioning, shapes.geometric, arrows.meta, fit, backgrounds}
+
+\\begin{document}
+
+\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % TOTE styles (Miller et al., Plans and the Structure of Behavior)
+  test/.style={diamond, draw=black, thick, aspect=2,
+    minimum width=2cm, text width=1.4cm, text centered, align=center},
+  operate/.style={rectangle, draw=black, thick,
+    minimum width=2.5cm, minimum height=1cm,
+    text width=2.1cm, text centered, align=center},
+  exitnode/.style={rectangle, draw=black, thick,
+    minimum width=1.5cm, minimum height=0.8cm,
+    text width=1.1cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  sequence/.style={->, thick},
+  feedback/.style={->, thick},
+  exitedge/.style={->, thick},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+\\node[test] (T1) at (-5.36, 2.14) {Test incongruity};
+\\node[operate] (O1) at (-5.36, -2.14) {Hammer};
+\\node[test] (T2) at (1.07, 2.14) {Re-test};
+\\node[exitnode] (X1) at (5.36, 2.14) {Exit};
+
+% --- Edges ---
+\\draw[sequence] (T1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {incongruity} (O1);
+\\draw[feedback] (O1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {feedback} (T2);
+\\draw[feedback] (O1) to[loop above, looseness=5] node[above, font=\\scriptsize] {iterate} (O1);
+\\draw[exitedge] (T2) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {congruity} (X1);
+\\draw[sequence] (T2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {test-fail} (O1);
+\\draw[exitedge] (T2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {exit} (X1);
+
+\\end{tikzpicture}
+
+\\end{document}"
+`;
+
+exports[`export parity for tote-cycle.json > SVG content is identical > svg 1`] = `
+"<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="100 0 700 400"
+     width="700" height="400">
+
+  <!-- Styles -->
+  <style>
+    .node-text { font-family: Arial, sans-serif; text-anchor: middle; }
+    .edge-text { font-family: Arial, sans-serif; text-anchor: middle; font-size: 12px; }
+  </style>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7"
+            refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+  </defs>
+
+  <!-- Edges -->
+  <path d="M 200.00 128.00 L 200.00 275.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="188.00" y="201.50" transform="rotate(90.00, 188.00, 201.50)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">incongruity</text>
+  <path d="M 250.00 277.48 Q 366.64 224.96 479.57 119.15" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="373.66" y="223.16" transform="rotate(-34.60, 373.66, 223.16)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">feedback</text>
+  <path d="M 250.00 287.50 C 330.00 287.50 330.00 312.50 250.00 312.50" stroke="#555555" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="280.00" y="270.00" fill="#555555" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">iterate</text>
+  <path d="M 526.82 108.05 Q 600.00 130.00 650.00 115.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="593.42" y="134.74" transform="rotate(3.23, 593.42, 134.74)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">congruity</text>
+  <path d="M 474.47 111.50 Q 333.36 175.04 226.68 275.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="334.26" y="172.46" transform="rotate(-33.42, 334.26, 172.46)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">test-fail</text>
+  <path d="M 526.82 91.95 Q 600.00 70.00 650.00 85.00" stroke="#333333" stroke-width="2" stroke-dasharray="none" fill="none" marker-end="url(#arrowhead)" stroke-linecap="round" />
+  <text class="edge-text" x="593.42" y="65.26" transform="rotate(-3.23, 593.42, 65.26)" fill="#333333" font-size="12" paint-order="stroke fill" stroke="white" stroke-width="3">exit</text>
+
+  <!-- Nodes -->
+  <path d="M 200.00,65.00 L 235.00,100.00 L 200.00,135.00 L 165.00,100.00 Z" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="200" y="100" font-size="14" class="node-text" fill="#333333" text-anchor="middle">Test incongruity</text>
+  <rect x="150.00" y="275.00" width="100.00" height="50.00" rx="10" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="200" y="300" font-size="14" class="node-text" fill="#333333" text-anchor="middle">Hammer</text>
+  <path d="M 500.00,65.00 L 535.00,100.00 L 500.00,135.00 L 465.00,100.00 Z" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="500" y="100" font-size="14" class="node-text" fill="#333333" text-anchor="middle">Re-test</text>
+  <rect x="650.00" y="75.00" width="100.00" height="50.00" rx="10" fill="#FFFFFF" stroke="#333333" stroke-width="2" />
+  <text x="700" y="100" font-size="14" class="node-text" fill="#333333" text-anchor="middle">Exit</text>
+</svg>"
+`;
+
+exports[`export parity for tote-cycle.json > TikZ code is identical > tikz 1`] = `
+"\\begin{tikzpicture}[>=Stealth, thick, font=\\small]
+
+% --- Node styles ---
+\\tikzset{
+  % TOTE styles (Miller et al., Plans and the Structure of Behavior)
+  test/.style={diamond, draw=black, thick, aspect=2,
+    minimum width=2cm, text width=1.4cm, text centered, align=center},
+  operate/.style={rectangle, draw=black, thick,
+    minimum width=2.5cm, minimum height=1cm,
+    text width=2.1cm, text centered, align=center},
+  exitnode/.style={rectangle, draw=black, thick,
+    minimum width=1.5cm, minimum height=0.8cm,
+    text width=1.1cm, text centered, align=center},
+  custom/.style={circle, draw=black, thick,
+    minimum size=1.5cm, text width=1.0cm, text centered, align=center},
+  container/.style={rectangle, draw=black, dashed, rounded corners=4pt,
+    inner sep=12pt},
+  % Edge styles
+  sequence/.style={->, thick},
+  feedback/.style={->, thick},
+  exitedge/.style={->, thick},
+  unmarked/.style={->, thick, gray!60},
+  customedge/.style={->, thick},
+}
+
+% --- Nodes ---
+\\node[test] (T1) at (-5.36, 2.14) {Test incongruity};
+\\node[operate] (O1) at (-5.36, -2.14) {Hammer};
+\\node[test] (T2) at (1.07, 2.14) {Re-test};
+\\node[exitnode] (X1) at (5.36, 2.14) {Exit};
+
+% --- Edges ---
+\\draw[sequence] (T1) -- node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {incongruity} (O1);
+\\draw[feedback] (O1) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {feedback} (T2);
+\\draw[feedback] (O1) to[loop above, looseness=5] node[above, font=\\scriptsize] {iterate} (O1);
+\\draw[exitedge] (T2) to[bend right=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {congruity} (X1);
+\\draw[sequence] (T2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {test-fail} (O1);
+\\draw[exitedge] (T2) to[bend left=15] node[midway, fill=white, inner sep=1pt, font=\\scriptsize] {exit} (X1);
+
+\\end{tikzpicture}"
+`;

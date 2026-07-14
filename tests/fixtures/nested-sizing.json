@@ -1,0 +1,24 @@
+{
+  "id": "fixture-nested-sizing",
+  "name": "Nested Containers and Overflowing Labels",
+  "type": "HYBRID",
+  "nodes": [
+    { "id": "container1", "type": "practice", "position": { "x": 300, "y": 300 }, "label": "Container practice with a fairly long label" },
+    { "id": "child-v", "type": "vocabulary", "parentId": "container1", "position": { "x": -80, "y": 0 }, "label": "Nested vocabulary child node with an extremely long label that should wrap or overflow" },
+    { "id": "child-p", "type": "practice", "parentId": "container1", "position": { "x": 80, "y": 40 }, "label": "Nested practice" },
+    { "id": "v-large", "type": "vocabulary", "position": { "x": 700, "y": 100 }, "label": "This vocabulary node has an exceptionally verbose label intended to exercise uniform node sizing and overflow indicators added in 775c2f9", "style": { "size": "small" } },
+    { "id": "t-sized", "type": "test", "position": { "x": 700, "y": 400 }, "label": "Sized test", "style": { "size": "large", "shape": "diamond" } }
+  ],
+  "edges": [
+    { "id": "e1", "source": "child-v", "target": "child-p", "type": "VP" },
+    { "id": "e2", "source": "container1", "target": "v-large", "type": "PV" },
+    { "id": "e3", "source": "v-large", "target": "t-sized", "type": "unmarked" }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z",
+    "description": "parentId nesting, container bounds, size styles, overflow labels"
+  }
+}

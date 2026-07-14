@@ -1,0 +1,24 @@
+{
+  "id": "fixture-latex-hostile",
+  "name": "LaTeX Hostile & <Unsafe> \"Labels\"",
+  "type": "MUD",
+  "nodes": [
+    { "id": "v1", "type": "vocabulary", "position": { "x": 100, "y": 100 }, "label": "A & B % C $ D # E" },
+    { "id": "v2", "type": "vocabulary", "position": { "x": 500, "y": 100 }, "label": "under_score {brace} ~tilde^ hat" },
+    { "id": "p1", "type": "practice", "position": { "x": 100, "y": 350 }, "label": "back\\slash and $x_1 \\to y^2$ math" },
+    { "id": "p2", "type": "practice", "position": { "x": 500, "y": 350 }, "label": "V₁ subscript unicode → arrow", "subscript": "50% of $100 & more" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "p1", "target": "v1", "type": "PV", "label": "100% & counting" },
+    { "id": "e2", "source": "v1", "target": "p2", "type": "VP", "label": "$\\mathcal{L}$ already-latex" },
+    { "id": "e3", "source": "p1", "target": "p2", "type": "PP", "label": "plain_label #3" },
+    { "id": "e4", "source": "v2", "target": "v1", "type": "VV" }
+  ],
+  "entryPoints": [],
+  "exitPoints": [],
+  "metadata": {
+    "created": "2026-01-01T00:00:00.000Z",
+    "modified": "2026-01-01T00:00:00.000Z",
+    "description": "Labels exercising escapeLaTeXText and isLaTeXContent passthrough"
+  }
+}
