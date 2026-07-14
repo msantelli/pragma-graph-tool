@@ -7,7 +7,7 @@ import {
   type DetectedPragmaticMetavocabulary,
   type Node
 } from '@pragma-graph/core';
-import { requireDiagram } from '../backend.js';
+import { requireDiagram, errorCode } from '../backend.js';
 import {
   outputSuccess,
   outputError,
@@ -172,7 +172,7 @@ export function registerExplainCommand(program: Command): void {
           outputSuccess('explain', buildStructured(diagram, lang));
         }
       } catch (e) {
-        outputError('explain', 'NO_DIAGRAM', (e as Error).message);
+        outputError('explain', errorCode(e), (e as Error).message);
       }
     });
 }

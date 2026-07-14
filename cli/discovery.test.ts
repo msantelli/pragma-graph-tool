@@ -80,6 +80,23 @@ describe('discoverGUI', () => {
     expect(stale[0]).toContain('PRAGMA_GUI_URL');
   });
 
+  it('flags PRAGMA_GUI_URL without PRAGMA_GUI_TOKEN instead of falling through', async () => {
+    process.env.PRAGMA_GUI_URL = `http://127.0.0.1:${port}`;
+    // A live server.json exists, but the misconfigured override must win.
+    writeServerFile(tmpHome, { port, token: TOKEN, pid: process.pid, version: '1.2.0' });
+
+    const { connection, stale } = await discoverGUI({ scanWindowsHomes: false });
+    expect(connection).toBeNull();
+    expect(stale[0]).toContain('PRAGMA_GUI_TOKEN');
+  });
+
+  it('probes the host recorded in server.json when present', async () => {
+    writeServerFile(tmpHome, { port, token: TOKEN, pid: process.pid, version: '1.2.0', host: '127.0.0.1' });
+
+    const { connection } = await discoverGUI({ scanWindowsHomes: false });
+    expect(connection?.host).toBe('127.0.0.1');
+  });
+
   it('finds a live GUI via the native home server.json', async () => {
     writeServerFile(tmpHome, { port, token: TOKEN, pid: process.pid, version: '1.2.0' });
 

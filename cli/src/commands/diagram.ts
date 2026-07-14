@@ -1,8 +1,9 @@
+import * as fs from 'node:fs';
 import { Command } from 'commander';
 import { createDiagram } from '@pragma-graph/core';
 import type { Diagram } from '@pragma-graph/core';
-import { dispatch, getDiagram, requireDiagram, isConnected } from '../backend.js';
-import { loadDiagramFromFile, saveDiagramToFile } from '../headless/fileManager.js';
+import { dispatch, getDiagram, requireDiagram, autoSave, isConnected } from '../backend.js';
+import { loadDiagramFromFile, saveDiagramToFile, isForceOverwrite } from '../headless/fileManager.js';
 import { loadDiagramIntoStore } from '../headless/headlessStore.js';
 import { outputSuccess, outputError } from '../output/formatter.js';
 
@@ -23,13 +24,25 @@ export function registerDiagramCommands(program: Command, getFilePath: () => str
         return;
       }
 
+      // create skips the preAction auto-load, so the conflict guard has no
+      // hash to compare — protect an existing file explicitly instead of
+      // silently replacing it with an empty diagram.
+      const filePath = getFilePath();
+      if (filePath && fs.existsSync(filePath) && !isForceOverwrite()) {
+        outputError(
+          'diagram.create',
+          'FILE_EXISTS',
+          `${filePath} already exists and would be overwritten by the new diagram.`,
+          undefined,
+          'Pass --force to overwrite it, or choose a different --file.'
+        );
+        return;
+      }
+
       await dispatch(createDiagram({ name: opts.name, type }));
       const created = (await getDiagram())!;
 
-      const filePath = getFilePath();
-      if (filePath && !isConnected()) {
-        saveDiagramToFile(created, filePath);
-      }
+      await autoSave(getFilePath);
 
       outputSuccess('diagram.create', {
         id: created.id,

@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { validateDiagram } from '@pragma-graph/core';
-import { requireDiagram } from '../backend.js';
+import { requireDiagram, errorCode } from '../backend.js';
 import { outputSuccess, outputError } from '../output/formatter.js';
 
 export function registerCheckCommand(program: Command): void {
@@ -29,7 +29,7 @@ export function registerCheckCommand(program: Command): void {
           issues: filtered
         });
       } catch (e) {
-        outputError('check', 'NO_DIAGRAM', (e as Error).message);
+        outputError('check', errorCode(e), (e as Error).message);
       }
     });
 }

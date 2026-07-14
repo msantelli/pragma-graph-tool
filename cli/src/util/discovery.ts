@@ -22,15 +22,20 @@ export interface DiscoveryResult {
 // Computed lazily so tests can redirect the home directory.
 const connectionFilePath = () => path.join(os.homedir(), '.pragma-graph-tool', 'server.json');
 
-const PROBE_TIMEOUT_MS = process.env.PRAGMA_GUI_TIMEOUT_MS
-  ? parseInt(process.env.PRAGMA_GUI_TIMEOUT_MS, 10)
-  : 750;
+// Probe timeout is generous by default (a busy host can take >1s to answer)
+// and independently overridable — PRAGMA_GUI_TIMEOUT_MS governs regular
+// requests, PRAGMA_GUI_PROBE_TIMEOUT_MS only this liveness probe.
+const PROBE_TIMEOUT_MS = process.env.PRAGMA_GUI_PROBE_TIMEOUT_MS
+  ? parseInt(process.env.PRAGMA_GUI_PROBE_TIMEOUT_MS, 10)
+  : 2000;
 
 interface ServerFile {
   port: number;
   token: string;
   pid: number;
   version?: string;
+  /** Present when the GUI was bound to a specific non-loopback interface. */
+  host?: string;
 }
 
 function readServerFile(filePath: string): ServerFile | null {
@@ -113,6 +118,12 @@ export async function discoverGUI(
 
   const envUrl = process.env.PRAGMA_GUI_URL;
   const envToken = process.env.PRAGMA_GUI_TOKEN;
+  if (envUrl && !envToken) {
+    // An explicit override must never silently fall through to other
+    // candidates — a missing token is a configuration error, not a fallback.
+    stale.push(`PRAGMA_GUI_URL=${envUrl} (PRAGMA_GUI_TOKEN is not set)`);
+    return { connection: null, stale };
+  }
   if (envUrl && envToken) {
     try {
       const url = new URL(envUrl);
@@ -142,10 +153,11 @@ export async function discoverGUI(
     } catch {
       pidAlive = false;
     }
-    if (pidAlive && await probe('127.0.0.1', native.port, native.token)) {
+    const nativeHost = native.host || '127.0.0.1';
+    if (pidAlive && await probe(nativeHost, native.port, native.token)) {
       return {
         connection: {
-          host: '127.0.0.1', port: native.port, token: native.token,
+          host: nativeHost, port: native.port, token: native.token,
           pid: native.pid, version: native.version ?? 'unknown', source: connectionFile,
         },
         stale,
@@ -160,7 +172,11 @@ export async function discoverGUI(
       const win = readServerFile(file);
       if (!win) continue;
       // No PID check: a Windows PID means nothing in the Linux process table.
-      const hosts = natIP && natIP !== '127.0.0.1' ? ['127.0.0.1', natIP] : ['127.0.0.1'];
+      const hosts = [
+        ...(win.host ? [win.host] : []),
+        '127.0.0.1',
+        ...(natIP && natIP !== '127.0.0.1' ? [natIP] : []),
+      ];
       for (const host of hosts) {
         if (await probe(host, win.port, win.token)) {
           return {

@@ -7,7 +7,7 @@ import {
   addEdge,
   saveToHistory
 } from '@pragma-graph/core';
-import { requireDiagram, dispatchBatch, autoSave } from '../backend.js';
+import { requireDiagram, dispatchBatch, autoSave, errorCode } from '../backend.js';
 import { outputSuccess, outputError } from '../output/formatter.js';
 
 export function registerDeriveCommand(
@@ -93,7 +93,7 @@ export function registerDeriveCommand(
           suggestions
         });
       } catch (e) {
-        outputError('derive', 'NO_DIAGRAM', (e as Error).message);
+        outputError('derive', errorCode(e), (e as Error).message);
       }
     });
 }

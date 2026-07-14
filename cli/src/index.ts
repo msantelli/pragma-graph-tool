@@ -85,7 +85,7 @@ program
 
     // Auto-load file if specified. Headless: this seeds the in-process store.
     // Connected: the GUI stays the source of truth, but loading still records
-    // the file's content hash so the mirror save can detect external writes.
+    // the file's content hash and diagram id for the mirror-safety checks.
     if (opts.file) {
       const commandName = actionCommand.name();
       const parentName = actionCommand.parent?.name();
@@ -94,11 +94,37 @@ program
         (parentName === 'diagram' && (commandName === 'create' || commandName === 'load'));
 
       if (!isCreateOrLoad) {
+        let loadedDiagram = null;
         try {
-          const diagram = loadDiagramFromFile(opts.file);
-          loadDiagramIntoStore(diagram);
+          loadedDiagram = loadDiagramFromFile(opts.file);
+          loadDiagramIntoStore(loadedDiagram);
         } catch {
           // File may not exist yet, that's ok for create commands
+        }
+
+        // Connected + --file targeting a DIFFERENT diagram than the one on
+        // the canvas: refuse before any mutation/mirror touches the wrong
+        // diagram, instead of editing the GUI and clobbering the file.
+        if (loadedDiagram && !opts.force) {
+          const { getGUIClient } = await import('./backend.js');
+          const client = getGUIClient();
+          if (client) {
+            try {
+              const guiDiagram = await client.getDiagram();
+              if (guiDiagram && guiDiagram.id !== loadedDiagram.id) {
+                outputError(
+                  actionCommand.name(),
+                  'DIAGRAM_MISMATCH',
+                  `--file ${opts.file} contains diagram "${loadedDiagram.name}" (${loadedDiagram.id}) but the connected GUI shows "${guiDiagram.name}" (${guiDiagram.id}).`,
+                  undefined,
+                  'Use --headless to edit the file directly, "diagram load" to open the file in the GUI first, or --force to operate on the GUI diagram and overwrite the file.'
+                );
+                process.exit(1);
+              }
+            } catch {
+              // GUI became unreachable mid-flight; commands will surface it.
+            }
+          }
         }
       }
     }

@@ -356,7 +356,7 @@ In headless mode the CLI detects when the `--file` was modified by another proce
 
 | Command | Description |
 |---------|-------------|
-| `diagram create --name <name> --type <MUD\|TOTE\|HYBRID\|GENERIC>` | Create a new diagram |
+| `diagram create --name <name> --type <MUD\|TOTE\|HYBRID\|GENERIC>` | Create a new diagram (refuses to overwrite an existing `--file` without `--force`) |
 | `diagram info` | Show current diagram summary |
 | `diagram load <file>` | Load a diagram from JSON |
 | `diagram save [file]` | Save current diagram to file |
@@ -520,6 +520,7 @@ In connected mode:
 - All commands (`node add`, `edge add`, `diagram create`, etc.) dispatch directly to the GUI's Redux store
 - Changes appear on the canvas instantly — no need to import/export files
 - With `--file`, the CLI **mirrors the GUI's state into the file after every mutation**, so the file always matches the canvas (the GUI remains the source of truth). If a mirror write fails, the command still succeeds but warns on stderr and adds `"persisted": false` to the envelope
+- **Identity guard**: if `--file` contains a *different* diagram than the one open in the GUI, the command fails with `DIAGRAM_MISMATCH` before mutating anything — use `--headless` to edit the file directly, `diagram load` to open the file in the GUI first, or `--force` to operate on the GUI diagram and overwrite the file
 - History commands (`undo`/`redo`) operate on the GUI's undo stack
 - Every JSON envelope carries `"mode": "gui"`; use `--require-gui` to make the CLI exit 1 (`GUI_UNAVAILABLE`) rather than silently falling back to headless when no GUI answers
 
@@ -539,7 +540,7 @@ node cli/dist/index.js --headless --file diagram.json node add --type vocabulary
 
 If the GUI runs on Windows and the CLI inside WSL, discovery additionally scans `/mnt/c/Users/*/.pragma-graph-tool/server.json` and probes `127.0.0.1` (works with WSL2 mirrored networking — `networkingMode=mirrored` in `%UserProfile%\.wslconfig`), falling back to the Windows host IP from `/etc/resolv.conf` under NAT mode. If a session file is found but nothing answers, the CLI prints a one-line stderr hint and runs headless.
 
-Environment overrides: `PRAGMA_GUI_URL` + `PRAGMA_GUI_TOKEN` (explicit endpoint, skips discovery), `PRAGMA_GUI_TIMEOUT_MS` (probe/request timeout), and `PRAGMA_BRIDGE_BIND=0.0.0.0` set before launching the GUI to bind the bridge beyond loopback (not recommended — the token travels as plaintext HTTP).
+Environment overrides: `PRAGMA_GUI_URL` + `PRAGMA_GUI_TOKEN` (explicit endpoint, skips discovery; setting the URL without the token is a hard error, not a fallback), `PRAGMA_GUI_TIMEOUT_MS` (request timeout, default 5 s), `PRAGMA_GUI_PROBE_TIMEOUT_MS` (discovery probe timeout, default 2 s), and `PRAGMA_BRIDGE_BIND` set before launching the GUI to bind the bridge beyond loopback (not recommended — the token travels as plaintext HTTP; a specific interface IP is recorded in `server.json` so discovery still works).
 
 ## Academic Context
 

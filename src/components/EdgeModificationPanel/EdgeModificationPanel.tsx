@@ -74,7 +74,13 @@ export const EdgeModificationPanel: React.FC<EdgeModificationPanelProps> = ({ is
 
   if (!edge) return null;
 
-  const availableEdgeTypes = getAvailableEdgeTypes(diagramMode, sourceNode?.type, targetNode?.type, autoDetectEdges);
+  // Endpoint filtering can exclude the edge's CURRENT type (e.g. a mistyped
+  // or imported edge) — always keep it selectable so the user can see it and
+  // switch back.
+  const filteredEdgeTypes = getAvailableEdgeTypes(diagramMode, sourceNode?.type, targetNode?.type, autoDetectEdges);
+  const availableEdgeTypes = filteredEdgeTypes.includes(edge.type)
+    ? filteredEdgeTypes
+    : [edge.type, ...filteredEdgeTypes];
 
   return (
     <Modal

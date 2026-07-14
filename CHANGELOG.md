@@ -24,6 +24,18 @@
 - Removed ~3,400 lines of dead code (`App-simple.tsx`, redundant type files), unused deps (`lodash`, `file-saver`), and tracked build output (`dev-dist/`). All lint errors fixed.
 - Electron bridge: configurable bind host (`PRAGMA_BRIDGE_BIND`), `server.json` written with owner-only permissions and the real app version.
 
+### Post-review hardening (same release)
+An adversarial multi-agent review of the branch surfaced ten confirmed issues, all fixed:
+- **`DIAGRAM_MISMATCH` guard**: connected-mode `--file` refuses to mutate/mirror when the file holds a different diagram than the canvas (previously the file was silently overwritten with the GUI's diagram — reproduced in review).
+- **`FILE_EXISTS` guard**: `diagram create --file existing.json` no longer silently replaces the file (`--force` to overwrite).
+- Headless save failures (permissions, disk full) now exit 1 with `SAVE_FAILED` instead of reporting success.
+- Electron: all renderer access guarded against a closed window (macOS keeps apps alive windowless) — bridge answers 503 instead of crashing per-request; menu items no-op cleanly; Tools → Validate reports "view not ready" instead of a false "no issues" when the bridge is absent.
+- `PRAGMA_BRIDGE_BIND` with a specific interface is recorded as `host` in `server.json` and honored by discovery.
+- Discovery probe timeout raised to 2 s with its own `PRAGMA_GUI_PROBE_TIMEOUT_MS` (no longer shares `PRAGMA_GUI_TIMEOUT_MS`); `PRAGMA_GUI_URL` without `PRAGMA_GUI_TOKEN` is a hard error instead of a silent fallback.
+- `check`/`derive`/`explain` no longer mislabel every failure as `NO_DIAGRAM` (`COMMAND_FAILED` for real errors).
+- Edge Modification panel always keeps the edge's current type selectable even when endpoint filtering would hide it.
+- `@pragma-graph/core` build excludes test files (fixes `build:win` on checkouts without devDependencies).
+
 ### Compatibility
 - Diagram JSON format unchanged (still `metadata.version: "1.1"` payloads); older files load as before.
 - The new CLI works against older installed GUIs (verified against 1.1.0) — bridge endpoints are unchanged.

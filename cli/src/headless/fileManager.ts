@@ -11,6 +11,10 @@ import type { Diagram } from '@pragma-graph/core';
 // WSL/NTFS) can miss rapid rewrites, and an identical rewrite is no conflict.
 const loadedHashes = new Map<string, string>();
 
+// Diagram id found in each --file at load time, for identity checks
+// (a connected-mode mirror must not overwrite an unrelated diagram).
+const loadedIds = new Map<string, string>();
+
 const hashContent = (raw: string | Buffer): string =>
   createHash('sha256').update(raw).digest('hex');
 
@@ -19,6 +23,15 @@ let force = false;
 /** --force: skip the conflict check on save. */
 export function setForceOverwrite(value: boolean): void {
   force = value;
+}
+
+export function isForceOverwrite(): boolean {
+  return force;
+}
+
+/** Diagram id recorded when filePath was loaded this invocation, if any. */
+export function getLoadedDiagramId(filePath: string): string | undefined {
+  return loadedIds.get(path.resolve(filePath));
 }
 
 export class FileConflictError extends Error {
@@ -37,7 +50,9 @@ export function loadDiagramFromFile(filePath: string): Diagram {
   const raw = fs.readFileSync(resolved, 'utf-8');
   loadedHashes.set(resolved, hashContent(raw));
   const data = JSON.parse(raw);
-  return validateDiagramImport(data);
+  const diagram = validateDiagramImport(data);
+  loadedIds.set(resolved, diagram.id);
+  return diagram;
 }
 
 export function saveDiagramToFile(diagram: Diagram, filePath: string): void {

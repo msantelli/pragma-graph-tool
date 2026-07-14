@@ -8,6 +8,19 @@ const os = require('os');
 // Keep a global reference of the window object
 let mainWindow;
 
+// True when the renderer window exists and can receive executeJavaScript.
+// (On macOS the app outlives its window; mainWindow is null after close.)
+const hasWindow = () => Boolean(mainWindow) && !mainWindow.isDestroyed();
+
+// All renderer access goes through here so a closed window yields a clean
+// error instead of "Cannot read properties of null".
+function runInRenderer(code) {
+  if (!hasWindow()) {
+    return Promise.reject(new Error('GUI window is closed'));
+  }
+  return mainWindow.webContents.executeJavaScript(code);
+}
+
 function createWindow() {
   // Create the browser window
   mainWindow = new BrowserWindow({
@@ -86,7 +99,7 @@ function createMenu() {
           label: 'New Diagram',
           accelerator: 'CmdOrCtrl+N',
           click: () => {
-            mainWindow.webContents.executeJavaScript(`
+            runInRenderer(`
               // Clear the current diagram
               if (window.clearDiagram) {
                 window.clearDiagram();
@@ -98,6 +111,7 @@ function createMenu() {
           label: 'Import Diagram...',
           accelerator: 'CmdOrCtrl+O',
           click: async () => {
+            if (!hasWindow()) return;
             const result = await dialog.showOpenDialog(mainWindow, {
               properties: ['openFile'],
               filters: [
@@ -113,7 +127,7 @@ function createMenu() {
                 const diagram = JSON.parse(fileContent);
                 
                 // Send the diagram data to the renderer
-                mainWindow.webContents.executeJavaScript(`
+                runInRenderer(`
                   if (window.importDiagram) {
                     window.importDiagram(${JSON.stringify(diagram)});
                   }
@@ -128,6 +142,7 @@ function createMenu() {
           label: 'Export Diagram...',
           accelerator: 'CmdOrCtrl+S',
           click: async () => {
+            if (!hasWindow()) return;
             const result = await dialog.showSaveDialog(mainWindow, {
               defaultPath: 'pragma-graph.json',
               filters: [
@@ -138,7 +153,7 @@ function createMenu() {
 
             if (!result.canceled) {
               // Get diagram data from renderer
-              const diagram = await mainWindow.webContents.executeJavaScript(`
+              const diagram = await runInRenderer(`
                 window.exportDiagram ? window.exportDiagram() : null
               `);
 
@@ -174,7 +189,7 @@ function createMenu() {
           label: 'Undo',
           accelerator: 'CmdOrCtrl+Z',
           click: () => {
-            mainWindow.webContents.executeJavaScript(`
+            runInRenderer(`
               if (window.undo) {
                 window.undo();
               }
@@ -185,7 +200,7 @@ function createMenu() {
           label: 'Redo',
           accelerator: process.platform === 'darwin' ? 'Cmd+Shift+Z' : 'Ctrl+Y',
           click: () => {
-            mainWindow.webContents.executeJavaScript(`
+            runInRenderer(`
               if (window.redo) {
                 window.redo();
               }
@@ -197,7 +212,7 @@ function createMenu() {
           label: 'Select All',
           accelerator: 'CmdOrCtrl+A',
           click: () => {
-            mainWindow.webContents.executeJavaScript(`
+            runInRenderer(`
               if (window.selectAll) {
                 window.selectAll();
               }
@@ -213,7 +228,7 @@ function createMenu() {
           label: 'Zoom In',
           accelerator: 'CmdOrCtrl+Plus',
           click: () => {
-            mainWindow.webContents.executeJavaScript(`
+            runInRenderer(`
               if (window.zoomIn) {
                 window.zoomIn();
               }
@@ -224,7 +239,7 @@ function createMenu() {
           label: 'Zoom Out',
           accelerator: 'CmdOrCtrl+-',
           click: () => {
-            mainWindow.webContents.executeJavaScript(`
+            runInRenderer(`
               if (window.zoomOut) {
                 window.zoomOut();
               }
@@ -235,7 +250,7 @@ function createMenu() {
           label: 'Reset Zoom',
           accelerator: 'CmdOrCtrl+0',
           click: () => {
-            mainWindow.webContents.executeJavaScript(`
+            runInRenderer(`
               if (window.resetZoom) {
                 window.resetZoom();
               }
@@ -246,7 +261,7 @@ function createMenu() {
           label: 'Center Diagram',
           accelerator: 'CmdOrCtrl+Shift+C',
           click: () => {
-            mainWindow.webContents.executeJavaScript(`
+            runInRenderer(`
               if (window.centerDiagram) {
                 window.centerDiagram();
               }
@@ -278,10 +293,16 @@ function createMenu() {
           accelerator: 'CmdOrCtrl+Shift+V',
           click: async () => {
             try {
-              const issues = await mainWindow.webContents.executeJavaScript(
-                `(function() { return window.validateDiagram ? window.validateDiagram() : []; })()`
+              const issues = await runInRenderer(
+                `(function() { return window.validateDiagram ? window.validateDiagram() : null; })()`
               );
-              if (!issues || issues.length === 0) {
+              if (issues === null) {
+                // Missing bridge means validation never ran — do not report
+                // a clean bill of health.
+                dialog.showErrorBox('Validate Diagram', 'The diagram view is not ready yet — try again in a moment.');
+                return;
+              }
+              if (issues.length === 0) {
                 dialog.showMessageBox(mainWindow, {
                   type: 'info',
                   title: 'Validate Diagram',
@@ -398,6 +419,14 @@ function startCLIServer() {
       return;
     }
 
+    // The bridge needs a live renderer; without one (e.g. macOS with all
+    // windows closed) answer 503 so the CLI reports the session cleanly.
+    if (!hasWindow()) {
+      res.writeHead(503);
+      res.end(JSON.stringify({ ok: false, error: 'GUI window is closed' }));
+      return;
+    }
+
     try {
       const url = new URL(req.url, `http://${req.headers.host}`);
       const pathname = url.pathname;
@@ -420,24 +449,24 @@ function startCLIServer() {
       let result;
 
       if (req.method === 'GET' && pathname === '/api/v1/status') {
-        const diagram = await mainWindow.webContents.executeJavaScript(
+        const diagram = await runInRenderer(
           `(function() { var s = window.__pragma_cli__; if (!s) return null; var d = s.getState().diagram.currentDiagram; return d ? { id: d.id, name: d.name, type: d.type, nodes: d.nodes.length, edges: d.edges.length } : null; })()`
         );
         result = { gui: true, pid: process.pid, diagram };
 
       } else if (req.method === 'GET' && pathname === '/api/v1/diagram') {
-        result = await mainWindow.webContents.executeJavaScript(
+        result = await runInRenderer(
           `(function() { var s = window.__pragma_cli__; return s ? s.getState().diagram.currentDiagram : null; })()`
         );
 
       } else if (req.method === 'GET' && pathname === '/api/v1/diagram/nodes') {
-        result = await mainWindow.webContents.executeJavaScript(
+        result = await runInRenderer(
           `(function() { var s = window.__pragma_cli__; var d = s ? s.getState().diagram.currentDiagram : null; return d ? d.nodes : []; })()`
         );
 
       } else if (req.method === 'GET' && pathname.match(/^\/api\/v1\/diagram\/nodes\/(.+)$/)) {
         const nodeId = pathname.match(/^\/api\/v1\/diagram\/nodes\/(.+)$/)[1];
-        result = await mainWindow.webContents.executeJavaScript(
+        result = await runInRenderer(
           `(function() { var s = window.__pragma_cli__; var d = s ? s.getState().diagram.currentDiagram : null; return d ? d.nodes.find(function(n) { return n.id === ${JSON.stringify(nodeId)}; }) || null : null; })()`
         );
         if (!result) {
@@ -447,7 +476,7 @@ function startCLIServer() {
         }
 
       } else if (req.method === 'GET' && pathname === '/api/v1/diagram/edges') {
-        result = await mainWindow.webContents.executeJavaScript(
+        result = await runInRenderer(
           `(function() { var s = window.__pragma_cli__; var d = s ? s.getState().diagram.currentDiagram : null; return d ? d.edges : []; })()`
         );
 
@@ -458,7 +487,7 @@ function startCLIServer() {
           res.end(JSON.stringify({ ok: false, error: 'Missing action.type' }));
           return;
         }
-        result = await mainWindow.webContents.executeJavaScript(
+        result = await runInRenderer(
           `(function() { var s = window.__pragma_cli__; s.dispatch(${JSON.stringify(action)}); return s.getState().diagram.currentDiagram; })()`
         );
 
@@ -469,14 +498,14 @@ function startCLIServer() {
           res.end(JSON.stringify({ ok: false, error: 'Missing actions array' }));
           return;
         }
-        result = await mainWindow.webContents.executeJavaScript(
+        result = await runInRenderer(
           `(function() { var s = window.__pragma_cli__; var actions = ${JSON.stringify(actions)}; actions.forEach(function(a) { s.dispatch(a); }); return s.getState().diagram.currentDiagram; })()`
         );
 
       } else if (req.method === 'POST' && pathname.match(/^\/api\/v1\/export\/(.+)$/)) {
         const format = pathname.match(/^\/api\/v1\/export\/(.+)$/)[1];
         // Get the diagram, then generate export on the main process side
-        const diagram = await mainWindow.webContents.executeJavaScript(
+        const diagram = await runInRenderer(
           `(function() { var s = window.__pragma_cli__; return s ? s.getState().diagram.currentDiagram : null; })()`
         );
         if (!diagram) {
@@ -517,6 +546,9 @@ function startCLIServer() {
       port,
       token: cliToken,
       pid: process.pid,
+      // Record a specific bind interface so discovery probes the right host
+      // (0.0.0.0 stays reachable via loopback; 127.0.0.1 is the default).
+      ...(bindHost !== '127.0.0.1' && bindHost !== '0.0.0.0' ? { host: bindHost } : {}),
       version: app.getVersion()
     }, null, 2) + '\n', { mode: 0o600 });
   });
