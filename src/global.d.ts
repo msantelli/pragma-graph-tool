@@ -1,5 +1,5 @@
 import type { UnknownAction } from '@reduxjs/toolkit';
-import type { Diagram } from '@pragma-graph/core';
+import type { Diagram, ValidationIssue } from '@pragma-graph/core';
 import type { RootState } from './store/store';
 
 declare global {
@@ -20,6 +20,7 @@ declare global {
     zoomOut?: () => void;
     resetZoom?: () => void;
     centerDiagram?: () => void;
+    validateDiagram?: () => ValidationIssue[];
   }
 }
 

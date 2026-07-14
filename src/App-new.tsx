@@ -42,7 +42,7 @@ import {
 } from '@pragma-graph/core';
 import { getAvailableTools } from '@pragma-graph/core';
 import { exportAsJSON, exportAsSVG, exportAsLaTeX, importFromJSON } from './utils/exportUtils';
-import { calculateDiagramBounds } from '@pragma-graph/core';
+import { calculateDiagramBounds, validateDiagram } from '@pragma-graph/core';
 import type { Node, Edge } from '@pragma-graph/core';
 
 const AppContent: React.FC = () => {
@@ -112,6 +112,10 @@ const AppContent: React.FC = () => {
     window.undo = () => store.dispatch(undo());
     window.redo = () => store.dispatch(redo());
     window.selectAll = () => store.dispatch(selectAll());
+    window.validateDiagram = () => {
+      const d = store.getState().diagram.currentDiagram;
+      return d ? validateDiagram(d) : [];
+    };
 
     // Zoom/view handlers for the Electron View menu. Zoom keeps the viewport
     // center fixed; state lives in uiSlice so Canvas re-renders from Redux.
@@ -158,6 +162,7 @@ const AppContent: React.FC = () => {
       delete window.zoomOut;
       delete window.resetZoom;
       delete window.centerDiagram;
+      delete window.validateDiagram;
     };
   }, []);
 

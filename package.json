@@ -11,7 +11,10 @@
   "type": "module",
   "main": "electron/main.cjs",
   "homepage": "./",
-  "workspaces": ["packages/*", "cli"],
+  "workspaces": [
+    "packages/*",
+    "cli"
+  ],
   "scripts": {
     "build:core": "cd packages/core && npm run build",
     "build:cli": "cd cli && npm run build",
@@ -47,6 +50,7 @@
     "@types/react-dom": "19.1.7",
     "@types/uuid": "10.0.0",
     "@vitejs/plugin-react": "4.7.0",
+    "ajv": "8.17.1",
     "concurrently": "9.2.0",
     "electron": "37.2.5",
     "electron-builder": "26.0.12",
@@ -73,8 +77,14 @@
       "package.json"
     ],
     "extraFiles": [
-      { "from": "build/pragma-cli.cmd", "to": "pragma-cli.cmd" },
-      { "from": "cli/dist/bundle.cjs", "to": "cli/bundle.cjs" }
+      {
+        "from": "build/pragma-cli.cmd",
+        "to": "pragma-cli.cmd"
+      },
+      {
+        "from": "cli/dist/bundle.cjs",
+        "to": "cli/bundle.cjs"
+      }
     ],
     "extraResources": [
       {
