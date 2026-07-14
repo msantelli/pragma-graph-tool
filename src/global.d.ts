@@ -1,5 +1,5 @@
 import type { UnknownAction } from '@reduxjs/toolkit';
-import type { Diagram } from './types/all';
+import type { Diagram } from '@pragma-graph/core';
 import type { RootState } from './store/store';
 
 declare global {

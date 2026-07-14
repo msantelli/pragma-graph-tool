@@ -5,8 +5,8 @@ dist-electron/
 # CLI package (not part of web app)
 cli/
 
-# Shared core (GUI uses parallel copies in src/, not this package)
-packages/
+# NOTE: packages/core must NOT be ignored — the web build compiles it from
+# source (vite aliases @pragma-graph/core to packages/core/src).
 
 # Research docs
 research/

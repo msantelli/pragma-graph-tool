@@ -3,10 +3,10 @@ import * as d3 from 'd3';
 import { useD3 } from '../../hooks/useD3';
 import { useDiagram } from '../../hooks/useDiagram';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { setZoom, setPanOffset, setCanvasSize, setPendingEdge, setShowEdgeTypeSelector, setPendingEntryExit, setSelectedNodeForCustomization, setSelectedEdgeForModification } from '../../store/uiSlice';
-import { addEdge, addEntryPoint, addExitPoint, updateEntryPoint, saveToHistory, setNodeParent } from '../../store/diagramSlice';
+import { setZoom, setPanOffset, setCanvasSize, setPendingEdge, setShowEdgeTypeSelector, setPendingEntryExit, setSelectedNodeForCustomization, setSelectedEdgeForModification } from '@pragma-graph/core';
+import { addEdge, addEntryPoint, addExitPoint, updateEntryPoint, saveToHistory, setNodeParent } from '@pragma-graph/core';
 import { Grid } from '../Grid';
-import { getSnappedPosition } from '../../utils/gridUtils';
+import { getSnappedPosition } from '@pragma-graph/core';
 import {
   getNodeColors,
   getNodeDimensions,
@@ -19,9 +19,9 @@ import {
   sortNodesForRendering,
   findContainerAtPosition,
   isValidDropTarget
-} from '../../utils/nodeUtils';
-import { getEdgeColor } from '../../utils/edgeUtils';
-import type { Node, Edge, Point } from '../../types/all';
+} from '@pragma-graph/core';
+import { getEdgeColor } from '@pragma-graph/core';
+import type { Node, Edge, Point } from '@pragma-graph/core';
 import './Canvas.css';
 
 export const Canvas: React.FC = () => {
