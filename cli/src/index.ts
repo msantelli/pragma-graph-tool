@@ -83,7 +83,9 @@ program
       }
     }
 
-    // Auto-load file if specified (only in headless mode)
+    // Auto-load file if specified. Headless: this seeds the in-process store.
+    // Connected: the GUI stays the source of truth, but loading still records
+    // the file's content hash so the mirror save can detect external writes.
     if (opts.file) {
       const commandName = actionCommand.name();
       const parentName = actionCommand.parent?.name();
